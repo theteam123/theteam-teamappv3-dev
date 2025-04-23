@@ -3,8 +3,8 @@
     <div class="max-w-md w-full space-y-8">
       <div class="text-center">
         <div class="flex justify-center">
-          <div class="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center">
-            <BuildingIcon class="h-8 w-8 text-green-600" />
+          <div class=" rounded-lg flex items-center justify-center">
+            <img src="/team-app-logo.webp" alt="Team App Logo" class="" />
           </div>
         </div>
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
@@ -178,7 +178,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { LockIcon, LoaderIcon, BuildingIcon, AlertCircleIcon } from 'lucide-vue-next';
+import { LockIcon, LoaderIcon, AlertCircleIcon } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { z } from 'zod';
 
