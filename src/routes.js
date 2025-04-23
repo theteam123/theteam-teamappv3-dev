@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
 import Home from './pages/Home.vue'
 import Auth from './pages/Auth.vue'
 import Users from './pages/Users.vue'
@@ -16,7 +15,7 @@ import Content from './pages/Content.vue'
 import Documents from './pages/Documents.vue'
 import EmployeeFeedbackRecords from './pages/EmployeeFeedbackRecords.vue'
 
-const routes: RouteRecordRaw[] = [
+const routes = [
   {
     path: '/',
     name: 'home',
@@ -134,4 +133,4 @@ router.beforeEach((to, from, next) => {
   next()
 })
 
-export default router
+export default router 

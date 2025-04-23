@@ -175,7 +175,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { LockIcon, LoaderIcon, AlertCircleIcon } from 'lucide-vue-next';
@@ -251,11 +251,8 @@ const handleSubmit = async () => {
     } else {
       await authStore.signIn(email.value, password.value);
     }
-
-    if (authStore.isAuthenticated) {
-      router.push('/');
-    }
-  } catch (error: any) {
+    router.push('/');
+  } catch (error) {
     console.error('Authentication error:', error);
   }
 };
@@ -263,8 +260,5 @@ const handleSubmit = async () => {
 const toggleMode = () => {
   isSignUp.value = !isSignUp.value;
   clearErrors();
-  email.value = '';
-  password.value = '';
-  fullName.value = '';
 };
 </script>

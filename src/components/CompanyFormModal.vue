@@ -54,19 +54,15 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue';
-import type { Company } from '../lib/types';
 
-const props = defineProps<{
-  isEditing: boolean;
-  companyData?: Company;
-}>();
+const props = defineProps({
+  isEditing: Boolean,
+  companyData: Object
+});
 
-const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'submit', data: { name: string; website: string; settingsStr: string }): void;
-}>();
+const emit = defineEmits(['close', 'submit']);
 
 const formData = ref({
   name: props.companyData?.name || '',

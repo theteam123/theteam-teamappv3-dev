@@ -58,25 +58,21 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { supabase } from '../lib/supabase';
-import type { Role } from '../lib/types';
 
-const props = defineProps<{
-  isEditing: boolean;
-  userData: any;
-}>();
+const props = defineProps({
+  isEditing: Boolean,
+  userData: Object
+});
 
-const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'submit'): void;
-}>();
+const emit = defineEmits(['close', 'submit']);
 
 const authStore = useAuthStore();
 const loading = ref(false);
-const roles = ref<Role[]>([]);
+const roles = ref([]);
 const formData = ref({
   full_name: props.userData?.full_name || '',
   email: props.userData?.email || '',

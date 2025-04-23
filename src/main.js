@@ -2,8 +2,9 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import './index.css'
-import router from './routes'
-import { useAuthStore } from './stores/auth'
+import router from './routes.js'
+import { useAuthStore } from './stores/auth.js'
+import { supabase } from './lib/supabase.js'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -12,6 +13,18 @@ app.use(pinia)
 
 // Initialize auth store
 const authStore = useAuthStore()
+
+// Initialize auth state
+authStore.fetchUser()
+
+// Listen for auth state changes
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    authStore.fetchUser()
+  } else if (event === 'SIGNED_OUT') {
+    authStore.resetState()
+  }
+})
 
 // Setup navigation guards
 router.beforeEach(async (to, from, next) => {
@@ -47,4 +60,4 @@ app.mount('#app')
 console.log('Available routes:', router.getRoutes().map(r => ({ 
   path: r.path,
   name: r.name
-})))
+}))) 
