@@ -5,12 +5,7 @@
       <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
         <!-- Logo -->
         <div class="flex items-center justify-start h-16 px-4 border-b border-gray-200">
-          <img 
-            src="./TeamLogo.png"
-            alt="TheTeam" 
-            class="h-8 w-auto"
-            @error="handleImageError"
-          />
+			<img src="/team-app-logo.webp" alt="Team App Logo" class="" @error="handleImageError" />
         </div>
         
         <!-- Search Bar -->
