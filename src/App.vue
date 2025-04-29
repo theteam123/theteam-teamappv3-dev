@@ -5,7 +5,7 @@
       <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
         <!-- Logo -->
         <div class="flex items-center justify-start h-16 px-4 border-b border-gray-200">
-			<img src="/team-app-logo.webp" alt="Team App Logo" class="" @error="handleImageError" />
+			    <img src="/team-app-logo.webp" alt="Team App Logo" class="" @error="handleImageError" />
         </div>
         
         <!-- Search Bar -->
@@ -282,28 +282,6 @@ const getContentIcon = (type: string) => {
   }
 };
 
-// Search content when query changes
-watch(searchQuery, async (newQuery) => {
-  if (!newQuery || !authStore.currentCompanyId) {
-    searchResults.value = [];
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('content')
-      .select('id, name, content_type')
-      .eq('company_id', authStore.currentCompanyId)
-      .ilike('name', `%${newQuery}%`)
-      .limit(5);
-
-    if (error) throw error;
-    searchResults.value = data;
-  } catch (err) {
-    console.error('Error searching content:', err);
-    searchResults.value = [];
-  }
-});
 
 const handleSignOut = async () => {
   try {
