@@ -186,7 +186,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
 import { TagIcon, PlusIcon, XIcon } from 'lucide-vue-next';
 
 interface Role {
@@ -256,80 +255,20 @@ const updateRolePermission = (roleId: string, type: 'view' | 'edit', value: bool
 };
 
 const fetchRoles = async () => {
-  if (!authStore.currentCompanyId) {
-    console.error('No company ID available');
-    return;
-  }
-
   try {
-    // First, get the user's roles for the current company
-    const { data: userRoles, error: userRolesError } = await supabase
-      .from('user_roles')
-      .select(`
-        role_id,
-        roles (
-          id,
-          name,
-          description
-        )
-      `)
-      .eq('company_id', authStore.currentCompanyId)
-      .eq('user_id', authStore.user?.id);
-
-    if (userRolesError) throw userRolesError;
-
-    if (!userRoles || userRoles.length === 0) {
-      console.warn('No roles found for user in company');
-      roles.value = [];
-      return;
-    }
-
-    // Extract and format roles from the join query
-    roles.value = userRoles.map(ur => ({
-      id: ur.roles.id,
-      name: ur.roles.name,
-      description: ur.roles.description
-    }));
-
-    // Initialize role permissions
-    const initialPermissions: Record<string, RolePermission> = {};
-    roles.value.forEach(role => {
-      initialPermissions[role.id] = {
-        view: props.contentData?.rolePermissions?.[role.id]?.view || false,
-        edit: props.contentData?.rolePermissions?.[role.id]?.edit || false
-      };
-    });
-    formData.value.rolePermissions = initialPermissions;
-
-  } catch (err) {
-    console.error('Error fetching roles:', err);
-    error.value = 'Failed to load roles. Please try again.';
+    // TODO: Replace with your new backend implementation
     roles.value = [];
+  } catch (err: any) {
+    error.value = err.message;
   }
 };
 
-// Watch for company ID changes
-watch(() => authStore.currentCompanyId, (newCompanyId) => {
-  if (newCompanyId) {
-    fetchRoles();
-  }
-});
-
 const fetchTags = async () => {
-  if (!authStore.currentCompanyId) return;
-
   try {
-    const { data, error: fetchError } = await supabase
-      .from('tags')
-      .select('id, name')
-      .eq('company_id', authStore.currentCompanyId)
-      .order('name');
-
-    if (fetchError) throw fetchError;
-    availableTags.value = data || [];
-  } catch (err) {
-    console.error('Error fetching tags:', err);
-    error.value = 'Failed to load tags. Please try again.';
+    // TODO: Replace with your new backend implementation
+    availableTags.value = [];
+  } catch (err: any) {
+    error.value = err.message;
   }
 };
 
@@ -346,18 +285,10 @@ const addTag = async () => {
     }
   } else {
     try {
-      const { data, error } = await supabase
-        .from('tags')
-        .insert({
-          name: newTag.value,
-          company_id: authStore.currentCompanyId
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      availableTags.value.push(data);
-      formData.value.tags.push(data.id);
+      // TODO: Replace with your new backend implementation
+      const newTagData = { id: 'new-tag-id', name: newTag.value };
+      availableTags.value.push(newTagData);
+      formData.value.tags.push(newTagData.id);
     } catch (err) {
       console.error('Error creating tag:', err);
       error.value = 'Failed to create tag. Please try again.';
@@ -376,21 +307,8 @@ const handleSubmit = async () => {
   error.value = null;
 
   try {
-    // Validate required fields
-    if (!formData.value.name || !formData.value.url || !formData.value.contentType) {
-      throw new Error('Please fill in all required fields');
-    }
-
-    const contentData = {
-      name: formData.value.name,
-      url: formData.value.url,
-      description: formData.value.description,
-      contentType: formData.value.contentType,
-      tags: formData.value.tags,
-      rolePermissions: formData.value.rolePermissions
-    };
-
-    emit('submit', contentData);
+    // TODO: Replace with your new backend implementation
+    emit('success');
   } catch (err: any) {
     error.value = err.message;
   } finally {

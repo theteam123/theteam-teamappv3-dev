@@ -182,7 +182,6 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
 import { format, subDays } from 'date-fns';
 import {
   ArrowLeftIcon,
@@ -213,97 +212,34 @@ const metrics = ref({
 const fieldAnalysis = ref([]);
 const recentActivity = ref([]);
 
-const fetchAnalytics = async () => {
+const fetchForm = async () => {
   loading.value = true;
+  error.value = null;
+
   try {
-    // Fetch form details
-    const { data: formData, error: formError } = await supabase
-      .from('forms')
-      .select('*')
-      .eq('id', route.params.id)
-      .single();
-
-    if (formError) throw formError;
-    form.value = formData;
-
-    // Fetch submissions for analysis
-    const { data: submissions, error: submissionsError } = await supabase
-      .from('form_submissions')
-      .select(`
-        *,
-        users!submitted_by (
-          profiles (
-            full_name
-          )
-        ),
-        public_submitters!form_submissions_public_submitter_id_fkey (
-          name
-        )
-      `)
-      .eq('form_id', route.params.id)
-      .order('created_at', { ascending: false });
-
-    if (submissionsError) throw submissionsError;
-
-    // Calculate metrics
-    const totalSubmissions = submissions.length;
-    const previousPeriodSubmissions = submissions.filter(s => 
-      new Date(s.created_at) > subDays(new Date(), 14) &&
-      new Date(s.created_at) <= subDays(new Date(), 7)
-    ).length;
-    const currentPeriodSubmissions = submissions.filter(s => 
-      new Date(s.created_at) > subDays(new Date(), 7)
-    ).length;
-
-    const submissionTrend = previousPeriodSubmissions === 0 ? 100 :
-      ((currentPeriodSubmissions - previousPeriodSubmissions) / previousPeriodSubmissions) * 100;
-
-    const uniqueSubmitters = new Set([
-      ...submissions.filter(s => s.submitted_by).map(s => s.submitted_by),
-      ...submissions.filter(s => s.public_submitter_id).map(s => s.public_submitter_id)
-    ]).size;
-
-    metrics.value = {
-      totalSubmissions,
-      submissionTrend: Math.round(submissionTrend),
-      avgCompletionTime: 45, // This would need to be calculated based on actual tracking data
-      uniqueSubmitters,
-      completionRate: 85 // This would need to be calculated based on form view tracking
-    };
-
-    // Analyze fields
-    fieldAnalysis.value = form.value.fields.map(field => {
-      const fieldResponses = submissions.map(s => s.data[field.label]).filter(Boolean);
-      const completionRate = (fieldResponses.length / totalSubmissions) * 100;
-
-      let analysis = {
-        label: field.label,
-        type: field.type,
-        completionRate: Math.round(completionRate)
-      };
-
-      if (field.type === 'select') {
-        const optionCounts = fieldResponses.reduce((acc, value) => {
-          acc[value] = (acc[value] || 0) + 1;
-          return acc;
-        }, {});
-        analysis.optionCounts = optionCounts;
-      }
-
-      return analysis;
-    });
-
-    // Get recent activity
-    recentActivity.value = submissions.slice(0, 5).map(submission => ({
-      id: submission.id,
-      submitter_name: submission.users?.profiles?.full_name || submission.public_submitters?.name || 'Anonymous',
-      created_at: submission.created_at
-    }));
-
-  } catch (err) {
+    // TODO: Replace with your new backend implementation
+    form.value = null;
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;
+  }
+};
+
+const fetchAnalytics = async () => {
+  try {
+    // TODO: Replace with your new backend implementation
+    metrics.value = {
+      totalSubmissions: 0,
+      submissionTrend: 0,
+      avgCompletionTime: 0,
+      uniqueSubmitters: 0,
+      completionRate: 0
+    };
+    fieldAnalysis.value = [];
+    recentActivity.value = [];
+  } catch (err: any) {
+    error.value = err.message;
   }
 };
 

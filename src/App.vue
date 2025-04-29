@@ -178,7 +178,6 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
-import { supabase } from './lib/supabase';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
 import { 
   HomeIcon, 
@@ -307,8 +306,13 @@ watch(searchQuery, async (newQuery) => {
 });
 
 const handleSignOut = async () => {
-  await authStore.signOut();
-  router.push('/auth');
+  try {
+    // TODO: Replace with your new backend implementation
+    await authStore.signOut();
+    router.push('/login');
+  } catch (error) {
+    console.error('Error signing out:', error);
+  }
 };
 
 const handleImageError = (event: Event) => {

@@ -40,6 +40,22 @@
       {{ error }}
     </div>
 
+    <!-- Empty State -->
+    <div v-else-if="!form" class="text-center py-12">
+      <ClipboardIcon class="mx-auto h-12 w-12 text-gray-400" />
+      <h3 class="mt-2 text-sm font-medium text-gray-900">Form not found</h3>
+      <p class="mt-1 text-sm text-gray-500">Share this form to start collecting responses.</p>
+      <div class="mt-6">
+        <button
+          @click="copyFormLink"
+          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        >
+          <LinkIcon class="w-5 h-5 mr-2" />
+          Copy Form Link
+        </button>
+      </div>
+    </div>
+
     <!-- Submissions Table -->
     <div v-else-if="submissions.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
       <div class="overflow-x-auto">
@@ -115,7 +131,6 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import {
   ArrowLeftIcon,
@@ -126,76 +141,70 @@ import {
   DownloadIcon,
 } from 'lucide-vue-next';
 
+interface FormField {
+  id: string;
+  label: string;
+  type: string;
+  required: boolean;
+  options?: string[];
+}
+
+interface Form {
+  id: string;
+  name: string;
+  description: string;
+  fields: FormField[];
+  created_at: string;
+}
+
+interface Submission {
+  id: string;
+  form_id: string;
+  data: Record<string, any>;
+  submitted_by: string;
+  submitted_by_name: string;
+  created_at: string;
+}
+
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-
+const form = ref<Form | null>(null);
+const submissions = ref<Submission[]>([]);
 const loading = ref(false);
-const error = ref(null);
-const form = ref(null);
-const submissions = ref([]);
+const error = ref('');
 
 const fetchFormAndSubmissions = async () => {
   loading.value = true;
   try {
-    // Fetch form details
-    const { data: formData, error: formError } = await supabase
-      .from('forms')
-      .select('*')
-      .eq('id', route.params.id)
-      .single();
-
-    if (formError) throw formError;
-    form.value = formData;
-
-    // Fetch submissions
-    const { data: submissionsData, error: submissionsError } = await supabase
-      .from('form_submissions')
-      .select(`
-        *,
-        profiles:submitted_by (
-          full_name
-        )
-      `)
-      .eq('form_id', route.params.id)
-      .order('created_at', { ascending: false });
-
-    if (submissionsError) throw submissionsError;
-
-    submissions.value = submissionsData.map(submission => ({
-      ...submission,
-      submitted_by_name: submission.profiles.full_name
-    }));
-  } catch (err) {
+    // TODO: Replace with your new backend implementation
+    form.value = null;
+    submissions.value = [];
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;
   }
 };
 
-const deleteSubmission = async (submission) => {
+const deleteSubmission = async (submission: any) => {
   if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) return;
 
   loading.value = true;
   try {
-    const { error: err } = await supabase
-      .from('form_submissions')
-      .delete()
-      .eq('id', submission.id);
-
-    if (err) throw err;
+    // TODO: Replace with your new backend implementation
     await fetchFormAndSubmissions();
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;
   }
 };
 
-const copyFormLink = async () => {
-  const formUrl = `${window.location.origin}/forms/${route.params.id}/submit`;
-  await navigator.clipboard.writeText(formUrl);
-  alert('Form link copied to clipboard!');
+const copyFormLink = () => {
+  if (!form.value) return;
+  const link = `${window.location.origin}/forms/${form.value.id}`;
+  navigator.clipboard.writeText(link);
 };
 
 const exportToCsv = () => {

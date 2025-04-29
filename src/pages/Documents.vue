@@ -214,7 +214,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
 import {
   FileUpIcon,
   FileTextIcon,
@@ -284,24 +283,8 @@ const fetchDocuments = async () => {
   
   loading.value = true;
   try {
-    const { data, error: fetchError } = await supabase
-      .from('documents')
-      .select(`
-        *,
-        uploader:profiles!documents_uploaded_by_fkey (
-          id,
-          full_name
-        )
-      `)
-      .eq('company_id', authStore.currentCompanyId);
-
-    if (fetchError) throw fetchError;
-
-    documents.value = data.map(doc => ({
-      ...doc,
-      uploader_name: doc.uploader?.full_name || 'Unknown',
-      tags: doc.tags || []
-    }));
+    // TODO: Replace with your new backend implementation
+    documents.value = [];
   } catch (err: any) {
     error.value = err.message;
   } finally {
@@ -324,32 +307,7 @@ const handleUpload = async () => {
 
   uploading.value = true;
   try {
-    // Upload file to storage
-    const fileExt = uploadForm.value.file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).slice(2)}.${fileExt}`;
-    const filePath = `${authStore.currentCompanyId}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(filePath, uploadForm.value.file);
-
-    if (uploadError) throw uploadError;
-
-    // Create document record
-    const { error: insertError } = await supabase
-      .from('documents')
-      .insert({
-        name: uploadForm.value.name,
-        category: uploadForm.value.category,
-        tags: uploadForm.value.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        file_path: filePath,
-        size: uploadForm.value.file.size,
-        company_id: authStore.currentCompanyId,
-        uploaded_by: authStore.user?.id
-      });
-
-    if (insertError) throw insertError;
-
+    // TODO: Replace with your new backend implementation
     showUploadModal.value = false;
     uploadForm.value = {
       name: '',
@@ -367,21 +325,7 @@ const handleUpload = async () => {
 
 const downloadDocument = async (document: any) => {
   try {
-    const { data, error: downloadError } = await supabase.storage
-      .from('documents')
-      .download(document.file_path);
-
-    if (downloadError) throw downloadError;
-
-    // Create download link
-    const url = window.URL.createObjectURL(data);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = document.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    // TODO: Replace with your new backend implementation
   } catch (err: any) {
     error.value = err.message;
   }
@@ -392,21 +336,7 @@ const deleteDocument = async (document: any) => {
 
   loading.value = true;
   try {
-    // Delete file from storage
-    const { error: storageError } = await supabase.storage
-      .from('documents')
-      .remove([document.file_path]);
-
-    if (storageError) throw storageError;
-
-    // Delete document record
-    const { error: deleteError } = await supabase
-      .from('documents')
-      .delete()
-      .eq('id', document.id);
-
-    if (deleteError) throw deleteError;
-
+    // TODO: Replace with your new backend implementation
     await fetchDocuments();
   } catch (err: any) {
     error.value = err.message;

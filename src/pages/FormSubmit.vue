@@ -122,7 +122,6 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
 import {
   LoaderIcon,
   CheckIcon,

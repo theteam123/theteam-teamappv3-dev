@@ -1,6 +1,5 @@
 import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
 import type { CompanyUser } from '../lib/types';
 
 export function useUsers() {
@@ -20,36 +19,8 @@ export function useUsers() {
     error.value = null;
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('user_companies')
-        .select(`
-          user_id,
-          users:user_id (
-            id,
-            email,
-            profiles (
-              full_name,
-              avatar_url
-            )
-          ),
-          user_roles (
-            roles (
-              name
-            )
-          )
-        `)
-        .eq('company_id', authStore.currentCompanyId);
-
-      if (fetchError) throw fetchError;
-
-      users.value = data.map(item => ({
-        id: item.users.id,
-        email: item.users.email,
-        full_name: item.users.profiles[0]?.full_name,
-        avatar_url: item.users.profiles[0]?.avatar_url,
-        role: item.user_roles[0]?.roles.name || 'No Role',
-        active: true
-      }));
+      // TODO: Replace with your new backend implementation
+      users.value = [];
     } catch (err: any) {
       error.value = err.message;
       users.value = [];
@@ -70,8 +41,7 @@ export function useUsers() {
     error.value = null;
 
     try {
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
-      if (deleteError) throw deleteError;
+      // TODO: Replace with your new backend implementation
       await fetchUsers();
     } catch (err: any) {
       error.value = err.message;

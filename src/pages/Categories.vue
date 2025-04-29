@@ -203,7 +203,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
 import {
   FolderIcon,
   FolderPlusIcon,
@@ -238,33 +237,13 @@ const availableParentCategories = computed(() => {
 });
 
 const fetchCategories = async () => {
-  if (!authStore.currentCompanyId) return;
-  
   loading.value = true;
+  error.value = null;
+
   try {
-    const { data, error: fetchError } = await supabase
-      .from('categories')
-      .select(`
-        *,
-        subcategories:categories!parent_id(id, name),
-        tags:category_tags(
-          tag:tags(
-            id,
-            name
-          )
-        )
-      `)
-      .eq('company_id', authStore.currentCompanyId);
-
-    if (fetchError) throw fetchError;
-
-    categories.value = data.map(category => ({
-      ...category,
-      item_count: 0, // Since category_items table doesn't exist in schema
-      tags: category.tags.map(ct => ct.tag),
-      subcategories: category.subcategories || []
-    }));
-  } catch (err) {
+    // TODO: Replace with your new backend implementation
+    categories.value = [];
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;
@@ -273,15 +252,10 @@ const fetchCategories = async () => {
 
 const fetchTags = async () => {
   try {
-    const { data, error: fetchError } = await supabase
-      .from('tags')
-      .select('id, name')
-      .eq('company_id', authStore.currentCompanyId);
-
-    if (fetchError) throw fetchError;
-    availableTags.value = data;
-  } catch (err) {
-    console.error('Error fetching tags:', err);
+    // TODO: Replace with your new backend implementation
+    availableTags.value = [];
+  } catch (err: any) {
+    error.value = err.message;
   }
 };
 
@@ -317,80 +291,29 @@ const editCategory = (category) => {
 
 const handleSubmit = async () => {
   loading.value = true;
+  error.value = null;
+
   try {
-    const categoryData = {
-      name: formData.value.name,
-      description: formData.value.description,
-      color: formData.value.color,
-      parent_id: formData.value.parent_id || null,
-      company_id: authStore.currentCompanyId
-    };
-
-    let categoryId;
-
-    if (isEditing.value) {
-      const { error: updateError } = await supabase
-        .from('categories')
-        .update(categoryData)
-        .eq('id', formData.value.id);
-
-      if (updateError) throw updateError;
-      categoryId = formData.value.id;
-
-      // Delete existing tag associations
-      const { error: deleteError } = await supabase
-        .from('category_tags')
-        .delete()
-        .eq('category_id', categoryId);
-
-      if (deleteError) throw deleteError;
-    } else {
-      const { data: newCategory, error: insertError } = await supabase
-        .from('categories')
-        .insert(categoryData)
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      categoryId = newCategory.id;
-    }
-
-    // Create new tag associations
-    if (formData.value.tag_ids.length > 0) {
-      const tagAssociations = formData.value.tag_ids.map(tagId => ({
-        category_id: categoryId,
-        tag_id: tagId
-      }));
-
-      const { error: tagError } = await supabase
-        .from('category_tags')
-        .insert(tagAssociations);
-
-      if (tagError) throw tagError;
-    }
-
+    // TODO: Replace with your new backend implementation
     showModal.value = false;
     await fetchCategories();
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;
   }
 };
 
-const deleteCategory = async (category) => {
+const deleteCategory = async (category: any) => {
   if (!confirm('Are you sure you want to delete this category? This action cannot be undone.')) return;
 
   loading.value = true;
-  try {
-    const { error: err } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', category.id);
+  error.value = null;
 
-    if (err) throw err;
+  try {
+    // TODO: Replace with your new backend implementation
     await fetchCategories();
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;

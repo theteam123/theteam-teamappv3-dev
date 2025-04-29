@@ -61,7 +61,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
 
 const props = defineProps({
   isEditing: Boolean,
@@ -81,12 +80,8 @@ const formData = ref({
 
 const fetchRoles = async () => {
   try {
-    const { data, error } = await supabase
-      .from('roles')
-      .select('id, name');
-
-    if (error) throw error;
-    roles.value = data;
+    // TODO: Replace with your new backend implementation
+    roles.value = [];
   } catch (err) {
     console.error('Error fetching roles:', err);
   }
@@ -95,65 +90,7 @@ const fetchRoles = async () => {
 const handleSubmit = async () => {
   loading.value = true;
   try {
-    if (props.isEditing) {
-      // Update user logic
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ full_name: formData.value.full_name })
-        .eq('id', props.userData.id);
-
-      if (updateError) throw updateError;
-
-      // Update role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ role_id: formData.value.role_id })
-        .eq('user_id', props.userData.id)
-        .eq('company_id', authStore.currentCompanyId);
-
-      if (roleError) throw roleError;
-    } else {
-      // Create user logic
-      const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-        email: formData.value.email,
-        password: Math.random().toString(36).slice(-8), // Generate random password
-        email_confirm: true
-      });
-
-      if (userError) throw userError;
-
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userData.user.id,
-          full_name: formData.value.full_name
-        });
-
-      if (profileError) throw profileError;
-
-      // Add to company
-      const { error: companyError } = await supabase
-        .from('user_companies')
-        .insert({
-          user_id: userData.user.id,
-          company_id: authStore.currentCompanyId
-        });
-
-      if (companyError) throw companyError;
-
-      // Assign role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userData.user.id,
-          role_id: formData.value.role_id,
-          company_id: authStore.currentCompanyId
-        });
-
-      if (roleError) throw roleError;
-    }
-
+    // TODO: Replace with your new backend implementation
     emit('submit');
   } catch (err) {
     console.error('Error submitting form:', err);

@@ -166,7 +166,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { supabase } from '../lib/supabase';
 import {
   LoaderIcon,
   CheckIcon,
@@ -189,6 +188,7 @@ const submitterInfo = ref({
 const fetchForm = async () => {
   loading.value = true;
   try {
+    // TODO: Replace with your new backend implementation
     const { data, error: fetchError } = await supabase
       .from('forms')
       .select('*')

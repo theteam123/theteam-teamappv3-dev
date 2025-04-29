@@ -287,18 +287,17 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
 import {
-  ClipboardPlusIcon,
   ClipboardIcon,
-  SearchIcon,
+  ClipboardPlusIcon,
   PencilIcon,
   TrashIcon,
   LoaderIcon,
   ClockIcon,
   FileTextIcon,
-  PlusIcon,
   BarChartIcon,
+  SearchIcon,
+  PlusIcon
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -356,27 +355,13 @@ const filteredForms = computed(() => {
 });
 
 const fetchForms = async () => {
-  if (!authStore.currentCompanyId) return;
-  
   loading.value = true;
+  error.value = null;
+
   try {
-    const { data, error: fetchError } = await supabase
-      .from('forms')
-      .select(`
-        *,
-        form_submissions (
-          count
-        )
-      `)
-      .eq('company_id', authStore.currentCompanyId);
-
-    if (fetchError) throw fetchError;
-
-    forms.value = data.map(form => ({
-      ...form,
-      submissions_count: form.form_submissions[0]?.count || 0
-    }));
-  } catch (err) {
+    // TODO: Replace with your new backend implementation
+    forms.value = [];
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;
@@ -430,57 +415,29 @@ const removeField = (index: number) => {
 
 const handleSubmit = async () => {
   loading.value = true;
+  error.value = null;
+
   try {
-    const formFields = formData.value.fields.map(field => ({
-      ...field,
-      options: field.type === 'select' ? field.options.split(',').map(opt => opt.trim()) : null
-    }));
-
-    const submitData = {
-      name: formData.value.name,
-      description: formData.value.description,
-      category: formData.value.category,
-      fields: formFields,
-      company_id: authStore.currentCompanyId
-    };
-
-    if (isEditing.value) {
-      const { error: updateError } = await supabase
-        .from('forms')
-        .update(submitData)
-        .eq('id', formData.value.id);
-
-      if (updateError) throw updateError;
-    } else {
-      const { error: insertError } = await supabase
-        .from('forms')
-        .insert(submitData);
-
-      if (insertError) throw insertError;
-    }
-
+    // TODO: Replace with your new backend implementation
     showModal.value = false;
     await fetchForms();
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;
   }
 };
 
-const deleteForm = async (form) => {
+const deleteForm = async (form: any) => {
   if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) return;
 
   loading.value = true;
-  try {
-    const { error: err } = await supabase
-      .from('forms')
-      .delete()
-      .eq('id', form.id);
+  error.value = null;
 
-    if (err) throw err;
+  try {
+    // TODO: Replace with your new backend implementation
     await fetchForms();
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;

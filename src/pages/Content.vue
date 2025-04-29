@@ -207,10 +207,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { supabase } from '../lib/supabase';
-import { format } from 'date-fns';
 import ContentFormModal from '../components/ContentFormModal.vue';
 import {
   FileEditIcon,
@@ -281,27 +279,13 @@ const filteredContent = computed(() => {
 });
 
 const fetchContent = async () => {
-  if (!authStore.currentCompanyId) return;
-  
   loading.value = true;
+  error.value = null;
+
   try {
-    const { data, error: fetchError } = await supabase
-      .from('content')
-      .select(`
-        *,
-        profiles:updated_by (
-          full_name
-        )
-      `)
-      .eq('company_id', authStore.currentCompanyId);
-
-    if (fetchError) throw fetchError;
-
-    content.value = data.map(item => ({
-      ...item,
-      updated_by_name: item.profiles?.full_name || 'Unknown'
-    }));
-  } catch (err) {
+    // TODO: Replace with your new backend implementation
+    content.value = [];
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;
@@ -310,29 +294,19 @@ const fetchContent = async () => {
 
 const fetchCategories = async () => {
   try {
-    const { data, error: fetchError } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('company_id', authStore.currentCompanyId);
-
-    if (fetchError) throw fetchError;
-    categories.value = data;
-  } catch (err) {
-    console.error('Error fetching categories:', err);
+    // TODO: Replace with your new backend implementation
+    categories.value = [];
+  } catch (err: any) {
+    error.value = err.message;
   }
 };
 
 const fetchTags = async () => {
   try {
-    const { data, error: fetchError } = await supabase
-      .from('tags')
-      .select('*')
-      .eq('company_id', authStore.currentCompanyId);
-
-    if (fetchError) throw fetchError;
-    tags.value = data;
-  } catch (err) {
-    console.error('Error fetching tags:', err);
+    // TODO: Replace with your new backend implementation
+    tags.value = [];
+  } catch (err: any) {
+    error.value = err.message;
   }
 };
 
@@ -411,18 +385,9 @@ const handleSubmit = async (formData) => {
     };
 
     if (isEditing.value && selectedContent.value) {
-      const { error: updateError } = await supabase
-        .from('content')
-        .update(contentData)
-        .eq('id', selectedContent.value.id);
-
-      if (updateError) throw updateError;
+      // TODO: Replace with your new backend implementation
     } else {
-      const { error: insertError } = await supabase
-        .from('content')
-        .insert(contentData);
-
-      if (insertError) throw insertError;
+      // TODO: Replace with your new backend implementation
     }
 
     closeModal();
@@ -435,19 +400,16 @@ const handleSubmit = async (formData) => {
   }
 };
 
-const deleteContent = async (item) => {
+const deleteContent = async (item: any) => {
   if (!confirm('Are you sure you want to delete this content? This action cannot be undone.')) return;
 
   loading.value = true;
-  try {
-    const { error: err } = await supabase
-      .from('content')
-      .delete()
-      .eq('id', item.id);
+  error.value = null;
 
-    if (err) throw err;
+  try {
+    // TODO: Replace with your new backend implementation
     await fetchContent();
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message;
   } finally {
     loading.value = false;
