@@ -1,0 +1,36 @@
+
+version: "3"
+
+services:
+  vuejs-app:
+    image: vuejs-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vuejs-app
+    restart: always
+    networks:
+      - nginx-proxy
+    environment:
+      - VIRTUAL_HOST=teamsite.theteam.net.au
+      - VIRTUAL_PORT=80
+      - LETSENCRYPT_HOST=teamsite.theteam.net.au
+      - LETSENCRYPT_EMAIL=admin@theteam.net.au
+
+  nginx-proxy:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: npm
+    restart: always
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    networks:
+      - nginx-proxy
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+networks:
+  nginx-proxy:
+    driver: bridge
