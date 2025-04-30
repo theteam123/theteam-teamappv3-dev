@@ -1,102 +1,63 @@
 import { defineStore } from 'pinia';
+import { login } from '../services/erpnext';
 
 export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    user: null,
-    session: null,
-    roles: ['admin'],
-    permissions: ['admin'],
-    loading: false,
-    error: null,
-    availableCompanies: [
-      {
-        id: '1',
-        name: 'Admin Company',
-        website: 'https://admin.example.com'
-      }
-    ],
-    currentCompanyId: '1'
-  }),
+  state: () => {
+    // Try to get persisted state from localStorage
+    const persistedState = localStorage.getItem('authState');
+    const initialState = {
+      user: null,
+      session: null,
+      roles: [],
+      permissions: [],
+      loading: false,
+      error: null,
+      availableCompanies: [],
+      currentCompanyId: null,
+      isLoggedIn: false
+    };
+
+    return persistedState ? JSON.parse(persistedState) : initialState;
+  },
 
   getters: {
-    isAuthenticated: (state) => !!state.user,
+    isAuthenticated: (state) => state.isLoggedIn,
     hasPermission: (state) => (permission) => state.permissions.includes(permission),
     currentCompany: (state) => state.availableCompanies.find(c => c.id === state.currentCompanyId)
   },
 
   actions: {
-    async fetchUser() {
-      this.loading = true;
-      try {
-        // If we have a user in localStorage, restore the session
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          this.user = JSON.parse(storedUser);
-          this.session = { user: this.user };
-        }
-      } catch (error) {
-        this.error = error.message;
-        this.resetState();
-      } finally {
-        this.loading = false;
-      }
-    },
-
     async signIn(email, password) {
       this.loading = true;
+      this.error = null;
+      
       try {
-        // Static authentication
-        if (email === 'admin@admin.com' && password === 'admin') {
-          this.user = {
-            id: '1',
-            email: 'admin@admin.com',
-            name: 'Admin User',
-            role: 'admin',
-            profile: {
-              full_name: 'Admin User',
-              avatar_url: 'https://www.gravatar.com/avatar/?d=mp'
-            }
-          };
-          this.session = { user: this.user };
-          
-          // Store user in localStorage
-          localStorage.setItem('user', JSON.stringify(this.user));
-        } else {
-          throw new Error('Invalid credentials');
+        // Login to ERPNext
+        const userData = await login(email, password);
+        
+        if (!userData.message) {
+          throw new Error('Invalid response from server');
         }
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
 
-    async signUp(email, password, fullName) {
-      this.loading = true;
-      try {
-        // Static registration
-        if (email && password && fullName) {
-          this.user = {
-            id: '1',
-            email: email,
-            name: fullName,
-            role: 'user',
-            profile: {
-              full_name: fullName,
-              avatar_url: 'https://www.gravatar.com/avatar/?d=mp'
-            }
-          };
-          this.session = { user: this.user };
-          
-          // Store user in localStorage
-          localStorage.setItem('user', JSON.stringify(this.user));
-        } else {
-          throw new Error('Invalid registration data');
-        }
+        // Update state with the full user data
+        this.user = {
+          email: email,
+          profile: {
+            full_name: userData.full_name || email.split('@')[0],
+            image: `https://www.gravatar.com/avatar/${email}?d=identicon`
+          }
+        };
+
+        // Set login state
+        this.isLoggedIn = true;
+        
+        // Persist state to localStorage
+        this.persistState();
+        
+        return true;
       } catch (error) {
-        this.error = error.message;
-        throw error;
+        this.error = error.response?.data?.message || error.message || 'Failed to authenticate. Please check your credentials.';
+        return false;
       } finally {
         this.loading = false;
       }
@@ -105,12 +66,14 @@ export const useAuthStore = defineStore('auth', {
     async signOut() {
       this.loading = true;
       try {
-        // Clear localStorage
-        localStorage.removeItem('user');
+        // Clear the session by removing cookies
+        document.cookie = 'sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         this.resetState();
+        this.isLoggedIn = false;
+        // Clear persisted state
+        localStorage.removeItem('authState');
       } catch (error) {
-        this.error = error.message;
-        throw error;
+        console.error('Error during sign out:', error);
       } finally {
         this.loading = false;
       }
@@ -121,9 +84,12 @@ export const useAuthStore = defineStore('auth', {
       this.session = null;
       this.roles = [];
       this.permissions = [];
+      this.error = null;
       this.availableCompanies = [];
       this.currentCompanyId = null;
-      this.error = null;
+      this.isLoggedIn = false;
+      // Clear persisted state
+      localStorage.removeItem('authState');
     },
 
     clearError() {
@@ -132,6 +98,18 @@ export const useAuthStore = defineStore('auth', {
 
     setCurrentCompany(companyId) {
       this.currentCompanyId = companyId;
+      this.persistState();
+    },
+
+    // Helper method to persist state
+    persistState() {
+      const stateToPersist = {
+        user: this.user,
+        isLoggedIn: this.isLoggedIn,
+        currentCompanyId: this.currentCompanyId,
+        availableCompanies: this.availableCompanies
+      };
+      localStorage.setItem('authState', JSON.stringify(stateToPersist));
     }
   }
 });

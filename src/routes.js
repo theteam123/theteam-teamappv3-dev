@@ -14,6 +14,11 @@ import Categories from './pages/Categories.vue'
 import Content from './pages/Content.vue'
 import Documents from './pages/Documents.vue'
 import EmployeeFeedbackRecords from './pages/EmployeeFeedbackRecords.vue'
+import Policies from './pages/Policies.vue'
+import Records from './pages/Records.vue'
+import Templates from './pages/Templates.vue'
+import Videos from './pages/Videos.vue'
+import { useAuthStore } from './stores/auth'
 
 const routes = [
   {
@@ -56,6 +61,30 @@ const routes = [
     path: '/forms',
     name: 'forms',
     component: Forms,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/policies',
+    name: 'policies',
+    component: Policies,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/records',
+    name: 'records',
+    component: Records,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/templates',
+    name: 'templates',
+    component: Templates,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/videos',
+    name: 'videos',
+    component: Videos,
     meta: { requiresAuth: true }
   },
   {
@@ -115,7 +144,14 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition;
+    } else {
+      return { top: 0 };
+    }
+  }
 })
 
 // Add debug logging
@@ -130,6 +166,19 @@ router.beforeEach((to, from, next) => {
       name: r.name
     }))
   })
+
+  const authStore = useAuthStore()
+
+  // Check if the route requires authentication
+  if (to.meta.requiresAuth) {
+    // Check if user is authenticated
+    if (!authStore.isAuthenticated) {
+      // Redirect to auth page if not authenticated
+      next({ name: 'auth' })
+      return
+    }
+  }
+
   next()
 })
 

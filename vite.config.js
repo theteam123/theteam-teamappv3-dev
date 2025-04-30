@@ -5,7 +5,7 @@ export default defineConfig({
   base: '/',
   plugins: [vue()],
   server: {
-    port: 80,
-    host: true,
+    port: 3000,
+    // host: true,
   }
 }) 

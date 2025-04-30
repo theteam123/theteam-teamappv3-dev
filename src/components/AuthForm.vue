@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div v-if="!authStore.isAuthenticated" class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div class="text-center">
         <div class="flex justify-center">
@@ -176,7 +176,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { LockIcon, LoaderIcon, AlertCircleIcon } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
@@ -246,11 +246,18 @@ const handleSubmit = async () => {
     if (isSignUp.value) {
       await authStore.signUp(email.value, password.value, fullName.value);
     } else {
-      await authStore.signIn(email.value, password.value);
+      const success = await authStore.signIn(email.value, password.value);
+      if (!success) {
+        return; // Don't redirect if login failed
+      }
     }
-    router.push('/');
+    
+    // Only redirect if authenticated
+    if (authStore.isAuthenticated) {
+      router.push({ name: 'home' });
+    }
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('Auth error:', error);
   }
 };
 
@@ -258,4 +265,11 @@ const toggleMode = () => {
   isSignUp.value = !isSignUp.value;
   clearErrors();
 };
+
+// Add mounted hook to check authentication
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    router.push({ name: 'home' });
+  }
+});
 </script>
