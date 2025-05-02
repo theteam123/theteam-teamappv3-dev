@@ -21,7 +21,12 @@ export const useAuthStore = defineStore('auth', {
   },
 
   getters: {
-    isAuthenticated: (state) => state.isLoggedIn,
+    isAuthenticated: (state) => {
+      // Check both localStorage and state
+      const persistedState = localStorage.getItem('authState');
+      const isPersisted = persistedState ? JSON.parse(persistedState).isLoggedIn : false;
+      return state.isLoggedIn || isPersisted;
+    },
     hasPermission: (state) => (permission) => state.permissions.includes(permission),
     currentCompany: (state) => state.availableCompanies.find(c => c.id === state.currentCompanyId)
   },

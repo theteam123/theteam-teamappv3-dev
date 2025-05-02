@@ -18,6 +18,7 @@ import Policies from './pages/Policies.vue'
 import Records from './pages/Records.vue'
 import Templates from './pages/Templates.vue'
 import Videos from './pages/Videos.vue'
+import DocType from './pages/DocType.vue'
 import { useAuthStore } from './stores/auth'
 
 const routes = [
@@ -85,6 +86,12 @@ const routes = [
     path: '/videos',
     name: 'videos',
     component: Videos,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/doctypes',
+    name: 'doctypes',
+    component: DocType,
     meta: { requiresAuth: true }
   },
   {
@@ -177,6 +184,7 @@ router.beforeEach((to, from, next) => {
       next({ name: 'auth' })
       return
     }
+
   }
 
   next()
