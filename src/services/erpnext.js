@@ -100,20 +100,18 @@ export const getFormList = async (doctype) => {
 
 export const getDocTypes = async () => {
   try {
-    // Get the stored user ID
-    const userId = localStorage.getItem('frappe_user');
-    if (!userId) {
-      throw new Error('Not authenticated');
-    }
+    // Create a new axios instance for this request with the API key
+    const apiClient = axios.create({
+      baseURL,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'token 21d844628cb178d:863a5ee4cacfe8b'
+      }
+    });
 
-    // Verify we're logged in by checking the user resource
-    const userResponse = await erp.get(`/api/resource/User/${userId}`);
-    if (!userResponse.data.data) {
-      throw new Error('Not authenticated');
-    }
-
-    // Then fetch the doctypes
-    const response = await erp.get('/api/resource/DocType', {
+    // Fetch the doctypes using the API key
+    const response = await apiClient.get('/api/resource/DocType', {
       params: {
         fields: '["name", "module", "modified", "creation", "description", "fields"]',
         filters: JSON.stringify([['DocType', 'istable', '=', 0]])
