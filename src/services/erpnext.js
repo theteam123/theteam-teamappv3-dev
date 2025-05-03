@@ -37,9 +37,8 @@ erp.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 403 || error.response?.data?.exc_type === 'PermissionError') {
       // Session might be expired, redirect to login
-      // window.location.href = '/auth';
-      // return Promise.reject(new Error('Session expired'));
-      console.log('Session expired');
+      window.location.href = '/auth';
+      return Promise.reject(new Error('Session expired'));
     }
     return Promise.reject(error);
   }
@@ -98,7 +97,7 @@ export const getFormList = async (doctype) => {
   }
 };
 
-export const getDocTypes = async () => {
+export const getDocTypes = async (page = 1, pageSize = 20, search = '', category = '') => {
   try {
     // Create a new axios instance for this request with the API key
     const apiClient = axios.create({
@@ -106,18 +105,55 @@ export const getDocTypes = async () => {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': 'token 21d844628cb178d:863a5ee4cacfe8b'
+        'Authorization': `token ${import.meta.env.VITE_ERPNEXT_API_KEY}:${import.meta.env.VITE_ERPNEXT_API_SECRET}`
       }
     });
 
-    // Fetch the doctypes using the API key
+    // Calculate start and end for pagination
+    const limit_start = (page - 1) * pageSize;
+    const limit_page_length = pageSize;
+
+    // Build filters array
+    const filters = [['DocType', 'istable', '=', 0]];
+    
+    // Add search filter if search term exists
+    if (search) {
+      filters.push(['DocType', 'name', 'like', `%${search}%`]);
+    }
+    
+    // Add category filter if category is selected
+    if (category) {
+      filters.push(['DocType', 'module', '=', category]);
+    }
+
+    // First get the total count using a count query
+    const countResponse = await apiClient.get('/api/method/frappe.client.get_count', {
+      params: {
+        doctype: 'DocType',
+        filters: JSON.stringify(filters)
+      }
+    });
+
+    const total = countResponse.data.message || 0;
+
+    // Then fetch the actual data
     const response = await apiClient.get('/api/resource/DocType', {
       params: {
         fields: '["name", "module", "modified", "creation", "description", "fields"]',
-        filters: JSON.stringify([['DocType', 'istable', '=', 0]])
+        filters: JSON.stringify(filters),
+        limit_start,
+        limit_page_length,
+        as_list: 1
       }
     });
-    return response.data.data;
+
+    return {
+      data: response.data.data || response.data,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize)
+    };
   } catch (error) {
     console.error('Error fetching document types:', error.response?.data || error);
     throw error;
