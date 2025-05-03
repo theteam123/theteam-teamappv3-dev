@@ -1,5 +1,11 @@
 <template>
   <div class="p-8">
+    <!-- Portal Title -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">{{ pageTitle }}</h1>
+      <p v-if="isTaktecPortal" class="text-sm text-gray-500 mt-1">Viewing Taktec ERPNext Document Types</p>
+    </div>
+
     <!-- Create DocType Button -->
     <div class="flex justify-end mb-6">
       <button
@@ -330,7 +336,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { getDocTypes, createDocType, updateDocType, deleteDocType as deleteDocTypeAPI } from '../services/erpnext';
 import {
@@ -366,6 +372,7 @@ interface DocType {
 
 const router = useRouter();
 const authStore = useAuthStore();
+const route = useRoute();
 const loading = ref(false);
 const error = ref<string | null>(null);
 const docTypes = ref<DocType[]>([]);
@@ -419,6 +426,11 @@ const docTypeData = ref<Omit<DocType, 'updated_at' | 'created_at' | 'documents_c
   category: '',
   fields: []
 });
+
+const isTaktecPortal = computed(() => route.meta.portal === 'taktec');
+
+// Update the page title based on portal
+const pageTitle = computed(() => isTaktecPortal.value ? 'Taktec Document Types' : 'Document Types');
 
 const filteredDocTypes = computed(() => {
   let filtered = [...docTypes.value];

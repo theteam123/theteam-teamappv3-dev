@@ -1,10 +1,29 @@
 import axios from 'axios';
 
-// Determine the base URL based on environment
-const baseURL = import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au';
+// Get the current domain
+const currentDomain = window.location.hostname;
+
+// Determine which ERPNext instance to use based on domain
+const getErpNextConfig = () => {
+  if (currentDomain.includes('teamsite-taktec')) {
+    return {
+      baseURL: import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL || 'http://taktec.theteam.net.au',
+      apiKey: import.meta.env.VITE_TAKTEC_ERPNEXT_API_KEY,
+      apiSecret: import.meta.env.VITE_TAKTEC_ERPNEXT_API_SECRET
+    };
+  }
+  // Default to main ERPNext instance
+  return {
+    baseURL: import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au',
+    apiKey: import.meta.env.VITE_ERPNEXT_API_KEY,
+    apiSecret: import.meta.env.VITE_ERPNEXT_API_SECRET
+  };
+};
+
+const config = getErpNextConfig();
 
 const erp = axios.create({
-  baseURL,
+  baseURL: config.baseURL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -51,7 +70,7 @@ export const login = async (email, password) => {
     const loginData = {
       usr: email,
       pwd: password,
-      device: 'mobile',
+      device: 'desktop',
       cmd: 'login'
     };
 
@@ -98,11 +117,11 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
   try {
     // Create a new axios instance for this request with the API key
     const apiClient = axios.create({
-      baseURL,
+      baseURL: config.baseURL,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `token ${import.meta.env.VITE_ERPNEXT_API_KEY}:${import.meta.env.VITE_ERPNEXT_API_SECRET}`
+        'Authorization': `token ${config.apiKey}:${config.apiSecret}`
       }
     });
 
