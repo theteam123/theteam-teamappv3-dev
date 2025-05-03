@@ -1,10 +1,7 @@
 import axios from 'axios';
 
 // Determine the base URL based on environment
-const isDevelopment = process.env.NODE_ENV === 'development';
-const baseURL = isDevelopment 
-  ? 'https://erp.theteam.net.au'  // Local development
-  : 'https://erp.theteam.net.au'; // Production
+const baseURL = import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au';
 
 const erp = axios.create({
   baseURL,
