@@ -2,14 +2,39 @@
   <div class="min-h-screen bg-gray-50">
     <div v-if="authStore.isAuthenticated" class="flex h-screen">
       <!-- Sidebar -->
-      <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <!-- Logo -->
-        <div class="flex items-center justify-start h-16 px-4 border-b border-gray-200">
-			    <img src="/team-app-logo.webp" alt="Team App Logo" class="" @error="handleImageError" />
+      <aside 
+        class="bg-white border-r border-gray-200 flex flex-col transition-all duration-300"
+        :class="isSidebarCollapsed ? 'w-16' : 'w-64'"
+      >
+        <!-- Logo and Toggle Button -->
+        <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+          <div class="flex items-center">
+            <img 
+              v-if="!isSidebarCollapsed" 
+              src="/team-app-logo.webp" 
+              alt="Team App Logo" 
+              class="h-8" 
+              @error="handleImageError" 
+            />
+          </div>
+          <button 
+            @click="toggleSidebar"
+            class="p-2 rounded-lg hover:bg-gray-100 bg-gray-50 border border-gray-200 shadow-sm z-10"
+            :class="isSidebarCollapsed ? 'ml-2' : 'ml-auto'"
+          >
+            <ChevronLeftIcon 
+              v-if="!isSidebarCollapsed" 
+              class="w-5 h-5 text-gray-600"
+            />
+            <ChevronRightIcon 
+              v-else 
+              class="w-5 h-5 text-gray-600"
+            />
+          </button>
         </div>
         
         <!-- Search Bar -->
-        <div class="px-4 py-3 border-b border-gray-200">
+        <div v-if="!isSidebarCollapsed" class="px-4 py-3 border-b border-gray-200">
           <div class="relative">
             <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -74,11 +99,11 @@
         <nav class="flex-1 p-4 space-y-1">
           <router-link 
             to="/" 
-            class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+            class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
             :class="{ 'bg-green-50 text-green-700': $route.path === '/' }"
           >
-            <HomeIcon class="w-5 h-5 mr-3" />
-            Home
+            <HomeIcon class="w-5 h-5" :class="isSidebarCollapsed ? '' : 'mr-3'" />
+            <span v-if="!isSidebarCollapsed">Home</span>
           </router-link>
 
           <!-- Document Management Section -->
@@ -87,36 +112,36 @@
               v-for="item in documentItems" 
               :key="item.path"
               :to="item.path"
-              class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-              :class="{ 'bg-green-50 text-green-700': $route.path === item.path }"
+              class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+              :class="{ 
+                'bg-green-50 text-green-700': $route.path === item.path,
+                'justify-center px-2': isSidebarCollapsed,
+                'justify-start px-4': !isSidebarCollapsed
+              }"
               @click="handleDocumentClick(item)"
+              :title="isSidebarCollapsed ? item.name : ''"
             >
-              <component :is="item.icon" class="w-5 h-5 mr-3" />
-              {{ item.name }}
+              <component 
+                :is="item.icon" 
+                class="w-5 h-5 transition-colors duration-200" 
+                :class="[
+                  isSidebarCollapsed ? 'text-gray-600' : 'mr-3 text-gray-500',
+                  $route.path === item.path ? 'text-green-600' : ''
+                ]"
+              />
+              <span v-if="!isSidebarCollapsed">{{ item.name }}</span>
             </router-link>
           </div>
         </nav>
 
         <!-- Admin Settings Section -->
-        <div class="p-4 border-t border-gray-200">
+        <div v-if="!isSidebarCollapsed" class="p-4 border-t border-gray-200">
           <details class="group">
             <summary class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg">
               <SettingsIcon class="w-5 h-5 mr-3" />
               Admin Settings
-              <ChevronDownIcon class="w-4 h-4 ml-auto transition-transform group-open:rotate-180" />
             </summary>
-            <div class="mt-1 space-y-1">
-              <router-link 
-                v-for="item in adminItems" 
-                :key="item.path"
-                :to="item.path"
-                class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 pl-12"
-                :class="{ 'bg-green-50 text-green-700': $route.path === item.path }"
-              >
-                <component :is="item.icon" class="w-5 h-5 mr-3" />
-                {{ item.name }}
-              </router-link>
-            </div>
+
           </details>
         </div>
 
@@ -131,7 +156,7 @@
                   alt=""
                 />
               </div>
-              <div class="ml-3">
+              <div v-if="!isSidebarCollapsed" class="ml-3">
                 <p class="text-sm font-medium text-gray-900">
                   {{ authStore.user?.profile?.full_name }}
                 </p>
@@ -148,22 +173,6 @@
       </aside>
 
       <div class="flex-1 flex flex-col">
-        <!-- Header -->
-        <header class="bg-white border-b border-gray-200">
-          <div class="flex items-center justify-between h-16 px-8">
-            <div>
-              <h1 class="text-xl font-semibold text-gray-900">
-                {{ currentPageTitle }}
-              </h1>
-              <p v-if="currentPageDescription" class="text-sm text-gray-500">
-                {{ currentPageDescription }}
-              </p>
-            </div>
-            <div class="w-64">
-              <CompanySelectionDropdown />
-            </div>
-          </div>
-        </header>
 
         <!-- Main Content -->
         <main class="flex-1 overflow-auto">
@@ -196,12 +205,20 @@ import {
   TagIcon,
   FolderIcon,
   ChevronDownIcon,
-  SearchIcon
+  SearchIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from 'lucide-vue-next';
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+
+const isSidebarCollapsed = ref(false);
+
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value;
+};
 
 const searchQuery = ref('');
 const showSearchResults = ref(false);
@@ -217,27 +234,19 @@ const documentItems = [
   { name: 'Videos', path: '/videos', icon: VideoIcon, description: 'Access training and company videos' },
 ];
 
-const adminItems = [
-  { name: 'Users', path: '/users', icon: UsersIcon, description: 'Manage users and their roles within your organization' },
-  { name: 'Companies', path: '/companies', icon: BuildingIcon, description: "Manage your organization's companies and their settings" },
-  { name: 'Roles', path: '/roles', icon: ShieldIcon, description: 'Configure and manage user roles and permissions' },
-  { name: 'Content', path: '/content', icon: FileEditIcon, description: 'Organize and manage all content types' },
-  { name: 'Tags', path: '/tags', icon: TagIcon, description: 'Manage and organize content tags' },
-  { name: 'Categories', path: '/categories', icon: FolderIcon, description: 'Manage content categories and hierarchies' },
-];
 
-const allMenuItems = [...documentItems, ...adminItems];
+const allMenuItems = [...documentItems];
 
 const currentPageTitle = computed(() => {
   if (route.path === '/') return 'Welcome';
-  const allItems = [...documentItems, ...adminItems];
+  const allItems = [...documentItems];
   const currentItem = allItems.find(item => item.path === route.path);
   return currentItem?.name || 'TheTeam';
 });
 
 const currentPageDescription = computed(() => {
   if (route.path === '/') return 'Your one-stop location for managing forms, records, users, and companies';
-  const allItems = [...documentItems, ...adminItems];
+  const allItems = [...documentItems];
   const currentItem = allItems.find(item => item.path === route.path);
   return currentItem?.description || '';
 });
@@ -320,5 +329,12 @@ details > summary {
 }
 details > summary::-webkit-details-marker {
   display: none;
+}
+
+/* Add smooth transition for sidebar */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
 }
 </style>
