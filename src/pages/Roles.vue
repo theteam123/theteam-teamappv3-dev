@@ -178,25 +178,8 @@ const permissionGroups = {
 const fetchRoles = async () => {
   loading.value = true;
   try {
-    const { data: rolesData, error: rolesError } = await supabase
-      .from('roles')
-      .select(`
-        *,
-        role_permissions (
-          permission_key
-        ),
-        user_roles (
-          count
-        )
-      `);
-
-    if (rolesError) throw rolesError;
-
-    roles.value = rolesData.map(role => ({
-      ...role,
-      permissions: role.role_permissions.map(rp => rp.permission_key),
-      user_count: role.user_roles[0]?.count || 0
-    }));
+    // TODO: Implement your data fetching logic here
+    roles.value = [];
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -235,47 +218,10 @@ const handleSubmit = async () => {
       is_system_role: false
     };
 
-    let roleId;
-
     if (isEditing.value) {
-      const { error: updateError } = await supabase
-        .from('roles')
-        .update(roleData)
-        .eq('id', formData.value.id);
-
-      if (updateError) throw updateError;
-      roleId = formData.value.id;
-
-      // Delete existing permissions
-      const { error: deleteError } = await supabase
-        .from('role_permissions')
-        .delete()
-        .eq('role_id', roleId);
-
-      if (deleteError) throw deleteError;
+      // TODO: Implement your update logic here
     } else {
-      const { data: newRole, error: insertError } = await supabase
-        .from('roles')
-        .insert(roleData)
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      roleId = newRole.id;
-    }
-
-    // Insert new permissions
-    if (formData.value.permissions.length > 0) {
-      const permissionData = formData.value.permissions.map(permission_key => ({
-        role_id: roleId,
-        permission_key
-      }));
-
-      const { error: permissionError } = await supabase
-        .from('role_permissions')
-        .insert(permissionData);
-
-      if (permissionError) throw permissionError;
+      // TODO: Implement your insert logic here
     }
 
     showModal.value = false;
@@ -292,12 +238,7 @@ const deleteRole = async (role) => {
 
   loading.value = true;
   try {
-    const { error: err } = await supabase
-      .from('roles')
-      .delete()
-      .eq('id', role.id);
-
-    if (err) throw err;
+    // TODO: Implement your delete logic here
     await fetchRoles();
   } catch (err) {
     error.value = err.message;

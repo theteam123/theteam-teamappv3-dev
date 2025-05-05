@@ -188,22 +188,8 @@ const submitterInfo = ref({
 const fetchForm = async () => {
   loading.value = true;
   try {
-    // TODO: Replace with your new backend implementation
-    const { data, error: fetchError } = await supabase
-      .from('forms')
-      .select('*')
-      .eq('id', route.params.id)
-      .eq('is_public', true)
-      .single();
-
-    if (fetchError) throw fetchError;
-    form.value = data;
-
-    // Initialize form data with empty values
-    formData.value = form.value.fields.reduce((acc, field) => {
-      acc[field.label] = '';
-      return acc;
-    }, {});
+    // TODO: Implement your form fetching logic here
+    form.value = null;
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -214,29 +200,7 @@ const fetchForm = async () => {
 const handleSubmit = async () => {
   submitting.value = true;
   try {
-    // Create anonymous profile for the submitter
-    const { data: profile, error: profileError } = await supabase
-      .from('public_submitters')
-      .insert({
-        name: submitterInfo.value.name,
-        email: submitterInfo.value.email
-      })
-      .select()
-      .single();
-
-    if (profileError) throw profileError;
-
-    // Submit form response
-    const { error: submitError } = await supabase
-      .from('form_submissions')
-      .insert({
-        form_id: route.params.id,
-        public_submitter_id: profile.id,
-        data: formData.value
-      });
-
-    if (submitError) throw submitError;
-
+    // TODO: Implement your form submission logic here
     submitted.value = true;
     
     // Reset form

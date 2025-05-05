@@ -220,22 +220,8 @@ const fetchTags = async () => {
   
   loading.value = true;
   try {
-    const { data, error: fetchError } = await supabase
-      .from('tags')
-      .select(`
-        *,
-        tagged_items (
-          count
-        )
-      `)
-      .eq('company_id', authStore.currentCompanyId);
-
-    if (fetchError) throw fetchError;
-
-    tags.value = data.map(tag => ({
-      ...tag,
-      usage_count: tag.tagged_items[0]?.count || 0
-    }));
+    // TODO: Implement your data fetching logic here
+    tags.value = [];
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -279,18 +265,9 @@ const handleSubmit = async () => {
     };
 
     if (isEditing.value) {
-      const { error: updateError } = await supabase
-        .from('tags')
-        .update(tagData)
-        .eq('id', formData.value.id);
-
-      if (updateError) throw updateError;
+      // TODO: Implement your update logic here
     } else {
-      const { error: insertError } = await supabase
-        .from('tags')
-        .insert(tagData);
-
-      if (insertError) throw insertError;
+      // TODO: Implement your insert logic here
     }
 
     showModal.value = false;
@@ -307,12 +284,7 @@ const deleteTag = async (tag) => {
 
   loading.value = true;
   try {
-    const { error: err } = await supabase
-      .from('tags')
-      .delete()
-      .eq('id', tag.id);
-
-    if (err) throw err;
+    // TODO: Implement your delete logic here
     await fetchTags();
   } catch (err) {
     error.value = err.message;
