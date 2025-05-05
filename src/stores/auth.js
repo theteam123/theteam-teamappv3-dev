@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { login, erp } from '../services/erpnext';
+import { getAuthorizationUrl, getCurrentToken, logout as oauthLogout } from '../services/oauth';
 
 export const useAuthStore = defineStore('auth', {
   state: () => {
@@ -7,13 +7,8 @@ export const useAuthStore = defineStore('auth', {
     const persistedState = localStorage.getItem('authState');
     const initialState = {
       user: null,
-      session: null,
-      roles: [],
-      permissions: [],
       loading: false,
       error: null,
-      availableCompanies: [],
-      currentCompanyId: null,
       isLoggedIn: false,
       isSystemManager: false
     };
@@ -23,30 +18,111 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isAuthenticated: (state) => {
-      // Check both localStorage and state
-      const persistedState = localStorage.getItem('authState');
-      const isPersisted = persistedState ? JSON.parse(persistedState).isLoggedIn : false;
-      return state.isLoggedIn || isPersisted;
-    },
-    hasPermission: (state) => (permission) => state.permissions.includes(permission),
-    currentCompany: (state) => state.availableCompanies.find(c => c.id === state.currentCompanyId)
+      return state.isLoggedIn;
+    }
   },
 
   actions: {
+    async signIn() {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        // Redirect to OAuth authorization page
+
+        window.location.href = getAuthorizationUrl();
+      } catch (error) {
+        console.error('Error during sign in:', error);
+        this.error = error.message || 'Failed to authenticate';
+        return false;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async setToken(token) {
+      try {
+        console.log('Auth Store - Setting token...');
+        
+        // Store token in localStorage first
+        localStorage.setItem('oauth_token', token);
+        localStorage.setItem('oauth_token_expiry', Date.now() + (3600 * 1000)); // 1 hour expiry
+        
+        // Get user info using the token
+        console.log('Auth Store - Fetching user info...');
+        const response = await fetch(`${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.auth.get_logged_user`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        console.log('Auth Store - User info response status:', response.status);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Auth Store - User info error:', errorData);
+          throw new Error('Failed to get user info');
+        }
+
+        const userData = await response.json();
+        console.log('Auth Store - User info received:', userData);
+        
+        // Update state
+        this.user = {
+          name: userData.message,
+          email: userData.message,
+          profile: {
+            full_name: userData.message.split('@')[0],
+            image: `https://www.gravatar.com/avatar/${userData.message}?d=identicon`
+          }
+        };
+        
+        this.isLoggedIn = true;
+        console.log('Auth Store - State updated:', {
+          user: this.user,
+          isLoggedIn: this.isLoggedIn
+        });
+        
+        // Persist state before any redirects
+        this.persistState();
+        console.log('Auth Store - State persisted');
+        
+        // Verify token is stored
+        const storedToken = localStorage.getItem('oauth_token');
+        console.log('Auth Store - Token verification:', storedToken ? 'Present' : 'Missing');
+        
+        return true;
+      } catch (error) {
+        console.error('Auth Store - Error setting token:', error);
+        this.error = error.message;
+        // Clear token on error
+        localStorage.removeItem('oauth_token');
+        localStorage.removeItem('oauth_token_expiry');
+        return false;
+      }
+    },
+
     async checkSystemManagerRole() {
       try {
-        console.log('Starting System Manager role check...');
-        // Get current user's roles from the User doctype
-        const res = await erp.get(`/api/resource/User/${this.user.email}`);
-        console.log('User data received:', res.data);
-        
-        // Access roles from the correct path in the response
-        const roles = res.data.data.roles || [];
-        const roleNames = roles.map(roleObj => roleObj.role);
-        console.log('User roles:', roleNames);
-        
-        this.isSystemManager = roleNames.includes("System Manager");
-        console.log('Is System Manager:', this.isSystemManager);
+        const token = await getCurrentToken();
+        if (!token) {
+          this.isSystemManager = false;
+          return false;
+        }
+
+        const response = await fetch(`${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.core.doctype.user.user.get_roles`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to get user roles');
+        }
+
+        const data = await response.json();
+        this.isSystemManager = data.message.includes('System Manager');
+        this.persistState();
         return this.isSystemManager;
       } catch (error) {
         console.error('Error checking System Manager role:', error);
@@ -55,60 +131,11 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async signIn(email, password) {
-      this.loading = true;
-      this.error = null;
-      
-      try {
-        console.log('Starting sign in process...');
-        // Login to ERPNext
-        const userData = await login(email, password);
-        console.log('Login successful:', userData);
-        
-        if (!userData.message) {
-          throw new Error('Invalid response from server');
-        }
-
-        // Update state with the full user data
-        this.user = {
-          email: email,
-          profile: {
-            full_name: userData.full_name || email.split('@')[0],
-            image: `https://www.gravatar.com/avatar/${email}?d=identicon`
-          }
-        };
-
-        // Set login state
-        this.isLoggedIn = true;
-        console.log('User state updated, checking System Manager role...');
-        
-        // Check for System Manager role after successful login
-        await this.checkSystemManagerRole();
-        console.log('System Manager role check completed:', this.isSystemManager);
-        
-        // Persist state to localStorage
-        this.persistState();
-        console.log('State persisted to localStorage');
-        
-        return true;
-      } catch (error) {
-        console.error('Error during sign in:', error);
-        this.error = error.response?.data?.message || error.message || 'Failed to authenticate. Please check your credentials.';
-        return false;
-      } finally {
-        this.loading = false;
-      }
-    },
-
     async signOut() {
       this.loading = true;
       try {
-        // Clear the session by removing cookies
-        document.cookie = 'sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        await oauthLogout();
         this.resetState();
-        this.isLoggedIn = false;
-        // Clear persisted state
-        localStorage.removeItem('authState');
       } catch (error) {
         console.error('Error during sign out:', error);
       } finally {
@@ -118,15 +145,9 @@ export const useAuthStore = defineStore('auth', {
 
     resetState() {
       this.user = null;
-      this.session = null;
-      this.roles = [];
-      this.permissions = [];
       this.error = null;
-      this.availableCompanies = [];
-      this.currentCompanyId = null;
       this.isLoggedIn = false;
       this.isSystemManager = false;
-      // Clear persisted state
       localStorage.removeItem('authState');
     },
 
@@ -134,18 +155,10 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
     },
 
-    setCurrentCompany(companyId) {
-      this.currentCompanyId = companyId;
-      this.persistState();
-    },
-
-    // Helper method to persist state
     persistState() {
       const stateToPersist = {
         user: this.user,
         isLoggedIn: this.isLoggedIn,
-        currentCompanyId: this.currentCompanyId,
-        availableCompanies: this.availableCompanies,
         isSystemManager: this.isSystemManager
       };
       localStorage.setItem('authState', JSON.stringify(stateToPersist));

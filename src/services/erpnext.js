@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
+import { getCurrentToken } from './oauth';
 
 // Get the current domain and environment
 const currentDomain = window.location.hostname;
@@ -11,30 +12,22 @@ export const getErpNextConfig = () => {
   if (isProduction) {
     if (currentDomain.includes('teamsite-taktec')) {
       return {
-        baseURL: import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL,
-        apiKey: import.meta.env.VITE_TAKTEC_ERPNEXT_API_KEY,
-        apiSecret: import.meta.env.VITE_TAKTEC_ERPNEXT_API_SECRET
+        baseURL: import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL
       };
     }
     return {
-      baseURL: import.meta.env.VITE_ERPNEXT_API_URL,
-      apiKey: import.meta.env.VITE_ERPNEXT_API_KEY,
-      apiSecret: import.meta.env.VITE_ERPNEXT_API_SECRET
+      baseURL: import.meta.env.VITE_ERPNEXT_API_URL
     };
   }
   
   // Development environment
   if (currentDomain.includes('teamsite-taktec')) {
     return {
-      baseURL: import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL || 'http://taktec.theteam.net.au',
-      apiKey: import.meta.env.VITE_TAKTEC_ERPNEXT_API_KEY,
-      apiSecret: import.meta.env.VITE_TAKTEC_ERPNEXT_API_SECRET
+      baseURL: import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL || 'http://taktec.theteam.net.au'
     };
   }
   return {
-    baseURL: import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au',
-    apiKey: import.meta.env.VITE_ERPNEXT_API_KEY,
-    apiSecret: import.meta.env.VITE_ERPNEXT_API_SECRET
+    baseURL: import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au'
   };
 };
 
@@ -52,19 +45,29 @@ export const erp = axios.create({
   baseURL: config.baseURL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Authorization': `token ${config.apiKey}:${config.apiSecret}`
+    'Accept': 'application/json'
   }
+});
+
+// Add request interceptor to add OAuth token
+erp.interceptors.request.use(async (config) => {
+  const token = await getCurrentToken();
+  console.log('Request interceptor - Token:', token ? 'Present' : 'Missing');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+    console.log('Request headers:', config.headers);
+  }
+  return config;
 });
 
 // Add response interceptor for error handling
 erp.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 403 || error.response?.data?.exc_type === 'PermissionError') {
+    if (error.response?.status === 401 || error.response?.status === 403) {
       // Only redirect if not already on auth page
       if (!window.location.pathname.includes('/auth')) {
-        window.location.href = '/auth';
+        // window.location.href = '/auth';
       }
     }
     return Promise.reject(error);
@@ -127,24 +130,16 @@ export const getFormList = async (doctype) => {
 export const getDocTypes = async (page = 1, pageSize = 20, search = '', category = '') => {
   try {
     const authStore = useAuthStore();
+    const username = authStore.user?.name;
+    console.log('Current user from auth store:', username);
     
-    // Create a new axios instance for this request with the API key
-    const apiClient = axios.create({
-      baseURL: config.baseURL,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `token ${config.apiKey}:${config.apiSecret}`
-      }
-    });
-
     // Calculate start and end for pagination
     const limit_start = (page - 1) * pageSize;
     const limit_page_length = pageSize;
 
     // Build filters array
     const filters = [
-      ['DocType', 'istable', '=', 0],
+      ['DocType', 'istable', '=', 0]
     ];
     
     // Add search filter if search term exists
@@ -157,36 +152,78 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
       filters.push(['DocType', 'module', '=', category]);
     }
 
-    // First get the total count using a count query
-    const countResponse = await apiClient.get('/api/method/frappe.client.get_count', {
+    console.log('Using filters:', filters);
+
+    // Get the current token
+    const token = await getCurrentToken();
+    console.log('API Request - Token:', token ? 'Present' : 'Missing');
+
+    // First, get total count
+    const countResponse = await erp.get('/api/method/frappe.client.get_count', {
       params: {
         doctype: 'DocType',
         filters: JSON.stringify(filters)
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
     });
 
     const total = countResponse.data.message || 0;
+    console.log('Total count:', total);
 
-    // Then fetch the actual data
-    const response = await apiClient.get('/api/resource/DocType', {
+    // Then fetch the data
+    const response = await erp.get('/api/method/frappe.client.get_list', {
       params: {
+        doctype: 'DocType',
         fields: '["name", "module", "modified", "creation", "description", "fields"]',
         filters: JSON.stringify(filters),
         limit_start,
         limit_page_length,
         as_list: 1
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
     });
 
+    console.log('API Response:', {
+      status: response.status,
+      data: response.data,
+      message: response.data.message,
+      total_count: total
+    });
+
+    // Handle different response formats
+    let data = [];
+
+    if (Array.isArray(response.data.message)) {
+      data = response.data.message;
+    } else if (response.data.data) {
+      data = response.data.data;
+    } else {
+      console.warn('Unexpected response format:', response.data);
+    }
+
+    console.log('Processed data:', {
+      dataLength: data.length,
+      total,
+      firstItem: data[0]
+    });
+
     return {
-      data: response.data.data || response.data,
+      data,
       total,
       page,
       pageSize,
       totalPages: Math.ceil(total / pageSize)
     };
   } catch (error) {
-    console.error('Error fetching document types:', error.response?.data || error);
+    console.error('Error fetching document types:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
     throw error;
   }
 };

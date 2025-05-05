@@ -35,6 +35,15 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/oauth-callback',
+    name: 'oauth-callback',
+    component: () => import('./pages/OAuthCallback.vue'),
+    meta: { 
+      requiresAuth: false,
+      isOAuthCallback: true
+    }
+  },
+  {
     path: '/users',
     name: 'users',
     component: Users,
@@ -92,6 +101,21 @@ const routes = [
     path: '/doctypes',
     name: 'doctypes',
     component: DocType,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/doctypes/taktec-portal',
+    name: 'taktec-doctypes',
+    component: DocType,
+    meta: { 
+      requiresAuth: true,
+      portal: 'taktec'
+    }
+  },
+  {
+    path: '/doctypes/:id/documents',
+    name: 'documents',
+    component: Documents,
     meta: { requiresAuth: true }
   },
   {
@@ -176,6 +200,12 @@ router.beforeEach((to, from, next) => {
 
   const authStore = useAuthStore()
 
+  // Always allow OAuth callback
+  if (to.path === '/oauth-callback') {
+    next();
+    return;
+  }
+
   // Check if the route requires authentication
   if (to.meta.requiresAuth) {
     // Check if user is authenticated
@@ -184,7 +214,6 @@ router.beforeEach((to, from, next) => {
       next({ name: 'auth' })
       return
     }
-
   }
 
   next()

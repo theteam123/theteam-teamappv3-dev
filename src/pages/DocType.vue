@@ -468,7 +468,7 @@ const fetchDocTypes = async (page = 1) => {
     error.value = err.response?.data?.message || err.message || 'Failed to fetch document types';
     
     if (err.response?.status === 403 || err.response?.data?.exc_type === 'PermissionError') {
-      router.push('/auth');
+      // router.push('/auth');
     }
   } finally {
     loading.value = false;
