@@ -5,7 +5,7 @@ const currentDomain = window.location.hostname;
 const isProduction = import.meta.env.PROD;
 
 // Determine which ERPNext instance to use based on domain and environment
-const getErpNextConfig = () => {
+export const getErpNextConfig = () => {
   // Production environment
   if (isProduction) {
     if (currentDomain.includes('teamsite-taktec')) {
@@ -75,14 +75,18 @@ erp.interceptors.request.use(
 erp.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 403 || error.response?.data?.exc_type === 'PermissionError') {
-      // Session might be expired, redirect to login
-      window.location.href = '/auth';
+    // Only redirect if it's a session expiration error and we're not already on the auth page
+    if ((error.response?.status === 403 || error.response?.data?.exc_type === 'PermissionError') 
+        && !window.location.pathname.includes('/auth')) {
+      // window.location.href = '/auth';
+      console.log('Session expired');
       return Promise.reject(new Error('Session expired'));
     }
     return Promise.reject(error);
   }
 );
+
+export { erp };
 
 export const login = async (email, password) => {
   try {

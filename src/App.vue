@@ -135,14 +135,16 @@
         </nav>
 
         <!-- Admin Settings Section -->
-        <div v-if="!isSidebarCollapsed" class="p-4 border-t border-gray-200">
-          <details class="group">
-            <summary class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg">
-              <SettingsIcon class="w-5 h-5 mr-3" />
-              Admin Settings
-            </summary>
-
-          </details>
+        <div v-if="!isSidebarCollapsed && authStore.isSystemManager" class="p-4 border-t border-gray-200">
+          <a 
+            :href="`${getErpNextUrl()}/app/build`"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg"
+          >
+            <SettingsIcon class="w-5 h-5 mr-3" />
+            Admin Settings
+          </a>
         </div>
 
         <!-- User Menu -->
@@ -185,9 +187,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import { erp } from './services/erpnext';
+import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
 import { 
   HomeIcon, 
@@ -213,6 +217,26 @@ import {
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+
+// Determine which ERPNext instance to use based on domain and environment
+const getErpNextUrl = () => {
+  const currentDomain = window.location.hostname;
+  const isProduction = import.meta.env.PROD;
+
+  // Production environment
+  if (isProduction) {
+    if (currentDomain.includes('teamsite-taktec')) {
+      return import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL;
+    }
+    return import.meta.env.VITE_ERPNEXT_API_URL;
+  }
+  
+  // Development environment
+  if (currentDomain.includes('teamsite-taktec')) {
+    return import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL || 'http://taktec.theteam.net.au';
+  }
+  return import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au';
+};
 
 const isSidebarCollapsed = ref(false);
 

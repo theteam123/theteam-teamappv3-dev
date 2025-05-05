@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { login } from '../services/erpnext';
+import { login, erp } from '../services/erpnext';
 
 export const useAuthStore = defineStore('auth', {
   state: () => {
@@ -14,7 +14,8 @@ export const useAuthStore = defineStore('auth', {
       error: null,
       availableCompanies: [],
       currentCompanyId: null,
-      isLoggedIn: false
+      isLoggedIn: false,
+      isSystemManager: false
     };
 
     return persistedState ? JSON.parse(persistedState) : initialState;
@@ -32,6 +33,27 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    async checkSystemManagerRole() {
+      try {
+        // Get current user's roles from the User doctype using API key
+        const res = await erp.get(`/api/resource/User/${this.user.email}`, {
+          headers: {
+            'Authorization': `token ${import.meta.env.VITE_ERPNEXT_API_KEY}:${import.meta.env.VITE_ERPNEXT_API_SECRET}`
+          }
+        });
+        // Extract roles from the response - roles is an array of objects with a 'role' property
+        const roles = res.data.roles || [];
+        const roleNames = roles.map(roleObj => roleObj.role);
+        console.log('Roles:', roleNames);
+        this.isSystemManager = roleNames.includes("System Manager");
+        return this.isSystemManager;
+      } catch (error) {
+        console.error('Error checking System Manager role:', error);
+        this.isSystemManager = false;
+        return false;
+      }
+    },
+
     async signIn(email, password) {
       this.loading = true;
       this.error = null;
@@ -55,6 +77,9 @@ export const useAuthStore = defineStore('auth', {
 
         // Set login state
         this.isLoggedIn = true;
+        
+        // Check for System Manager role after successful login
+        await this.checkSystemManagerRole();
         
         // Persist state to localStorage
         this.persistState();
@@ -93,6 +118,7 @@ export const useAuthStore = defineStore('auth', {
       this.availableCompanies = [];
       this.currentCompanyId = null;
       this.isLoggedIn = false;
+      this.isSystemManager = false;
       // Clear persisted state
       localStorage.removeItem('authState');
     },
@@ -112,7 +138,8 @@ export const useAuthStore = defineStore('auth', {
         user: this.user,
         isLoggedIn: this.isLoggedIn,
         currentCompanyId: this.currentCompanyId,
-        availableCompanies: this.availableCompanies
+        availableCompanies: this.availableCompanies,
+        isSystemManager: this.isSystemManager
       };
       localStorage.setItem('authState', JSON.stringify(stateToPersist));
     }
