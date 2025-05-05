@@ -35,17 +35,18 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async checkSystemManagerRole() {
       try {
-        // Get current user's roles from the User doctype using API key
-        const res = await erp.get(`/api/resource/User/${this.user.email}`, {
-          headers: {
-            'Authorization': `token ${import.meta.env.VITE_ERPNEXT_API_KEY}:${import.meta.env.VITE_ERPNEXT_API_SECRET}`
-          }
-        });
-        // Extract roles from the response - roles is an array of objects with a 'role' property
-        const roles = res.data.roles || [];
+        console.log('Starting System Manager role check...');
+        // Get current user's roles from the User doctype
+        const res = await erp.get(`/api/resource/User/${this.user.email}`);
+        console.log('User data received:', res.data);
+        
+        // Access roles from the correct path in the response
+        const roles = res.data.data.roles || [];
         const roleNames = roles.map(roleObj => roleObj.role);
-        console.log('Roles:', roleNames);
+        console.log('User roles:', roleNames);
+        
         this.isSystemManager = roleNames.includes("System Manager");
+        console.log('Is System Manager:', this.isSystemManager);
         return this.isSystemManager;
       } catch (error) {
         console.error('Error checking System Manager role:', error);
@@ -59,8 +60,10 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       
       try {
+        console.log('Starting sign in process...');
         // Login to ERPNext
         const userData = await login(email, password);
+        console.log('Login successful:', userData);
         
         if (!userData.message) {
           throw new Error('Invalid response from server');
@@ -77,15 +80,19 @@ export const useAuthStore = defineStore('auth', {
 
         // Set login state
         this.isLoggedIn = true;
+        console.log('User state updated, checking System Manager role...');
         
         // Check for System Manager role after successful login
         await this.checkSystemManagerRole();
+        console.log('System Manager role check completed:', this.isSystemManager);
         
         // Persist state to localStorage
         this.persistState();
+        console.log('State persisted to localStorage');
         
         return true;
       } catch (error) {
+        console.error('Error during sign in:', error);
         this.error = error.response?.data?.message || error.message || 'Failed to authenticate. Please check your credentials.';
         return false;
       } finally {

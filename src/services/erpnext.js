@@ -46,41 +46,25 @@ if (!isProduction) {
   console.log('Using API URL:', config.baseURL);
 }
 
+// Create axios instance with default config
 const erp = axios.create({
   baseURL: config.baseURL,
-  withCredentials: true,
   headers: {
+    'Authorization': `token ${config.apiKey}:${config.apiSecret}`,
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest'
+    'Accept': 'application/json'
   }
 });
 
-// Add request interceptor to ensure auth headers are present
-erp.interceptors.request.use(
-  (config) => {
-    // Get the session ID from cookie
-    const sid = document.cookie.split(';').find(c => c.trim().startsWith('sid='));
-    if (sid) {
-      config.headers['X-Frappe-Session-Id'] = sid.split('=')[1].trim();
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
 // Add response interceptor for error handling
 erp.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    // Only redirect if it's a session expiration error and we're not already on the auth page
-    if ((error.response?.status === 403 || error.response?.data?.exc_type === 'PermissionError') 
-        && !window.location.pathname.includes('/auth')) {
-      // window.location.href = '/auth';
-      console.log('Session expired');
-      return Promise.reject(new Error('Session expired'));
+  response => response,
+  error => {
+    if (error.response?.status === 403 || error.response?.data?.exc_type === 'PermissionError') {
+      // Only redirect if not already on auth page
+      if (!window.location.pathname.includes('/auth')) {
+        window.location.href = '/auth';
+      }
     }
     return Promise.reject(error);
   }
