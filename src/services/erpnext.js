@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../stores/auth';
 
 // Get the current domain and environment
 const currentDomain = window.location.hostname;
@@ -47,12 +48,12 @@ if (!isProduction) {
 }
 
 // Create axios instance with default config
-const erp = axios.create({
+export const erp = axios.create({
   baseURL: config.baseURL,
   headers: {
-    'Authorization': `token ${config.apiKey}:${config.apiSecret}`,
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'Authorization': `token ${config.apiKey}:${config.apiSecret}`
   }
 });
 
@@ -69,8 +70,6 @@ erp.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-export { erp };
 
 export const login = async (email, password) => {
   try {
@@ -127,6 +126,8 @@ export const getFormList = async (doctype) => {
 
 export const getDocTypes = async (page = 1, pageSize = 20, search = '', category = '') => {
   try {
+    const authStore = useAuthStore();
+    
     // Create a new axios instance for this request with the API key
     const apiClient = axios.create({
       baseURL: config.baseURL,
@@ -142,7 +143,9 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
     const limit_page_length = pageSize;
 
     // Build filters array
-    const filters = [['DocType', 'istable', '=', 0]];
+    const filters = [
+      ['DocType', 'istable', '=', 0],
+    ];
     
     // Add search filter if search term exists
     if (search) {

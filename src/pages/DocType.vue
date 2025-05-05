@@ -104,20 +104,7 @@
                 >
                   <FileTextIcon class="w-5 h-5" />
                 </button>
-                <button
-                  @click="editDocType(doctype)"
-                  class="text-gray-400 hover:text-gray-600"
-                  title="Edit"
-                >
-                  <PencilIcon class="w-5 h-5" />
-                </button>
-                <button
-                  @click="deleteDocType(doctype)"
-                  class="text-gray-400 hover:text-red-600"
-                  title="Delete"
-                >
-                  <TrashIcon class="w-5 h-5" />
-                </button>
+
               </div>
             </div>
 
