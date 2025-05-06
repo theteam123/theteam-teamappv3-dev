@@ -48,9 +48,15 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('oauth_token', token);
         localStorage.setItem('oauth_token_expiry', Date.now() + (3600 * 1000)); // 1 hour expiry
         
+        // Determine which API URL to use based on domain
+        const currentDomain = window.location.hostname;
+        const apiUrl = currentDomain.includes('teamsite-taktec') 
+          ? import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL 
+          : import.meta.env.VITE_ERPNEXT_API_URL;
+        
         // Get user info using the token
         console.log('Auth Store - Fetching user info...');
-        const response = await fetch(`${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.auth.get_logged_user`, {
+        const response = await fetch(`${apiUrl}/api/method/frappe.auth.get_logged_user`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -68,7 +74,7 @@ export const useAuthStore = defineStore('auth', {
         console.log('Auth Store - User info received:', userData);
 
         // Get user roles to verify identity
-        const rolesResponse = await fetch(`${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.core.doctype.user.user.get_roles`, {
+        const rolesResponse = await fetch(`${apiUrl}/api/method/frappe.core.doctype.user.user.get_roles`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
