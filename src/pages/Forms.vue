@@ -41,11 +41,16 @@
           v-model="sortBy"
           class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
         >
-          <option value="name">Name</option>
+          <option value="title">Name</option>
           <option value="updated_at">Last Updated</option>
           <option value="created_at">Date Created</option>
         </select>
       </div>
+    </div>
+
+    <!-- Form Count -->
+    <div class="mb-4 text-sm text-gray-600">
+      Showing {{ forms.length }} of {{ totalItems }} forms
     </div>
 
     <!-- Loading State -->
@@ -72,7 +77,7 @@
                 <ClipboardIcon class="w-8 h-8 text-green-600" />
               </div>
               <div>
-                <h3 class="text-lg font-semibold text-gray-900">{{ form.name }}</h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ form.title }}</h3>
                 <p class="text-sm text-gray-500 mt-1">{{ form.description }}</p>
               </div>
             </div>
@@ -91,33 +96,43 @@
               >
                 <FileTextIcon class="w-5 h-5" />
               </button>
-              <button
-                @click="editForm(form)"
-                class="text-gray-400 hover:text-gray-600"
-                title="Edit"
-              >
-                <PencilIcon class="w-5 h-5" />
-              </button>
-              <button
-                @click="deleteForm(form)"
-                class="text-gray-400 hover:text-red-600"
-                title="Delete"
-              >
-                <TrashIcon class="w-5 h-5" />
-              </button>
             </div>
           </div>
 
           <div class="mt-4">
             <div class="flex flex-wrap gap-2">
               <span
-                v-if="form.category"
+                v-if="form.module"
                 class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800"
               >
-                {{ form.category }}
+                {{ form.module }}
               </span>
               <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                {{ form.fields.length }} Fields
+                {{ form.doc_type }}
+              </span>
+              <span
+                v-if="form.is_standard"
+                class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800"
+              >
+                Standard
+              </span>
+              <span
+                v-if="form.login_required"
+                class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800"
+              >
+                Login Required
+              </span>
+              <span
+                v-if="form.allow_edit"
+                class="px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800"
+              >
+                Editable
+              </span>
+              <span
+                v-if="form.allow_multiple"
+                class="px-2 py-1 text-xs font-medium rounded-full bg-pink-100 text-pink-800"
+              >
+                Multiple Submissions
               </span>
             </div>
           </div>
@@ -129,7 +144,11 @@
             </div>
             <div class="flex items-center gap-2 mt-1">
               <FileTextIcon class="w-4 h-4" />
-              <span>{{ form.submissions_count }} Submissions</span>
+              <span>Route: {{ form.route }}</span>
+            </div>
+            <div v-if="form.success_message" class="flex items-center gap-2 mt-1">
+              <MessageSquareIcon class="w-4 h-4" />
+              <span class="truncate">{{ form.success_message }}</span>
             </div>
           </div>
         </div>
@@ -149,6 +168,42 @@
           <ClipboardPlusIcon class="w-5 h-5 mr-2" />
           Create Form
         </button>
+      </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div v-if="forms.length > 0" class="mt-6 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <button
+          @click="goToPage(currentPage - 1)"
+          :disabled="currentPage === 1"
+          class="px-3 py-1 rounded border border-gray-300 disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <span class="text-sm text-gray-600">
+          Page {{ currentPage }} of {{ totalPages }}
+        </span>
+        <button
+          @click="goToPage(currentPage + 1)"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1 rounded border border-gray-300 disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-600">Items per page:</span>
+        <select
+          v-model="pageSize"
+          @change="fetchForms(1)"
+          class="rounded border-gray-300 text-sm"
+        >
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
       </div>
     </div>
 
@@ -180,7 +235,7 @@
             <label for="form-category" class="block text-sm font-medium text-gray-700">Category</label>
             <select
               id="form-category"
-              v-model="formData.category"
+              v-model="formData.module"
               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             >
               <option value="">Select Category</option>
@@ -284,9 +339,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { getWebforms } from '../services/erpnext';
 import {
   ClipboardIcon,
   ClipboardPlusIcon,
@@ -297,19 +353,65 @@ import {
   FileTextIcon,
   BarChartIcon,
   SearchIcon,
-  PlusIcon
+  PlusIcon,
+  MessageSquareIcon
 } from 'lucide-vue-next';
+
+interface WebForm {
+  id: string;
+  name: string;
+  title: string;
+  module: string;
+  route: string;
+  doc_type: string;
+  is_standard: boolean;
+  success_url: string;
+  success_message: string;
+  login_required: boolean;
+  allow_edit: boolean;
+  allow_multiple: boolean;
+  updated_at: string;
+  created_at: string;
+}
 
 const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
-const error = ref(null);
-const forms = ref([]);
+const error = ref<string | null>(null);
+const forms = ref<WebForm[]>([]);
 const searchQuery = ref('');
 const selectedCategory = ref('');
 const sortBy = ref('updated_at');
 const showModal = ref(false);
 const isEditing = ref(false);
+
+// Add pagination state
+const currentPage = ref(1);
+const pageSize = ref(20);
+const totalItems = ref(0);
+const totalPages = ref(0);
+
+// Add debounced search
+const debouncedSearch = ref('');
+let searchTimeout: number | null = null;
+
+// Watch for search changes
+watch(searchQuery, (newValue) => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  searchTimeout = setTimeout(() => {
+    debouncedSearch.value = newValue;
+    currentPage.value = 1; // Reset to first page on search
+    fetchForms();
+  }, 300);
+});
+
+// Watch for category changes
+watch(selectedCategory, () => {
+  currentPage.value = 1; // Reset to first page on category change
+  fetchForms();
+});
 
 const categories = [
   'HR',
@@ -324,7 +426,7 @@ const formData = ref({
   id: '',
   name: '',
   description: '',
-  category: '',
+  module: '',
   fields: [] as any[]
 });
 
@@ -334,18 +436,18 @@ const filteredForms = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(form => 
-      form.name.toLowerCase().includes(query) ||
+      form.title.toLowerCase().includes(query) ||
       form.description.toLowerCase().includes(query)
     );
   }
 
   if (selectedCategory.value) {
-    filtered = filtered.filter(form => form.category === selectedCategory.value);
+    filtered = filtered.filter(form => form.module === selectedCategory.value);
   }
 
   filtered.sort((a, b) => {
     if (sortBy.value === 'name') {
-      return a.name.localeCompare(b.name);
+      return a.title.localeCompare(b.title);
     } else {
       return new Date(b[sortBy.value]).getTime() - new Date(a[sortBy.value]).getTime();
     }
@@ -354,15 +456,33 @@ const filteredForms = computed(() => {
   return filtered;
 });
 
-const fetchForms = async () => {
+const fetchForms = async (page = 1) => {
   loading.value = true;
   error.value = null;
-
   try {
-    // TODO: Replace with your new backend implementation
-    forms.value = [];
-  } catch (err: any) {
-    error.value = err.message;
+    const response = await getWebforms(page, pageSize.value, debouncedSearch.value, selectedCategory.value);
+    forms.value = response.data.map(form => ({
+      id: form.name,
+      name: form.name,
+      title: form.title,
+      module: form.module || 'Other',
+      route: form.route,
+      doc_type: form.doc_type,
+      is_standard: form.is_standard,
+      success_url: form.success_url,
+      success_message: form.success_message,
+      login_required: form.login_required,
+      allow_edit: form.allow_edit,
+      allow_multiple: form.allow_multiple,
+      updated_at: form.modified,
+      created_at: form.creation
+    }));
+    totalItems.value = response.total;
+    totalPages.value = response.totalPages;
+    currentPage.value = response.page;
+  } catch (err) {
+    console.error('Error fetching webforms:', err);
+    error.value = err.response?.data?.message || err.message || 'Failed to fetch webforms';
   } finally {
     loading.value = false;
   }
@@ -374,7 +494,7 @@ const openCreateFormModal = () => {
     id: '',
     name: '',
     description: '',
-    category: '',
+    module: '',
     fields: []
   };
   showModal.value = true;
@@ -386,17 +506,17 @@ const editForm = (form) => {
     id: form.id,
     name: form.name,
     description: form.description || '',
-    category: form.category || '',
+    module: form.module || '',
     fields: form.fields || []
   };
   showModal.value = true;
 };
 
-const viewSubmissions = (form) => {
+const viewSubmissions = (form: WebForm) => {
   router.push(`/forms/${form.id}/submissions`);
 };
 
-const viewAnalytics = (form) => {
+const viewAnalytics = (form: WebForm) => {
   router.push(`/forms/${form.id}/analytics`);
 };
 
@@ -428,7 +548,7 @@ const handleSubmit = async () => {
   }
 };
 
-const deleteForm = async (form: any) => {
+const deleteForm = async (form: WebForm) => {
   if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) return;
 
   loading.value = true;
@@ -452,5 +572,19 @@ const formatDate = (date: string) => {
   });
 };
 
-onMounted(fetchForms);
+// Add pagination controls
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+    fetchForms(page);
+  }
+};
+
+onMounted(() => {
+  // Check authentication before fetching data
+  if (!authStore.isAuthenticated) {
+    return;
+  }
+  fetchForms();
+});
 </script>

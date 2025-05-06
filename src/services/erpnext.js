@@ -260,4 +260,103 @@ export const deleteDocType = async (name) => {
     console.error('Error deleting document type:', error.response?.data || error);
     throw error;
   }
+};
+
+export const getWebforms = async (page = 1, pageSize = 20, search = '', category = '') => {
+  try {
+    const authStore = useAuthStore();
+    const username = authStore.user?.name;
+    console.log('Current user from auth store:', username);
+    
+    // Calculate start and end for pagination
+    const limit_start = (page - 1) * pageSize;
+    const limit_page_length = pageSize;
+
+    // Build filters array
+    const filters = [];
+    
+    // Add search filter if search term exists
+    if (search) {
+      filters.push(['Web Form', 'title', 'like', `%${search}%`]);
+    }
+    
+    // Add category filter if category is selected
+    if (category) {
+      filters.push(['Web Form', 'module', '=', category]);
+    }
+
+    console.log('Using filters:', filters);
+
+    // Get the current token
+    const token = await getCurrentToken();
+    console.log('API Request - Token:', token ? 'Present' : 'Missing');
+
+    // First, get total count
+    const countResponse = await erp.get('/api/method/frappe.client.get_count', {
+      params: {
+        doctype: 'Web Form',
+        filters: JSON.stringify(filters)
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const total = countResponse.data.message || 0;
+    console.log('Total count:', total);
+
+    // Then fetch the data
+    const response = await erp.get('/api/method/frappe.client.get_list', {
+      params: {
+        doctype: 'Web Form',
+        fields: '["name", "title", "module", "modified", "creation", "route", "is_standard", "doc_type", "success_url", "success_message", "login_required", "allow_edit", "allow_multiple"]',
+        filters: JSON.stringify(filters),
+        limit_start,
+        limit_page_length,
+        as_list: 1
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    console.log('API Response:', {
+      status: response.status,
+      data: response.data,
+      message: response.data.message,
+      total_count: total
+    });
+
+    // Handle different response formats
+    let data = [];
+
+    if (Array.isArray(response.data.message)) {
+      data = response.data.message;
+    } else if (response.data.data) {
+      data = response.data.data;
+    } else {
+      console.warn('Unexpected response format:', response.data);
+    }
+
+    console.log('Processed data:', {
+      dataLength: data.length,
+      total,
+      firstItem: data[0]
+    });
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize)
+    };
+  } catch (error) {
+    console.error('Error fetching webforms:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    throw error;
+  }
 }; 

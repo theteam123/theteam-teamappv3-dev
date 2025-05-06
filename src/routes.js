@@ -19,6 +19,7 @@ import Records from './pages/Records.vue'
 import Templates from './pages/Templates.vue'
 import Videos from './pages/Videos.vue'
 import DocType from './pages/DocType.vue'
+import DocTypeDocuments from './pages/DocTypeDocuments.vue'
 import { useAuthStore } from './stores/auth'
 
 const routes = [
@@ -114,8 +115,8 @@ const routes = [
   },
   {
     path: '/doctypes/:id/documents',
-    name: 'documents',
-    component: Documents,
+    name: 'doctype-documents',
+    component: DocTypeDocuments,
     meta: { requiresAuth: true }
   },
   {
