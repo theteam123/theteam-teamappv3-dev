@@ -12,7 +12,7 @@ export const getErpNextConfig = () => {
   if (isProduction) {
     if (currentDomain.includes('teamsite-taktec')) {
       return {
-        baseURL: import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL
+        baseURL: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL
       };
     }
     return {
@@ -23,7 +23,7 @@ export const getErpNextConfig = () => {
   // Development environment
   if (currentDomain.includes('teamsite-taktec')) {
     return {
-      baseURL: import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL || 'http://taktec.theteam.net.au'
+      baseURL: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL || 'http://taktec.theteam.net.au'
     };
   }
   return {
