@@ -1,13 +1,31 @@
 import axios from 'axios';
 
+const clientId = import.meta.env.VITE_OAUTH_CLIENT_ID;
+const clientSecret = import.meta.env.VITE_OAUTH_CLIENT_SECRET;
+const redirectUri = import.meta.env.VITE_OAUTH_REDIRECT_URI;
+const authorizationEndpoint = `${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.integrations.oauth2.authorize`;
+const tokenEndpoint = `${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.integrations.oauth2.get_token`;
+const scope = 'all openid';
+
+const currentDomain = window.location.hostname;
+
+if (currentDomain.includes('teamsite-taktec')) {
+  clientId = import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_ID;
+  clientSecret = import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_SECRET;
+  redirectUri = import.meta.env.VITE_OAUTH_TAKTEC_REDIRECT_URI;
+  authorizationEndpoint = `${import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL}/api/method/frappe.integrations.oauth2.authorize`;
+  tokenEndpoint = `${import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL}/api/method/frappe.integrations.oauth2.get_token`;
+}
+
+
 // OAuth2 configuration
 const oauthConfig = {
-  clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
-  clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET,
-  redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI,
-  authorizationEndpoint: `${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.integrations.oauth2.authorize`,
-  tokenEndpoint: `${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.integrations.oauth2.get_token`,
-  scope: 'all openid'
+  clientId,
+  clientSecret,
+  redirectUri,
+  authorizationEndpoint,
+  tokenEndpoint,
+  scope
 };
 
 // Create axios instance for OAuth requests

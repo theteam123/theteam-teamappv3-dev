@@ -218,19 +218,21 @@ const authStore = useAuthStore();
 const getErpNextUrl = () => {
   const currentDomain = window.location.hostname;
   const isProduction = import.meta.env.PROD;
+  const isDevelopment = import.meta.env.DEV;
 
   // Production environment
   if (isProduction) {
     if (currentDomain.includes('teamsite-taktec')) {
-      return import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL;
+      return import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL;
     }
     return import.meta.env.VITE_ERPNEXT_API_URL;
   }
   
   // Development environment
-  if (currentDomain.includes('teamsite-taktec')) {
-    return import.meta.env.VITE_TAKTEC_ERPNEXT_API_URL || 'http://taktec.theteam.net.au';
+  if (isDevelopment) {
+    return import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au';
   }
+  
   return import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au';
 };
 
