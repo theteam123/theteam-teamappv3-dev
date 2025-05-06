@@ -7,7 +7,9 @@
         :class="isSidebarCollapsed ? 'w-16' : 'w-64'"
       >
         <!-- Logo and Toggle Button -->
-        <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+        <div class="flex items-center h-16 border-b border-gray-200"
+          :class="isSidebarCollapsed ? '' : 'justify-between px-4'"
+        >
           <div class="flex items-center">
             <img 
               v-if="!isSidebarCollapsed" 
@@ -22,14 +24,7 @@
             class="p-2 rounded-lg hover:bg-gray-100 bg-gray-50 border border-gray-200 shadow-sm z-10"
             :class="isSidebarCollapsed ? 'ml-2' : 'ml-auto'"
           >
-            <ChevronLeftIcon 
-              v-if="!isSidebarCollapsed" 
-              class="w-5 h-5 text-gray-600"
-            />
-            <ChevronRightIcon 
-              v-else 
-              class="w-5 h-5 text-gray-600"
-            />
+            <MenuIcon class="w-5 h-5 text-gray-600" />
           </button>
         </div>
         
@@ -96,7 +91,7 @@
         </div>
         
         <!-- Navigation -->
-        <nav class="flex-1 p-4 space-y-1">
+        <nav v-if="!isSidebarCollapsed" class="flex-1 p-4 space-y-1">
           <router-link 
             to="/" 
             class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
@@ -132,20 +127,20 @@
               <span v-if="!isSidebarCollapsed">{{ item.name }}</span>
             </router-link>
           </div>
-        </nav>
 
-        <!-- Admin Settings Section -->
-        <div v-if="!isSidebarCollapsed && authStore.isSystemManager" class="p-4 border-t border-gray-200">
-          <a 
-            :href="`${getErpNextUrl()}/app/build`"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg"
-          >
-            <SettingsIcon class="w-5 h-5 mr-3" />
-            Admin Settings
-          </a>
-        </div>
+          <!-- Admin Settings -->
+          <div v-if="authStore.isSystemManager" class="border-gray-200">
+            <a 
+              :href="`${getErpNextUrl()}/app/build`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg"
+            >
+              <SettingsIcon class="w-5 h-5 mr-3" />
+              Admin Settings
+            </a>
+          </div>
+        </nav>
 
         <!-- User Menu -->
         <div class="border-t border-gray-200">
@@ -210,6 +205,7 @@ import {
   FolderIcon,
   ChevronDownIcon,
   SearchIcon,
+  MenuIcon,
   ChevronLeftIcon,
   ChevronRightIcon
 } from 'lucide-vue-next';
