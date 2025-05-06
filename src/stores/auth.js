@@ -66,11 +66,32 @@ export const useAuthStore = defineStore('auth', {
 
         const userData = await response.json();
         console.log('Auth Store - User info received:', userData);
-        
-        // Update state
+
+        // Get user roles to verify identity
+        const rolesResponse = await fetch(`${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.core.doctype.user.user.get_roles`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            uid: userData.message
+          })
+        });
+
+        if (!rolesResponse.ok) {
+          console.error('Auth Store - Roles verification failed:', await rolesResponse.json());
+          throw new Error('Failed to verify user roles');
+        }
+
+        const rolesData = await rolesResponse.json();
+        console.log('Auth Store - User roles:', rolesData);
+
+        // Update state with verified user info
         this.user = {
           name: userData.message,
           email: userData.message,
+          roles: rolesData.message || [],
           profile: {
             full_name: userData.message.split('@')[0],
             image: `https://www.gravatar.com/avatar/${userData.message}?d=identicon`
@@ -78,9 +99,12 @@ export const useAuthStore = defineStore('auth', {
         };
         
         this.isLoggedIn = true;
+        this.isSystemManager = rolesData.message?.includes('System Manager') || false;
+        
         console.log('Auth Store - State updated:', {
           user: this.user,
-          isLoggedIn: this.isLoggedIn
+          isLoggedIn: this.isLoggedIn,
+          isSystemManager: this.isSystemManager
         });
         
         // Persist state before any redirects
