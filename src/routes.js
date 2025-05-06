@@ -20,6 +20,7 @@ import Templates from './pages/Templates.vue'
 import Videos from './pages/Videos.vue'
 import DocType from './pages/DocType.vue'
 import DocTypeDocuments from './pages/DocTypeDocuments.vue'
+import DocTypeForm from './pages/DocTypeForm.vue'
 import { useAuthStore } from './stores/auth'
 
 const routes = [
@@ -117,6 +118,12 @@ const routes = [
     path: '/doctypes/:id/documents',
     name: 'doctype-documents',
     component: DocTypeDocuments,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/doctypes/:id/new',
+    name: 'doctype-form',
+    component: DocTypeForm,
     meta: { requiresAuth: true }
   },
   {

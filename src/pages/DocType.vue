@@ -6,16 +6,6 @@
       <p v-if="isTaktecPortal" class="text-sm text-gray-500 mt-1">Viewing Taktec ERPNext Document Types</p>
     </div>
 
-    <!-- Create DocType Button -->
-    <div class="flex justify-end mb-6">
-      <button
-        @click="openCreateDocTypeModal"
-        class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
-      >
-        <FilePlusIcon class="w-5 h-5" />
-        Create DocType
-      </button>
-    </div>
 
     <!-- Search and Filter -->
     <div class="mb-6 flex flex-col sm:flex-row gap-4">
@@ -32,7 +22,7 @@
         </div>
       </div>
       <div class="flex gap-4">
-        <select
+        <!-- <select
           id="doctype-category"
           v-model="selectedCategory"
           class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
@@ -50,7 +40,7 @@
           <option value="name">Name</option>
           <option value="updated_at">Last Updated</option>
           <option value="created_at">Date Created</option>
-        </select>
+        </select> -->
       </div>
     </div>
 
@@ -91,33 +81,26 @@
               </div>
               <div class="flex gap-2">
                 <button
-                  @click="viewAnalytics(doctype)"
+                  @click="router.push(`/doctypes/${doctype.id}/new`)"
                   class="text-gray-400 hover:text-gray-600"
-                  title="View Analytics"
+                  :title="`New ${doctype.name}`"
                 >
-                  <BarChartIcon class="w-5 h-5" />
+                  <FilePlusIcon class="w-5 h-5" />
                 </button>
                 <button
                   @click="viewDocuments(doctype)"
                   class="text-gray-400 hover:text-gray-600"
-                  title="View Documents"
+                  :title="`View ${doctype.name} submissions`"
                 >
                   <FileTextIcon class="w-5 h-5" />
                 </button>
-
               </div>
             </div>
 
             <div class="mt-4">
               <div class="flex flex-wrap gap-2">
-                <span
-                  v-if="doctype.category"
-                  class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800"
-                >
-                  {{ doctype.category }}
-                </span>
-                <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                  {{ doctype.fields.length }} Fields
+                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                  {{ doctype.module }}
                 </span>
               </div>
             </div>
@@ -129,7 +112,7 @@
               </div>
               <div class="flex items-center gap-2 mt-1">
                 <FileTextIcon class="w-4 h-4" />
-                <span>{{ doctype.documents_count }} Documents</span>
+                <span>{{ doctype.documents_count || 0 }} Submissions</span>
               </div>
             </div>
           </div>
@@ -140,16 +123,6 @@
       <div v-else class="text-center py-12">
         <FileIcon class="mx-auto h-12 w-12 text-gray-400" />
         <h3 class="mt-2 text-sm font-medium text-gray-900">No document types</h3>
-        <p class="mt-1 text-sm text-gray-500">Get started by creating a new document type.</p>
-        <div class="mt-6">
-          <button
-            @click="openCreateDocTypeModal"
-            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-          >
-            <FilePlusIcon class="w-5 h-5 mr-2" />
-            Create DocType
-          </button>
-        </div>
       </div>
 
       <!-- Pagination Controls -->
@@ -189,135 +162,6 @@
       </div>
     </div>
 
-    <!-- Create/Edit DocType Modal -->
-    <div v-if="showModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-      <div class="bg-white rounded-lg p-6 max-w-2xl w-full">
-        <h2 class="text-xl font-bold mb-4">{{ isEditing ? 'Edit DocType' : 'Create New DocType' }}</h2>
-        <form @submit.prevent="handleSubmit" class="space-y-4">
-          <div>
-            <label for="doctype-name" class="block text-sm font-medium text-gray-700">DocType Name</label>
-            <input
-              id="doctype-name"
-              type="text"
-              v-model="docTypeData.name"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-              required
-            />
-          </div>
-          <div>
-            <label for="doctype-description" class="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              id="doctype-description"
-              v-model="docTypeData.description"
-              rows="2"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            ></textarea>
-          </div>
-          <div>
-            <label for="doctype-category" class="block text-sm font-medium text-gray-700">Category</label>
-            <select
-              id="doctype-category"
-              v-model="docTypeData.category"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            >
-              <option value="">Select Category</option>
-              <option v-for="category in categories" :key="category" :value="category">
-                {{ category }}
-              </option>
-            </select>
-          </div>
-
-          <!-- DocType Fields -->
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <label class="block text-sm font-medium text-gray-700">DocType Fields</label>
-              <button
-                type="button"
-                @click="addField"
-                class="text-sm text-green-600 hover:text-green-700 flex items-center gap-1"
-              >
-                <PlusIcon class="w-4 h-4" />
-                Add Field
-              </button>
-            </div>
-            <div class="space-y-4">
-              <div
-                v-for="(field, index) in docTypeData.fields"
-                :key="index"
-                class="flex gap-4 items-start p-4 bg-gray-50 rounded-lg"
-              >
-                <div class="flex-1">
-                  <input
-                    :id="'field-label-' + index"
-                    type="text"
-                    v-model="field.label"
-                    placeholder="Field Label"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
-                  />
-                  <div class="mt-2 flex gap-4">
-                    <select
-                      :id="'field-type-' + index"
-                      v-model="field.type"
-                      class="rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
-                    >
-                      <option value="text">Text</option>
-                      <option value="number">Number</option>
-                      <option value="email">Email</option>
-                      <option value="date">Date</option>
-                      <option value="select">Select</option>
-                      <option value="textarea">Text Area</option>
-                      <option value="file">File</option>
-                    </select>
-                    <label :for="'field-required-' + index" class="flex items-center">
-                      <input
-                        :id="'field-required-' + index"
-                        type="checkbox"
-                        v-model="field.required"
-                        class="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span class="ml-2 text-sm text-gray-600">Required</span>
-                    </label>
-                  </div>
-                  <div v-if="field.type === 'select'" class="mt-2">
-                    <input
-                      :id="'field-options-' + index"
-                      type="text"
-                      v-model="field.options"
-                      placeholder="Options (comma-separated)"
-                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-sm"
-                    />
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  @click="removeField(index)"
-                  class="text-gray-400 hover:text-red-600"
-                >
-                  <TrashIcon class="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-3 mt-6">
-            <button
-              type="button"
-              @click="showModal = false"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
-              :disabled="loading"
-            >
-              {{ isEditing ? 'Update' : 'Create' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -377,7 +221,7 @@ const totalPages = ref(0);
 
 // Add debounced search
 const debouncedSearch = ref('');
-let searchTimeout: number | null = null;
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Watch for search changes
 watch(searchQuery, (newValue) => {
@@ -403,6 +247,7 @@ const categories = [
   'Finance',
   'IT',
   'Sales',
+  'Taktec',
   'Other'
 ];
 
@@ -450,16 +295,38 @@ const fetchDocTypes = async (page = 1) => {
   error.value = null;
   try {
     const response = await getDocTypes(page, pageSize.value, debouncedSearch.value, selectedCategory.value);
-    docTypes.value = response.data.map(docType => ({
-      id: docType.name,
-      name: docType.name,
-      description: docType.description || '',
-      category: docType.module || 'Other',
-      fields: docType.fields ? JSON.parse(docType.fields) : [],
-      updated_at: docType.modified,
-      created_at: docType.creation,
-      documents_count: 0
-    }));
+    docTypes.value = response.data.map(docType => {
+      // Safely parse fields
+      let fields = [];
+      try {
+        if (docType.fields) {
+          if (typeof docType.fields === 'string') {
+            try {
+              fields = JSON.parse(docType.fields);
+            } catch (parseErr) {
+              console.warn(`Failed to parse fields for ${docType.name}:`, parseErr);
+              fields = [];
+            }
+          } else if (Array.isArray(docType.fields)) {
+            fields = docType.fields;
+          }
+        }
+      } catch (err) {
+        console.warn(`Error processing fields for ${docType.name}:`, err);
+        fields = [];
+      }
+
+      return {
+        id: docType.name,
+        name: docType.name,
+        description: docType.description || '',
+        module: docType.module || 'Other',
+        fields: fields,
+        updated_at: docType.modified,
+        created_at: docType.creation,
+        documents_count: docType.documents_count || 0
+      };
+    });
     totalItems.value = response.total;
     totalPages.value = response.totalPages;
     currentPage.value = response.page;
@@ -475,17 +342,6 @@ const fetchDocTypes = async (page = 1) => {
   }
 };
 
-const openCreateDocTypeModal = () => {
-  isEditing.value = false;
-  docTypeData.value = {
-    id: '',
-    name: '',
-    description: '',
-    category: '',
-    fields: []
-  };
-  showModal.value = true;
-};
 
 const editDocType = (doctype: DocType) => {
   isEditing.value = true;
@@ -570,11 +426,47 @@ const deleteDocType = async (doctype: DocType) => {
 };
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  if (!date) return 'N/A';
+  try {
+    // Handle ERPNext date format (YYYY-MM-DD HH:mm:ss.SSSSSS)
+    const [datePart, timePart] = date.split(' ');
+    if (!datePart) {
+      console.warn('Invalid date format:', date);
+      return 'N/A';
+    }
+
+    // Parse the date part (YYYY-MM-DD)
+    const [year, month, day] = datePart.split('-').map(Number);
+    
+    // Parse the time part (HH:mm:ss.SSSSSS)
+    let hours = 0, minutes = 0, seconds = 0;
+    if (timePart) {
+      const [time, microseconds] = timePart.split('.');
+      const [h, m, s] = time.split(':').map(Number);
+      hours = h || 0;
+      minutes = m || 0;
+      seconds = s || 0;
+    }
+
+    // Create date in UTC to avoid timezone issues
+    const parsedDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+
+    if (isNaN(parsedDate.getTime())) {
+      console.warn('Invalid date:', date);
+      return 'N/A';
+    }
+
+    // Format in local timezone
+    return parsedDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC' // Keep in UTC to match server time
+    });
+  } catch (err) {
+    console.warn('Error formatting date:', err);
+    return 'N/A';
+  }
 };
 
 // Add pagination controls

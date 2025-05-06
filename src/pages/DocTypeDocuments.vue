@@ -13,6 +13,17 @@
       </div>
     </div>
 
+    <!-- New Document Button -->
+    <div class="flex justify-end mb-6">
+      <button
+        @click="router.push(`/doctypes/${route.params.id}/new`)"
+        class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+      >
+        <FilePlusIcon class="w-5 h-5" />
+        New {{ docType?.name }}
+      </button>
+    </div>
+
     <!-- Search and Filter -->
     <div class="mb-6 flex flex-col sm:flex-row gap-4">
       <div class="flex-1">

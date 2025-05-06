@@ -187,13 +187,6 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
       }
     });
 
-    console.log('API Response:', {
-      status: response.status,
-      data: response.data,
-      message: response.data.message,
-      total_count: total
-    });
-
     // Handle different response formats
     let data = [];
 
@@ -205,14 +198,104 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
       console.warn('Unexpected response format:', response.data);
     }
 
-    console.log('Processed data:', {
-      dataLength: data.length,
-      total,
-      firstItem: data[0]
-    });
+    console.log('Raw DocType data:', data[0]);
+
+    // Get document counts for each DocType
+    const docTypesWithCounts = await Promise.all(
+      data.map(async (docType) => {
+        try {
+          console.log(`Processing DocType:`, docType);
+          
+          // Safely parse fields first
+          let fields = [];
+          try {
+            if (docType.fields) {
+              if (typeof docType.fields === 'string') {
+                try {
+                  fields = JSON.parse(docType.fields);
+                } catch (parseErr) {
+                  console.warn(`Failed to parse fields string for ${docType.name}:`, parseErr);
+                  fields = [];
+                }
+              } else if (Array.isArray(docType.fields)) {
+                fields = docType.fields;
+              }
+            }
+          } catch (err) {
+            console.warn(`Error processing fields for ${docType.name}:`, err);
+          }
+
+          // Get document count with improved error handling
+          let count = 0;
+          try {
+            console.log(`Fetching count for DocType: ${docType.name}`);
+            const countResponse = await erp.get('/api/method/frappe.client.get_count', {
+              params: {
+                doctype: docType.name,
+                filters: '[]'
+              },
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            console.log(`Count response for ${docType.name}:`, countResponse.data);
+            
+            if (countResponse.data && countResponse.data.message !== undefined) {
+              count = Number(countResponse.data.message);
+            }
+          } catch (err) {
+            // Handle 500 errors gracefully
+            if (err.response?.status === 500) {
+              console.warn(`Server error getting count for ${docType.name}, defaulting to 0`);
+              count = 0;
+            } else {
+              console.error(`Error getting count for ${docType.name}:`, err);
+              count = 0;
+            }
+          }
+
+          // Map the DocType data with the count
+          const mappedDocType = {
+            id: docType.name,
+            name: docType.name,
+            description: docType.description || '',
+            module: docType.module || 'Othersss',
+            fields: fields,
+            updated_at: docType.modified || docType.modified_on || docType.updated_at || null,
+            created_at: docType.creation || docType.created_on || docType.created_at || null,
+            documents_count: count,
+            modified: docType.modified,
+            modified_on: docType.modified_on,
+            creation: docType.creation,
+            created_on: docType.created_on
+          };
+
+          console.log('Mapped DocTypesss:', mappedDocType);
+          return mappedDocType;
+        } catch (err) {
+          console.error(`Error processing DocType ${docType.name}:`, err);
+          return {
+            id: docType.name,
+            name: docType.name,
+            description: docType.description || '',
+            module: docType.module || 'Othersss',
+            fields: [],
+            updated_at: docType.modified || docType.modified_on || docType.updated_at || null,
+            created_at: docType.creation || docType.created_on || docType.created_at || null,
+            documents_count: 0,
+            modified: docType.modified,
+            modified_on: docType.modified_on,
+            creation: docType.creation,
+            created_on: docType.created_on
+          };
+        }
+      })
+    );
+
+    console.log('Final processed DocTypesSSSSSSSSSSSS:', docTypesWithCounts);
 
     return {
-      data,
+      data: docTypesWithCounts,
       total,
       page,
       pageSize,
@@ -320,13 +403,6 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
       }
     });
 
-    console.log('API Response:', {
-      status: response.status,
-      data: response.data,
-      message: response.data.message,
-      total_count: total
-    });
-
     // Handle different response formats
     let data = [];
 
@@ -337,12 +413,6 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
     } else {
       console.warn('Unexpected response format:', response.data);
     }
-
-    console.log('Processed data:', {
-      dataLength: data.length,
-      total,
-      firstItem: data[0]
-    });
 
     return {
       data,
@@ -357,6 +427,16 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
       data: error.response?.data,
       message: error.message
     });
+    throw error;
+  }
+};
+
+export const createForm = async (doctype, data) => {
+  try {
+    const response = await erp.post(`/api/resource/${doctype}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating form:', error);
     throw error;
   }
 }; 
