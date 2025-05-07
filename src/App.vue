@@ -198,7 +198,15 @@
               <div class="space-y-6">
                 <!-- Basic Information -->
                 <div>
-                  <h5 class="text-sm font-medium text-gray-500 mb-4">Basic Information</h5>
+                  <div class="flex justify-between items-center mb-4">
+                    <h5 class="text-sm font-medium text-gray-500">Basic Information</h5>
+                    <button
+                      @click="isEditing = !isEditing"
+                      class="text-sm font-medium text-green-600 hover:text-green-700"
+                    >
+                      {{ isEditing ? 'Cancel' : 'Edit' }}
+                    </button>
+                  </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <h6 class="text-xs font-medium text-gray-400">Email</h6>
@@ -214,32 +222,87 @@
                     </div>
                     <div>
                       <h6 class="text-xs font-medium text-gray-400">Language</h6>
-                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.language || 'Not specified' }}</p>
+                      <select
+                        v-if="isEditing"
+                        v-model="editForm.language"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      >
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="zh">Chinese</option>
+                      </select>
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.language || 'Not specified' }}</p>
                     </div>
                     <div>
                       <h6 class="text-xs font-medium text-gray-400">First Name</h6>
-                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.first_name || 'Not specified' }}</p>
+                      <input
+                        v-if="isEditing"
+                        v-model="editForm.first_name"
+                        type="text"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      />
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.first_name || 'Not specified' }}</p>
                     </div>
                     <div>
                       <h6 class="text-xs font-medium text-gray-400">Middle Name</h6>
-                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.middle_name || 'Not specified' }}</p>
+                      <input
+                        v-if="isEditing"
+                        v-model="editForm.middle_name"
+                        type="text"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      />
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.middle_name || 'Not specified' }}</p>
                     </div>
                     <div>
                       <h6 class="text-xs font-medium text-gray-400">Last Name</h6>
-                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.last_name || 'Not specified' }}</p>
+                      <input
+                        v-if="isEditing"
+                        v-model="editForm.last_name"
+                        type="text"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      />
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.last_name || 'Not specified' }}</p>
                     </div>
                     <div>
                       <h6 class="text-xs font-medium text-gray-400">Timezone</h6>
-                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.time_zone || 'Not specified' }}</p>
+                      <select
+                        v-if="isEditing"
+                        v-model="editForm.time_zone"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      >
+                        <option value="UTC">UTC</option>
+                        <option value="America/New_York">Eastern Time</option>
+                        <option value="America/Chicago">Central Time</option>
+                        <option value="America/Denver">Mountain Time</option>
+                        <option value="America/Los_Angeles">Pacific Time</option>
+                        <option value="Australia/Sydney">Sydney</option>
+                        <option value="Australia/Melbourne">Melbourne</option>
+                        <option value="Australia/Perth">Perth</option>
+                      </select>
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.time_zone || 'Not specified' }}</p>
                     </div>
                   </div>
                 </div>
 
-                <!-- Additional Information -->
-                <!-- <div v-if="authStore.user?.details" class="mt-6">
-                  <h5 class="text-sm font-medium text-gray-500 mb-2">Additional Information</h5>
-                  <pre class="bg-gray-50 p-4 rounded-lg text-xs overflow-auto max-h-48">{{ JSON.stringify(authStore.user.details, null, 2) }}</pre>
-                </div> -->
+                <!-- Save Button -->
+                <div v-if="isEditing" class="flex justify-end space-x-3">
+                  <button
+                    @click="isEditing = false"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    @click="handleSaveProfile"
+                    :disabled="isSaving"
+                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                  >
+                    <LoaderIcon v-if="isSaving" class="w-4 h-4 animate-spin inline-block mr-2" />
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -460,13 +523,44 @@ const handleSupportClick = () => {
 
 // Add new refs and methods
 const showUserModal = ref(false);
+const isEditing = ref(false);
+const isSaving = ref(false);
+const editForm = ref({
+  language: '',
+  first_name: '',
+  middle_name: '',
+  last_name: '',
+  time_zone: ''
+});
 
 // Watch for modal opening
 watch(showUserModal, (newValue) => {
   if (newValue) {
-    // No need to fetch data anymore as it's already in the store
+    // Initialize edit form with current values
+    editForm.value = {
+      language: authStore.user?.profile?.language || '',
+      first_name: authStore.user?.profile?.first_name || '',
+      middle_name: authStore.user?.profile?.middle_name || '',
+      last_name: authStore.user?.profile?.last_name || '',
+      time_zone: authStore.user?.profile?.time_zone || ''
+    };
+  } else {
+    isEditing.value = false;
   }
 });
+
+const handleSaveProfile = async () => {
+  isSaving.value = true;
+  try {
+    await authStore.updateUserDetails(editForm.value);
+    isEditing.value = false;
+  } catch (error) {
+    console.error('Error saving profile:', error);
+    // You might want to show an error message to the user here
+  } finally {
+    isSaving.value = false;
+  }
+};
 </script>
 
 <style>

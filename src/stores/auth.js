@@ -216,6 +216,75 @@ export const useAuthStore = defineStore('auth', {
         isSystemManager: this.isSystemManager
       };
       localStorage.setItem('authState', JSON.stringify(stateToPersist));
+    },
+
+    async updateUserDetails(updatedData) {
+      try {
+        const token = await getCurrentToken();
+        if (!token) throw new Error('No authentication token found');
+
+        // Determine which API URL to use based on domain
+        const currentDomain = window.location.hostname;
+        const apiUrl = currentDomain.includes('teamsite-taktec') 
+          ? import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL 
+          : import.meta.env.VITE_ERPNEXT_API_URL;
+
+        // Format the data according to ERPNext's expectations
+        const formattedData = {
+          first_name: updatedData.first_name,
+          middle_name: updatedData.middle_name,
+          last_name: updatedData.last_name,
+          language: updatedData.language,
+          time_zone: updatedData.time_zone
+        };
+
+        // Update user details
+        const response = await fetch(`${apiUrl}/api/resource/User/${this.user.name}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formattedData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to update user details');
+        }
+
+        const updatedUserData = await response.json();
+        
+        // Update local state with the response data
+        if (updatedUserData.data) {
+          this.user = {
+            ...this.user,
+            name: updatedUserData.data.name,
+            email: updatedUserData.data.email,
+            profile: {
+              ...this.user.profile,
+              full_name: updatedUserData.data.full_name,
+              email: updatedUserData.data.email,
+              language: updatedUserData.data.language,
+              first_name: updatedUserData.data.first_name,
+              middle_name: updatedUserData.data.middle_name,
+              last_name: updatedUserData.data.last_name,
+              time_zone: updatedUserData.data.time_zone,
+              user_id: updatedUserData.data.name,
+              enabled: updatedUserData.data.enabled
+            },
+            details: updatedUserData.data
+          };
+        }
+
+        // Persist updated state
+        this.persistState();
+        
+        return true;
+      } catch (error) {
+        console.error('Error updating user details:', error);
+        throw error;
+      }
     }
   }
 });
