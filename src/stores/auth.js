@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { getAuthorizationUrl, getCurrentToken, logout as oauthLogout } from '../services/oauth';
+import { getErpNextApiUrl } from '../utils/api';
 
 export const useAuthStore = defineStore('auth', {
   state: () => {
@@ -29,7 +30,6 @@ export const useAuthStore = defineStore('auth', {
       
       try {
         // Redirect to OAuth authorization page
-
         window.location.href = getAuthorizationUrl();
       } catch (error) {
         console.error('Error during sign in:', error);
@@ -48,11 +48,7 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('oauth_token', token);
         localStorage.setItem('oauth_token_expiry', Date.now() + (3600 * 1000)); // 1 hour expiry
         
-        // Determine which API URL to use based on domain
-        const currentDomain = window.location.hostname;
-        const apiUrl = currentDomain.includes('teamsite-taktec') 
-          ? import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL 
-          : import.meta.env.VITE_ERPNEXT_API_URL;
+        const apiUrl = getErpNextApiUrl();
         
         // Get user info using the token
         console.log('Auth Store - Fetching user info...');
@@ -164,7 +160,8 @@ export const useAuthStore = defineStore('auth', {
           return false;
         }
 
-        const response = await fetch(`${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.core.doctype.user.user.get_roles`, {
+        const apiUrl = getErpNextApiUrl();
+        const response = await fetch(`${apiUrl}/api/method/frappe.core.doctype.user.user.get_roles`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -223,11 +220,7 @@ export const useAuthStore = defineStore('auth', {
         const token = await getCurrentToken();
         if (!token) throw new Error('No authentication token found');
 
-        // Determine which API URL to use based on domain
-        const currentDomain = window.location.hostname;
-        const apiUrl = currentDomain.includes('teamsite-taktec') 
-          ? import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL 
-          : import.meta.env.VITE_ERPNEXT_API_URL;
+        const apiUrl = getErpNextApiUrl();
 
         // Format the data according to ERPNext's expectations
         const formattedData = {

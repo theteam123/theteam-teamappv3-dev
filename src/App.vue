@@ -123,7 +123,7 @@
           <!-- Admin Settings -->
           <div v-if="authStore.isSystemManager" class="border-gray-200">
             <a 
-              :href="`${getErpNextUrl()}/app/build`"
+              :href="`${getErpNextApiUrl()}/app/build`"
               target="_blank"
               rel="noopener noreferrer"
               class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg"
@@ -355,7 +355,7 @@
 import { computed, ref, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
-import { erp } from './services/erpnext';
+import { getErpNextApiUrl } from './utils/api';
 import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
 import { 
@@ -385,28 +385,6 @@ import {
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-
-// Determine which ERPNext instance to use based on domain and environment
-const getErpNextUrl = () => {
-  const currentDomain = window.location.hostname;
-  const isProduction = import.meta.env.PROD;
-  const isDevelopment = import.meta.env.DEV;
-
-  // Production environment
-  if (isProduction) {
-    if (currentDomain.includes('teamsite-taktec')) {
-      return import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL;
-    }
-    return import.meta.env.VITE_ERPNEXT_API_URL;
-  }
-  
-  // Development environment
-  if (isDevelopment) {
-    return import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au';
-  }
-  
-  return import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au';
-};
 
 const isSidebarCollapsed = ref(false);
 

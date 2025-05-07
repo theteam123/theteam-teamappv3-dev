@@ -1,10 +1,11 @@
 import axios from 'axios';
+import { getErpNextApiUrl } from '../utils/api';
 
 let clientId = import.meta.env.VITE_OAUTH_CLIENT_ID;
 let clientSecret = import.meta.env.VITE_OAUTH_CLIENT_SECRET;
 let redirectUri = import.meta.env.VITE_OAUTH_REDIRECT_URI;
-let authorizationEndpoint = `${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.integrations.oauth2.authorize`;
-let tokenEndpoint = `${import.meta.env.VITE_ERPNEXT_API_URL}/api/method/frappe.integrations.oauth2.get_token`;
+let authorizationEndpoint = `${getErpNextApiUrl()}/api/method/frappe.integrations.oauth2.authorize`;
+let tokenEndpoint = `${getErpNextApiUrl()}/api/method/frappe.integrations.oauth2.get_token`;
 const scope = 'all openid';
 
 const currentDomain = window.location.hostname;
@@ -30,7 +31,7 @@ const oauthConfig = {
 
 // Create axios instance for OAuth requests
 const oauthClient = axios.create({
-  baseURL: import.meta.env.VITE_ERPNEXT_API_URL,
+  baseURL: getErpNextApiUrl(),
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'

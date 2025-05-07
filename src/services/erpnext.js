@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 import { getCurrentToken } from './oauth';
+import { getErpNextApiUrl } from '../utils/api';
 
 // Get the current domain and environment
 const currentDomain = window.location.hostname;
@@ -41,15 +42,31 @@ if (!isProduction) {
 }
 
 // Create axios instance with default config
-export const erp = axios.create({
-  baseURL: config.baseURL,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
-});
+const createAxiosInstance = () => {
+  const apiUrl = getErpNextApiUrl();
+  return axios.create({
+    baseURL: apiUrl,
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  });
+};
+
+// Create axios instance with default config
+const createAxiosInstanceWithFallback = () => {
+  const apiUrl = getErpNextApiUrl();
+  return axios.create({
+    baseURL: apiUrl,
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  });
+};
 
 // Add request interceptor to add OAuth token
+const erp = createAxiosInstance();
 erp.interceptors.request.use(async (config) => {
   const token = await getCurrentToken();
   console.log('Request interceptor - Token:', token ? 'Present' : 'Missing');
@@ -200,6 +217,16 @@ export const getFormList = async (doctype) => {
 
 export const getDocTypes = async (page = 1, pageSize = 20, search = '', category = '') => {
   try {
+    // Create a cache key based on the request parameters
+    const cacheKey = `doctypes-${page}-${pageSize}-${search}-${category}`;
+    const cachedData = getCachedMetadata(cacheKey);
+    
+    if (cachedData) {
+      console.log('Using cached DocTypes data for:', cacheKey);
+      return cachedData;
+    }
+
+    console.log('Fetching fresh DocTypes data for:', cacheKey);
     const authStore = useAuthStore();
     const username = authStore.user?.name;
     console.log('Current user from auth store:', username);
@@ -349,13 +376,18 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
       })
     );
 
-    return {
+    const result = {
       data: docTypesWithCounts,
       total,
       page,
       pageSize,
       totalPages: Math.ceil(total / pageSize)
     };
+
+    // Cache the result
+    setCachedMetadata(cacheKey, result);
+    
+    return result;
   } catch (error) {
     console.error('Error fetching document types:', {
       status: error.response?.status,
@@ -366,10 +398,24 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
   }
 };
 
+// Add a function to clear DocType cache
+export const clearDocTypeCache = (page, pageSize, search, category) => {
+  const cacheKey = `doctypes-${page}-${pageSize}-${search}-${category}`;
+  invalidateMetadataCache(cacheKey);
+  console.log('Cleared DocType cache for:', cacheKey);
+};
+
+// Update the existing functions to clear cache when modifying DocTypes
 export const createDocType = async (data) => {
   try {
     const response = await erp.post('/api/resource/DocType', {
       data: data
+    });
+    // Clear all DocType caches after creating a new DocType
+    metadataCache.forEach((value, key) => {
+      if (key.startsWith('doctypes-')) {
+        invalidateMetadataCache(key);
+      }
     });
     return response.data;
   } catch (error) {
@@ -383,6 +429,12 @@ export const updateDocType = async (name, data) => {
     const response = await erp.put(`/api/resource/DocType/${name}`, {
       data: data
     });
+    // Clear all DocType caches after updating a DocType
+    metadataCache.forEach((value, key) => {
+      if (key.startsWith('doctypes-')) {
+        invalidateMetadataCache(key);
+      }
+    });
     return response.data;
   } catch (error) {
     console.error('Error updating document type:', error.response?.data || error);
@@ -393,6 +445,12 @@ export const updateDocType = async (name, data) => {
 export const deleteDocType = async (name) => {
   try {
     const response = await erp.delete(`/api/resource/DocType/${name}`);
+    // Clear all DocType caches after deleting a DocType
+    metadataCache.forEach((value, key) => {
+      if (key.startsWith('doctypes-')) {
+        invalidateMetadataCache(key);
+      }
+    });
     return response.data;
   } catch (error) {
     console.error('Error deleting document type:', error.response?.data || error);
