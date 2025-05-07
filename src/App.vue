@@ -284,6 +284,11 @@
                       <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.time_zone || 'Not specified' }}</p>
                     </div>
                   </div>
+                  <!-- Additional User Data -->
+                  <div v-if="userData" class="mt-6">
+                    <h5 class="text-sm font-medium text-gray-500 mb-2">Additional Information</h5>
+                    <pre class="bg-gray-50 p-4 rounded-lg text-xs overflow-auto max-h-48">{{ JSON.stringify(userData, null, 2) }}</pre>
+                  </div>
                 </div>
 
                 <!-- Save Button -->
@@ -503,6 +508,7 @@ const handleSupportClick = () => {
 const showUserModal = ref(false);
 const isEditing = ref(false);
 const isSaving = ref(false);
+const userData = ref(null);
 const editForm = ref({
   language: '',
   first_name: '',
@@ -522,8 +528,12 @@ watch(showUserModal, (newValue) => {
       last_name: authStore.user?.profile?.last_name || '',
       time_zone: authStore.user?.profile?.time_zone || ''
     };
+
+    // Get user data from auth store
+    userData.value = authStore.user?.details || null;
   } else {
     isEditing.value = false;
+    userData.value = null;
   }
 });
 
