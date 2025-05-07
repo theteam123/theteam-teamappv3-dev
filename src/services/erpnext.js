@@ -107,14 +107,85 @@ export const login = async (email, password) => {
   }
 };
 
+// Metadata caching implementation
+const metadataCache = new Map();
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
+// Cache management functions
+const getCachedMetadata = (key) => {
+  const cachedData = metadataCache.get(key);
+  if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION) {
+    return cachedData.data;
+  }
+  return null;
+};
+
+const setCachedMetadata = (key, data) => {
+  metadataCache.set(key, {
+    data,
+    timestamp: Date.now()
+  });
+};
+
+const invalidateMetadataCache = (key) => {
+  metadataCache.delete(key);
+};
+
+// Persist cache to localStorage every 5 minutes
+setInterval(() => {
+  const cacheData = Array.from(metadataCache.entries());
+  localStorage.setItem('metadataCache', JSON.stringify(cacheData));
+}, 5 * 60 * 1000);
+
+// Load cache from localStorage on startup
+const loadCache = () => {
+  try {
+    const cached = localStorage.getItem('metadataCache');
+    if (cached) {
+      const cacheData = JSON.parse(cached);
+      metadataCache.clear();
+      cacheData.forEach(([key, value]) => {
+        // Only load non-expired cache entries
+        if (Date.now() - value.timestamp < CACHE_DURATION) {
+          metadataCache.set(key, value);
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error loading metadata cache:', error);
+    // Clear potentially corrupted cache
+    localStorage.removeItem('metadataCache');
+  }
+};
+
+// Load cache on module initialization
+loadCache();
+
 export const getFormData = async (doctype, name) => {
   try {
+    const cacheKey = `${doctype}-${name}`;
+    const cachedData = getCachedMetadata(cacheKey);
+    
+    if (cachedData) {
+      console.log('Using cached metadata for:', cacheKey);
+      return cachedData;
+    }
+
+    console.log('Fetching fresh metadata for:', cacheKey);
     const response = await erp.get(`/api/resource/${doctype}/${name}`);
+    setCachedMetadata(cacheKey, response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching form data:', error.response?.data || error);
     throw error;
   }
+};
+
+// Add cache invalidation function to exports
+export const clearMetadataCache = (doctype, name) => {
+  const cacheKey = `${doctype}-${name}`;
+  invalidateMetadataCache(cacheKey);
+  console.log('Cleared metadata cache for:', cacheKey);
 };
 
 export const getFormList = async (doctype) => {
@@ -198,37 +269,27 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
       console.warn('Unexpected response format:', response.data);
     }
 
-    console.log('Raw DocType data:', data[0]);
-
-    // Get document counts for each DocType
+    // Process each DocType to get document counts
     const docTypesWithCounts = await Promise.all(
       data.map(async (docType) => {
         try {
-          console.log(`Processing DocType:`, docType);
-          
-          // Safely parse fields first
           let fields = [];
           try {
             if (docType.fields) {
               if (typeof docType.fields === 'string') {
-                try {
-                  fields = JSON.parse(docType.fields);
-                } catch (parseErr) {
-                  console.warn(`Failed to parse fields string for ${docType.name}:`, parseErr);
-                  fields = [];
-                }
+                fields = JSON.parse(docType.fields);
               } else if (Array.isArray(docType.fields)) {
                 fields = docType.fields;
               }
             }
           } catch (err) {
-            console.warn(`Error processing fields for ${docType.name}:`, err);
+            console.warn(`Error parsing fields for ${docType.name}:`, err);
+            fields = [];
           }
 
-          // Get document count with improved error handling
+          // Get document count for this DocType
           let count = 0;
           try {
-            console.log(`Fetching count for DocType: ${docType.name}`);
             const countResponse = await erp.get('/api/method/frappe.client.get_count', {
               params: {
                 doctype: docType.name,
@@ -238,7 +299,6 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
                 'Authorization': `Bearer ${token}`
               }
             });
-            console.log(`Count response for ${docType.name}:`, countResponse.data);
             
             if (countResponse.data && countResponse.data.message !== undefined) {
               count = Number(countResponse.data.message);
@@ -255,11 +315,11 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
           }
 
           // Map the DocType data with the count
-          const mappedDocType = {
+          return {
             id: docType.name,
             name: docType.name,
             description: docType.description || '',
-            module: docType.module || 'Othersss',
+            module: docType.module || 'Other',
             fields: fields,
             updated_at: docType.modified || docType.modified_on || docType.updated_at || null,
             created_at: docType.creation || docType.created_on || docType.created_at || null,
@@ -269,16 +329,13 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
             creation: docType.creation,
             created_on: docType.created_on
           };
-
-          console.log('Mapped DocTypesss:', mappedDocType);
-          return mappedDocType;
         } catch (err) {
           console.error(`Error processing DocType ${docType.name}:`, err);
           return {
             id: docType.name,
             name: docType.name,
             description: docType.description || '',
-            module: docType.module || 'Othersss',
+            module: docType.module || 'Other',
             fields: [],
             updated_at: docType.modified || docType.modified_on || docType.updated_at || null,
             created_at: docType.creation || docType.created_on || docType.created_at || null,
@@ -291,8 +348,6 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
         }
       })
     );
-
-    console.log('Final processed DocTypesSSSSSSSSSSSS:', docTypesWithCounts);
 
     return {
       data: docTypesWithCounts,
@@ -439,4 +494,4 @@ export const createForm = async (doctype, data) => {
     console.error('Error creating form:', error);
     throw error;
   }
-}; 
+};

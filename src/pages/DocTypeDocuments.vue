@@ -14,7 +14,7 @@
     </div>
 
     <!-- New Document Button -->
-    <div class="flex justify-end mb-6">
+    <div class="flex justify-start sm:justify-end mb-6">
       <button
         @click="router.push(`/doctypes/${route.params.id}/new`)"
         class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
@@ -54,33 +54,56 @@
     <div v-else>
       <!-- Documents Table -->
       <div v-if="documents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th
-                v-for="field in docType?.fields"
-                :key="field.fieldname"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ field.label }}
-                <div class="text-xs text-gray-400">
-                  {{ field.fieldtype }}
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="doc in filteredDocuments" :key="doc.name" class="hover:bg-gray-50">
-              <td
-                v-for="field in docType?.fields"
-                :key="field.fieldname"
-                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-              >
-                {{ doc[field.fieldname] }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <div class="inline-block min-w-full align-middle">
+            <div class="overflow-hidden">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th
+                      v-for="field in docType?.fields"
+                      :key="field.fieldname"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      @click="sortByColumn(field.fieldname)"
+                    >
+                      <div class="flex items-center gap-1">
+                        {{ field.label }}
+                        <div class="flex flex-col">
+                          <ChevronUpIcon 
+                            class="w-3 h-3" 
+                            :class="{'text-green-600': sortBy === field.fieldname && sortDirection === 'asc'}"
+                          />
+                          <ChevronDownIcon 
+                            class="w-3 h-3 -mt-1" 
+                            :class="{'text-green-600': sortBy === field.fieldname && sortDirection === 'desc'}"
+                          />
+                        </div>
+                      </div>
+                      <div class="text-xs text-gray-400">
+                        {{ field.fieldtype }}
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr v-for="doc in filteredDocuments" :key="doc.name" class="hover:bg-gray-50">
+                    <td
+                      v-for="field in docType?.fields"
+                      :key="field.fieldname"
+                      class="px-6 py-4 text-sm text-gray-900"
+                      :class="{'whitespace-nowrap': !field.fieldtype.includes('Text')}"
+                    >
+                      <div class="sm:hidden font-medium text-gray-500 mb-1">
+                        {{ field.label }}
+                      </div>
+                      {{ doc[field.fieldname] }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Empty State -->
@@ -141,7 +164,9 @@ import {
   TrashIcon,
   LoaderIcon,
   ArrowLeftIcon,
-  SearchIcon
+  SearchIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from 'lucide-vue-next';
 
 interface DocTypeField {
@@ -173,6 +198,7 @@ const documents = ref<Document[]>([]);
 const docType = ref<DocType | null>(null);
 const searchQuery = ref('');
 const sortBy = ref('modified');
+const sortDirection = ref<'asc' | 'desc'>('desc');
 
 // Pagination state
 const currentPage = ref(1);
@@ -194,11 +220,26 @@ const filteredDocuments = computed(() => {
   }
 
   filtered.sort((a, b) => {
-    if (sortBy.value === 'name') {
-      return a.name.localeCompare(b.name);
-    } else {
-      return new Date(b[sortBy.value]).getTime() - new Date(a[sortBy.value]).getTime();
+    const aValue = a[sortBy.value];
+    const bValue = b[sortBy.value];
+    
+    // Handle different data types
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      return sortDirection.value === 'asc' 
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
     }
+    
+    if (aValue instanceof Date && bValue instanceof Date) {
+      return sortDirection.value === 'asc'
+        ? aValue.getTime() - bValue.getTime()
+        : bValue.getTime() - aValue.getTime();
+    }
+    
+    // Default numeric comparison
+    return sortDirection.value === 'asc'
+      ? (aValue || 0) - (bValue || 0)
+      : (bValue || 0) - (aValue || 0);
   });
 
   return filtered;
@@ -259,6 +300,17 @@ const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
     fetchDocuments(page);
+  }
+};
+
+const sortByColumn = (column: string) => {
+  if (sortBy.value === column) {
+    // Toggle direction if clicking the same column
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    // Set new column and default to descending
+    sortBy.value = column;
+    sortDirection.value = 'desc';
   }
 };
 

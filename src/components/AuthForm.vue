@@ -4,7 +4,7 @@
       <div class="text-center">
         <div class="flex justify-center">
           <div class=" rounded-lg flex items-center justify-center">
-            <img src="/team-app-logo.webp" alt="Team App Logo" class="" />
+            <img src="/theteamlogo with tag line.png" alt="Team App Logo" class="" />
           </div>
         </div>
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">

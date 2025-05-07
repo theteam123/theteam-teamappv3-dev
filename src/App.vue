@@ -4,28 +4,20 @@
       <!-- Sidebar -->
       <aside 
         class="bg-white border-r border-gray-200 flex flex-col transition-all duration-300"
-        :class="isSidebarCollapsed ? 'w-16' : 'w-64'"
+        :class="isSidebarCollapsed ? 'w-0 -translate-x-full' : 'w-64'"
       >
-        <!-- Logo and Toggle Button -->
-        <div class="flex items-center h-16 border-b border-gray-200"
-          :class="isSidebarCollapsed ? '' : 'justify-between px-4'"
-        >
+        <!-- Logo -->
+        <div class="flex items-center h-16 px-4" :class="{ 'border-b border-gray-200': !isSidebarCollapsed }">
           <div class="flex items-center">
             <img 
               v-if="!isSidebarCollapsed" 
-              src="/team-app-logo.webp" 
+              src="/theteamlogo with tag line.png" 
               alt="Team App Logo" 
               class="h-8" 
               @error="handleImageError" 
             />
           </div>
-          <button 
-            @click="toggleSidebar"
-            class="p-2 rounded-lg hover:bg-gray-100 bg-gray-50 border border-gray-200 shadow-sm z-10"
-            :class="isSidebarCollapsed ? 'ml-2' : 'ml-auto'"
-          >
-            <MenuIcon class="w-5 h-5 text-gray-600" />
-          </button>
+
         </div>
         
         <!-- Search Bar -->
@@ -143,9 +135,9 @@
         </nav>
 
         <!-- User Menu -->
-        <div class="border-t border-gray-200">
+        <div v-if="!isSidebarCollapsed" class="border-t border-gray-200">
           <div class="p-4">
-            <div class="flex items-center">
+            <div class="flex items-center cursor-pointer" @click="showUserModal = true">
               <div class="flex-shrink-0">
                 <img
                   :src="authStore.user?.profile?.avatar_url || 'https://www.gravatar.com/avatar/?d=mp'"
@@ -153,12 +145,12 @@
                   alt=""
                 />
               </div>
-              <div v-if="!isSidebarCollapsed" class="ml-3">
+              <div class="ml-3">
                 <p class="text-sm font-medium text-gray-900">
                   {{ authStore.user?.profile?.full_name }}
                 </p>
                 <button
-                  @click="handleSignOut"
+                  @click.stop="handleSignOut"
                   class="text-sm font-medium text-gray-500 hover:text-gray-700"
                 >
                   Sign out
@@ -169,7 +161,122 @@
         </div>
       </aside>
 
+      <!-- User Profile Modal -->
+      <div v-if="showUserModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+          <!-- Modal Header -->
+          <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900">User Profile</h3>
+            <button @click="showUserModal = false" class="text-gray-400 hover:text-gray-500">
+              <XIcon class="w-6 h-6" />
+            </button>
+          </div>
+
+          <!-- Modal Content -->
+          <div class="px-6 py-4">
+            <div v-if="loading" class="flex justify-center py-8">
+              <LoaderIcon class="w-8 h-8 animate-spin text-green-600" />
+            </div>
+            <div v-else-if="error" class="text-red-600 p-4 bg-red-50 rounded-lg">
+              {{ error }}
+            </div>
+            <div v-else class="space-y-6">
+              <!-- Profile Header -->
+              <div class="flex items-center space-x-4">
+                <img
+                  :src="authStore.user?.profile?.avatar_url || 'https://www.gravatar.com/avatar/?d=mp'"
+                  class="h-16 w-16 rounded-full"
+                  alt=""
+                />
+                <div>
+                  <h4 class="text-xl font-semibold text-gray-900">{{ authStore.user?.profile?.full_name }}</h4>
+                  <p class="text-sm text-gray-500">{{ authStore.user?.profile?.email }}</p>
+                </div>
+              </div>
+
+              <!-- User Details -->
+              <div class="space-y-6">
+                <!-- Basic Information -->
+                <div>
+                  <h5 class="text-sm font-medium text-gray-500 mb-4">Basic Information</h5>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Email</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.email || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Full Name</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.full_name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Username</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Language</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.language || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">First Name</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.first_name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Middle Name</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.middle_name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Last Name</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.last_name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Timezone</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.time_zone || 'Not specified' }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Additional Information -->
+                <!-- <div v-if="authStore.user?.details" class="mt-6">
+                  <h5 class="text-sm font-medium text-gray-500 mb-2">Additional Information</h5>
+                  <pre class="bg-gray-50 p-4 rounded-lg text-xs overflow-auto max-h-48">{{ JSON.stringify(authStore.user.details, null, 2) }}</pre>
+                </div> -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            <button
+              @click="showUserModal = false"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="flex-1 flex flex-col">
+        <!-- Toggle Button -->        
+        <div class="flex items-center p-4">
+          <button 
+            @click="toggleSidebar"
+            class="p-2 rounded-lg hover:bg-gray-100 bg-gray-50 border border-gray-200 shadow-sm z-10"
+          >
+            <MenuIcon class="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        <!-- Support Button -->
+        <div class="fixed top-4 right-4 z-50">
+          <button
+            @click="handleSupportClick"
+            class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg shadow-lg hover:bg-green-700 transition-colors"
+          >
+            <HelpCircleIcon class="w-5 h-5" />
+            <span>Support</span>
+          </button>
+        </div>
 
         <!-- Main Content -->
         <main class="flex-1 overflow-auto">
@@ -207,7 +314,9 @@ import {
   SearchIcon,
   MenuIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  HelpCircleIcon,
+  XIcon
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -343,6 +452,21 @@ const handleDocumentClick = (item) => {
   console.log('Navigating to:', item.path);
   router.push(item.path);
 };
+
+const handleSupportClick = () => {
+  // TODO: Implement support functionality
+  window.open('https://support.theteam.net.au', '_blank');
+};
+
+// Add new refs and methods
+const showUserModal = ref(false);
+
+// Watch for modal opening
+watch(showUserModal, (newValue) => {
+  if (newValue) {
+    // No need to fetch data anymore as it's already in the store
+  }
+});
 </script>
 
 <style>

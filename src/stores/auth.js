@@ -73,6 +73,21 @@ export const useAuthStore = defineStore('auth', {
         const userData = await response.json();
         console.log('Auth Store - User info received:', userData);
 
+        // Get detailed user information
+        const userDetailsResponse = await fetch(`${apiUrl}/api/resource/User/${userData.message}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!userDetailsResponse.ok) {
+          console.error('Auth Store - User details fetch failed:', await userDetailsResponse.json());
+          throw new Error('Failed to get user details');
+        }
+
+        const userDetails = await userDetailsResponse.json();
+        console.log('Auth Store - User details received:', userDetails);
+
         // Get user roles to verify identity
         const rolesResponse = await fetch(`${apiUrl}/api/method/frappe.core.doctype.user.user.get_roles`, {
           method: 'POST',
@@ -99,9 +114,18 @@ export const useAuthStore = defineStore('auth', {
           email: userData.message,
           roles: rolesData.message || [],
           profile: {
-            full_name: userData.message.split('@')[0],
-            image: `https://www.gravatar.com/avatar/${userData.message}?d=identicon`
-          }
+            full_name: userDetails.data.full_name || userData.message.split('@')[0],
+            email: userDetails.data.email,
+            language: userDetails.data.language,
+            first_name: userDetails.data.first_name,
+            middle_name: userDetails.data.middle_name,
+            last_name: userDetails.data.last_name,
+            time_zone: userDetails.data.time_zone,
+            user_id: userDetails.data.name,
+            avatar_url: `https://www.gravatar.com/avatar/${userData.message}?d=identicon`,
+            enabled: userDetails.data.enabled
+          },
+          details: userDetails.data // Store complete user data
         };
         
         this.isLoggedIn = true;

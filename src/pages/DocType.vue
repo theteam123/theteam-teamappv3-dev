@@ -22,6 +22,14 @@
         </div>
       </div>
       <div class="flex gap-4">
+        <button
+          @click="isGridView = !isGridView"
+          class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+          :title="isGridView ? 'Switch to List View' : 'Switch to Grid View'"
+        >
+          <GridIcon v-if="!isGridView" class="w-5 h-5" />
+          <ListIcon v-else class="w-5 h-5" />
+        </button>
         <!-- <select
           id="doctype-category"
           v-model="selectedCategory"
@@ -62,15 +70,22 @@
     <!-- Content Area -->
     <div v-else>
       <!-- DocTypes Grid -->
-      <div v-if="docTypes.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-if="docTypes.length > 0" :class="[
+        isGridView 
+          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+          : 'space-y-4'
+      ]">
         <div
           v-for="doctype in docTypes"
           :key="doctype.id"
-          class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+          :class="[
+            'bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow',
+            !isGridView && 'flex items-center'
+          ]"
         >
-          <div class="p-6">
-            <div class="flex justify-between items-start">
-              <div class="flex items-start gap-3">
+          <div :class="[isGridView ? 'p-6' : 'p-4 flex-1 flex items-center']">
+            <div :class="[isGridView ? 'flex justify-between items-start' : 'flex-1 flex items-center gap-4']">
+              <div :class="[isGridView ? 'flex items-start gap-3' : 'flex items-center gap-3']">
                 <div class="p-2 bg-green-50 rounded-lg">
                   <FileIcon class="w-8 h-8 text-green-600" />
                 </div>
@@ -79,25 +94,25 @@
                   <p class="text-sm text-gray-500 mt-1">{{ doctype.description }}</p>
                 </div>
               </div>
-              <div class="flex gap-2">
+              <div class="flex gap-1">
                 <button
                   @click="router.push(`/doctypes/${doctype.id}/new`)"
-                  class="text-gray-400 hover:text-gray-600"
+                  class="text-gray-700 hover:text-gray-600"
                   :title="`New ${doctype.name}`"
                 >
-                  <FilePlusIcon class="w-5 h-5" />
+                  <FilePlusIcon class="w-6 h-6" />
                 </button>
                 <button
                   @click="viewDocuments(doctype)"
-                  class="text-gray-400 hover:text-gray-600"
+                  class="text-gray-700 hover:text-gray-600"
                   :title="`View ${doctype.name} submissions`"
                 >
-                  <FileTextIcon class="w-5 h-5" />
+                  <FileTextIcon class="w-6 h-6" />
                 </button>
               </div>
             </div>
 
-            <div class="mt-4">
+            <div :class="[isGridView ? 'mt-4' : 'ml-4']">
               <div class="flex flex-wrap gap-2">
                 <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                   {{ doctype.module }}
@@ -105,7 +120,7 @@
               </div>
             </div>
 
-            <div class="mt-4 text-sm text-gray-500">
+            <div :class="[isGridView ? 'mt-4 text-sm text-gray-500' : 'ml-4 text-sm text-gray-500']">
               <div class="flex items-center gap-2">
                 <ClockIcon class="w-4 h-4" />
                 <span>Updated {{ formatDate(doctype.updated_at) }}</span>
@@ -180,7 +195,9 @@ import {
   FileTextIcon,
   BarChartIcon,
   SearchIcon,
-  PlusIcon
+  PlusIcon,
+  GridIcon,
+  ListIcon
 } from 'lucide-vue-next';
 
 interface DocTypeField {
@@ -476,6 +493,8 @@ const goToPage = (page: number) => {
     fetchDocTypes(page);
   }
 };
+
+const isGridView = ref(false);
 
 onMounted(() => {
   // Check authentication before fetching data
