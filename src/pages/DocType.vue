@@ -23,12 +23,24 @@
       </div>
       <div class="flex gap-4">
         <button
-          @click="isGridView = !isGridView"
-          class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-          :title="isGridView ? 'Switch to List View' : 'Switch to Grid View'"
+          @click="isGridView = true"
+          :class="[
+            'p-2 rounded-lg',
+            isGridView ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+          ]"
+          title="Grid View"
         >
-          <GridIcon v-if="!isGridView" class="w-5 h-5" />
-          <ListIcon v-else class="w-5 h-5" />
+          <GridIcon class="w-5 h-5" />
+        </button>
+        <button
+          @click="isGridView = false"
+          :class="[
+            'p-2 rounded-lg',
+            !isGridView ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+          ]"
+          title="List View"
+        >
+          <ListIcon class="w-5 h-5" />
         </button>
         <!-- <select
           id="doctype-category"
@@ -494,6 +506,7 @@ const goToPage = (page: number) => {
   }
 };
 
+// Change default to list view
 const isGridView = ref(false);
 
 onMounted(() => {

@@ -1,15 +1,5 @@
 <template>
   <div class="p-8">
-    <!-- Create Form Button -->
-    <div class="flex justify-end mb-6">
-      <button
-        @click="openCreateFormModal"
-        class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
-      >
-        <ClipboardPlusIcon class="w-5 h-5" />
-        Create Form
-      </button>
-    </div>
 
     <!-- Search and Filter -->
     <div class="mb-6 flex flex-col sm:flex-row gap-4">
@@ -25,26 +15,27 @@
           />
         </div>
       </div>
-      <div class="flex gap-4">
-        <select
-          id="form-category"
-          v-model="selectedCategory"
-          class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
+      <div class="flex items-center gap-2">
+        <button
+          @click="viewMode = 'grid'"
+          :class="[
+            'p-2 rounded-lg',
+            viewMode === 'grid' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+          ]"
+          title="Grid View"
         >
-          <option value="">All Categories</option>
-          <option v-for="category in categories" :key="category" :value="category">
-            {{ category }}
-          </option>
-        </select>
-        <select
-          id="form-sort"
-          v-model="sortBy"
-          class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
+          <LayoutGridIcon class="w-5 h-5" />
+        </button>
+        <button
+          @click="viewMode = 'list'"
+          :class="[
+            'p-2 rounded-lg',
+            viewMode === 'list' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+          ]"
+          title="List View"
         >
-          <option value="title">Name</option>
-          <option value="updated_at">Last Updated</option>
-          <option value="created_at">Date Created</option>
-        </select>
+          <ListIcon class="w-5 h-5" />
+        </button>
       </div>
     </div>
 
@@ -63,8 +54,8 @@
       {{ error }}
     </div>
 
-    <!-- Forms Grid -->
-    <div v-else-if="filteredForms.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Grid View -->
+    <div v-else-if="filteredForms.length > 0 && viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
         v-for="form in filteredForms"
         :key="form.id"
@@ -83,18 +74,18 @@
             </div>
             <div class="flex gap-2">
               <button
-                @click="viewAnalytics(form)"
-                class="text-gray-400 hover:text-gray-600"
-                title="View Analytics"
+                @click="router.push(`/forms/${form.id}/new`)"
+                class="text-gray-700 hover:text-gray-600"
+                title="New Submission"
               >
-                <BarChartIcon class="w-5 h-5" />
+              <FilePlusIcon class="w-6 h-6" />
               </button>
               <button
                 @click="viewSubmissions(form)"
-                class="text-gray-400 hover:text-gray-600"
+                class="text-gray-700 hover:text-gray-600"
                 title="View Submissions"
               >
-                <FileTextIcon class="w-5 h-5" />
+                <FileTextIcon class="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -155,20 +146,105 @@
       </div>
     </div>
 
+    <!-- List View -->
+    <div v-else-if="filteredForms.length > 0 && viewMode === 'list'" class="bg-white rounded-lg shadow overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Form Name
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Description
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Category
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Updated
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status
+            </th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr v-for="form in filteredForms" :key="form.id" class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center">
+                  <ClipboardIcon class="h-6 w-6 text-green-600" />
+                </div>
+                <div class="ml-4">
+                  <div class="text-sm font-medium text-gray-900">{{ form.title }}</div>
+                  <div class="text-sm text-gray-500">{{ form.doc_type }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="text-sm text-gray-900">{{ form.description }}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                {{ form.module }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ formatDate(form.updated_at) }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex flex-wrap gap-1">
+                <span
+                  v-if="form.is_standard"
+                  class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800"
+                >
+                  Standard
+                </span>
+                <span
+                  v-if="form.login_required"
+                  class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800"
+                >
+                  Login Required
+                </span>
+                <span
+                  v-if="form.allow_edit"
+                  class="px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800"
+                >
+                  Editable
+                </span>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <div class="flex justify-end gap-2">
+                <button
+                  @click="router.push(`/forms/${form.id}/new`)"
+                  class="text-gray-700 hover:text-gray-600"
+                  title="New Submission"
+                >
+                  <FilePlusIcon class="w-5 h-5" />
+                </button>
+                <button
+                  @click="viewSubmissions(form)"
+                  class="text-gray-700 hover:text-gray-600"
+                  title="View Submissions"
+                >
+                  <FileTextIcon class="w-5 h-5" />
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- Empty State -->
     <div v-else class="text-center py-12">
       <ClipboardIcon class="mx-auto h-12 w-12 text-gray-400" />
-      <h3 class="mt-2 text-sm font-medium text-gray-900">No forms</h3>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No forms found</h3>
       <p class="mt-1 text-sm text-gray-500">Get started by creating a new form.</p>
-      <div class="mt-6">
-        <button
-          @click="openCreateFormModal"
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-        >
-          <ClipboardPlusIcon class="w-5 h-5 mr-2" />
-          Create Form
-        </button>
-      </div>
     </div>
 
     <!-- Pagination Controls -->
@@ -351,16 +427,19 @@ import {
   LoaderIcon,
   ClockIcon,
   FileTextIcon,
-  BarChartIcon,
   SearchIcon,
   PlusIcon,
-  MessageSquareIcon
+  MessageSquareIcon,
+  FilePlusIcon,
+  LayoutGridIcon,
+  ListIcon
 } from 'lucide-vue-next';
 
 interface WebForm {
   id: string;
   name: string;
   title: string;
+  description: string;
   module: string;
   route: string;
   doc_type: string;
@@ -393,7 +472,7 @@ const totalPages = ref(0);
 
 // Add debounced search
 const debouncedSearch = ref('');
-let searchTimeout: number | null = null;
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Watch for search changes
 watch(searchQuery, (newValue) => {
@@ -465,6 +544,7 @@ const fetchForms = async (page = 1) => {
       id: form.name,
       name: form.name,
       title: form.title,
+      description: form.description || '',
       module: form.module || 'Other',
       route: form.route,
       doc_type: form.doc_type,
@@ -488,18 +568,6 @@ const fetchForms = async (page = 1) => {
   }
 };
 
-const openCreateFormModal = () => {
-  isEditing.value = false;
-  formData.value = {
-    id: '',
-    name: '',
-    description: '',
-    module: '',
-    fields: []
-  };
-  showModal.value = true;
-};
-
 const editForm = (form) => {
   isEditing.value = true;
   formData.value = {
@@ -514,10 +582,6 @@ const editForm = (form) => {
 
 const viewSubmissions = (form: WebForm) => {
   router.push(`/forms/${form.id}/submissions`);
-};
-
-const viewAnalytics = (form: WebForm) => {
-  router.push(`/forms/${form.id}/analytics`);
 };
 
 const addField = () => {
@@ -579,6 +643,9 @@ const goToPage = (page: number) => {
     fetchForms(page);
   }
 };
+
+// Add view mode state
+const viewMode = ref('list');
 
 onMounted(() => {
   // Check authentication before fetching data

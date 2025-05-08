@@ -544,12 +544,145 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
   }
 };
 
-export const createForm = async (doctype, data) => {
+export const createForm = async (webFormName, data) => {
+  // 1. Fetch the Web Form to get the DocType
+  const webFormResponse = await fetch(`${getErpNextApiUrl()}/api/resource/Web Form/${webFormName}`, {
+    headers: {
+      'Authorization': `Bearer ${await getCurrentToken()}`,
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!webFormResponse.ok) {
+    const error = await webFormResponse.json();
+    throw new Error(error.message || 'Failed to fetch Web Form');
+  }
+
+  const webFormData = await webFormResponse.json();
+  const docType = webFormData.data.doc_type;
+
+  if (!docType) {
+    throw new Error('Web Form has no DocType specified');
+  }
+
+  // 2. Submit the data to the DocType endpoint
+  const response = await fetch(`${getErpNextApiUrl()}/api/resource/${docType}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${await getCurrentToken()}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to submit form');
+  }
+
+  return await response.json();
+};
+
+export const getFormSubmissions = async (formId) => {
   try {
-    const response = await erp.post(`/api/resource/${doctype}`, data);
-    return response.data;
+    // First get the Web Form to know its DocType
+    const formResponse = await fetch(`${getErpNextApiUrl()}/api/resource/Web Form/${formId}`, {
+      headers: {
+        'Authorization': `Bearer ${await getCurrentToken()}`,
+      },
+    });
+
+    if (!formResponse.ok) {
+      throw new Error('Failed to fetch Web Form data');
+    }
+
+    const formData = await formResponse.json();
+    const docType = formData.data.doc_type;
+
+    if (!docType) {
+      throw new Error('Web Form has no DocType specified');
+    }
+
+    console.log('Fetching submissions from DocType:', docType);
+
+    // Then fetch submissions from the DocType
+    const submissionsResponse = await fetch(
+      `${getErpNextApiUrl()}/api/resource/${docType}?limit_page_length=100&order_by=creation desc&fields=["*"]`,
+      {
+        headers: {
+          'Authorization': `Bearer ${await getCurrentToken()}`,
+        },
+      }
+    );
+
+    if (!submissionsResponse.ok) {
+      throw new Error(`Failed to fetch submissions from ${docType}`);
+    }
+
+    const submissions = await submissionsResponse.json();
+    
+    // Map the submissions to our expected format
+    const formattedSubmissions = submissions.data.map((submission) => ({
+      id: submission.name,
+      form_id: submission.web_form,
+      data: submission,
+      submitted_by: submission.owner,
+      submitted_by_name: submission.owner_name || submission.owner,
+      created_at: submission.creation
+    }));
+
+    return {
+      data: formattedSubmissions
+    };
   } catch (error) {
-    console.error('Error creating form:', error);
+    console.error('Error fetching form submissions:', error);
     throw error;
   }
+};
+
+export const updateFormSubmission = async (webFormName, recordName, data) => {
+  console.log('Updating record:', {
+    webForm: webFormName,
+    recordName: recordName,
+    data: data
+  });
+
+  // 1. Fetch the Web Form to get the DocType
+  const webFormResponse = await fetch(`${getErpNextApiUrl()}/api/resource/Web Form/${webFormName}`, {
+    headers: {
+      'Authorization': `Bearer ${await getCurrentToken()}`,
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!webFormResponse.ok) {
+    const error = await webFormResponse.json();
+    throw new Error(error.message || 'Failed to fetch Web Form');
+  }
+
+  const webFormData = await webFormResponse.json();
+  const docType = webFormData.data.doc_type;
+
+  if (!docType) {
+    throw new Error('Web Form has no DocType specified');
+  }
+
+  // 2. Update the record in the DocType
+  const response = await fetch(`${getErpNextApiUrl()}/api/resource/${docType}/${recordName}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${await getCurrentToken()}`
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update submission');
+  }
+
+  return await response.json();
 };

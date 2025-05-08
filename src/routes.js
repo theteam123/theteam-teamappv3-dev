@@ -7,8 +7,8 @@ import Roles from './pages/Roles.vue'
 import Forms from './pages/Forms.vue'
 import FormSubmissions from './pages/FormSubmissions.vue'
 import FormSubmit from './pages/FormSubmit.vue'
+import FormNew from './pages/FormNew.vue'
 import PublicFormSubmit from './pages/PublicFormSubmit.vue'
-import FormAnalytics from './pages/FormAnalytics.vue'
 import Tags from './pages/Tags.vue'
 import Categories from './pages/Categories.vue'
 import Content from './pages/Content.vue'
@@ -129,19 +129,19 @@ const routes = [
   {
     path: '/forms/:id/submissions',
     name: 'form-submissions',
-    component: FormSubmissions,
+    component: () => import('./pages/FormSubmissions.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/forms/:id/submit',
     name: 'form-submit',
-    component: FormSubmit,
+    component: () => import('./pages/FormSubmit.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/forms/:id/analytics',
-    name: 'form-analytics',
-    component: FormAnalytics,
+    path: '/forms/:id/new',
+    name: 'form-new',
+    component: () => import('./pages/FormNew.vue'),
     meta: { requiresAuth: true }
   },
   {

@@ -350,6 +350,13 @@
         <main class="flex-1 overflow-auto">
           <router-view></router-view>
         </main>
+
+        <!-- Footer -->
+        <footer class="py-4 px-8 border-t border-gray-200 bg-white">
+          <div class="text-center text-sm text-gray-500">
+            Powered by <a href="https://frappe.io" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-700">Frappe</a> and <a href="https://theteam.net.au" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-700">theteam.net.au</a>
+          </div>
+        </footer>
       </div>
     </div>
     <router-view v-else></router-view>
@@ -384,7 +391,8 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   HelpCircleIcon,
-  XIcon
+  XIcon,
+  LoaderIcon
 } from 'lucide-vue-next';
 
 const router = useRouter();
