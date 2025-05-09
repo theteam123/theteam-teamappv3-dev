@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.5.7",
+    "@types/js-cookie": "^3.0.6",
     "axios": "^1.9.0",
     "date-fns": "^3.3.1",
+    "js-cookie": "^3.0.5",
     "lucide-vue-next": "^0.344.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",

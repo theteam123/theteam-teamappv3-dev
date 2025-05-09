@@ -72,11 +72,15 @@
           <SearchIcon class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
         </div>
       </div>
+      <!-- <pre>{{ form }}</pre> -->
 
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
               <th
                 v-for="field in form.fields"
                 :key="field.label"
@@ -90,7 +94,7 @@
                   </span>
                 </div>
               </th>
-              <th 
+              <!-- <th 
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 @click="sortBy('owner')"
               >
@@ -100,7 +104,7 @@
                     {{ sortDirection === 'asc' ? '↑' : '↓' }}
                   </span>
                 </div>
-              </th>
+              </th> -->
               <th 
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 @click="sortBy('creation')"
@@ -112,9 +116,7 @@
                   </span>
                 </div>
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -127,20 +129,6 @@
                 submission.data.owner === authStore.user?.email ? 'bg-green-50' : ''
               ]"
             >
-              <td
-                v-for="field in form.fields"
-                :key="field.label"
-                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-              >
-                <!-- <pre class="text-xs text-gray-500">{{ JSON.stringify(submission.data, null, 2) }}</pre> -->
-                {{ submission.data[field.fieldname] || '-' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ submission.data.owner }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatDate(submission.data.creation) }}
-              </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 <button
                   v-if="canEditSubmission(submission)"
@@ -150,6 +138,21 @@
                   <PencilIcon class="w-5 h-5" />
                 </button>
               </td>
+              <td
+                v-for="field in form.fields"
+                :key="field.label"
+                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+              >
+                <!-- <pre class="text-xs text-gray-500">{{ JSON.stringify(submission.data, null, 2) }}</pre> -->
+                {{ submission.data[field.fieldname] || '-' }}
+              </td>
+              <!-- <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ submission.data.owner }}
+              </td> -->
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ formatDate(submission.data.creation) }}
+              </td>
+
             </tr>
           </tbody>
         </table>
@@ -432,7 +435,7 @@ const fetchFormAndSubmissions = async () => {
       throw new Error('No form data received');
     }
 
-    const fields = formResponse.data.web_form_fields || [];
+    const fields = formResponse.data.list_columns || [];
     
     const formFields = fields.filter(field => 
       !['Section Break', 'Column Break'].includes(field.fieldtype) && 

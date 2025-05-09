@@ -151,6 +151,9 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Form Name
             </th>
@@ -166,13 +169,29 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Status
             </th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
-            </th>
+
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="form in filteredForms" :key="form.id" class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <div class="flex justify-end gap-2">
+                <button
+                  @click="router.push(`/forms/${form.id}/new`)"
+                  class="text-gray-700 hover:text-gray-600"
+                  title="New Submission"
+                >
+                  <FilePlusIcon class="w-5 h-5" />
+                </button>
+                <button
+                  @click="viewSubmissions(form)"
+                  class="text-gray-700 hover:text-gray-600"
+                  title="View Submissions"
+                >
+                  <FileTextIcon class="w-5 h-5" />
+                </button>
+              </div>
+            </td>            
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div class="flex-shrink-0 h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center">
@@ -217,24 +236,7 @@
                 </span>
               </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <div class="flex justify-end gap-2">
-                <button
-                  @click="router.push(`/forms/${form.id}/new`)"
-                  class="text-gray-700 hover:text-gray-600"
-                  title="New Submission"
-                >
-                  <FilePlusIcon class="w-5 h-5" />
-                </button>
-                <button
-                  @click="viewSubmissions(form)"
-                  class="text-gray-700 hover:text-gray-600"
-                  title="View Submissions"
-                >
-                  <FileTextIcon class="w-5 h-5" />
-                </button>
-              </div>
-            </td>
+
           </tr>
         </tbody>
       </table>
@@ -419,6 +421,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { getWebforms } from '../services/erpnext';
+import Cookies from 'js-cookie';
 import {
   ClipboardIcon,
   ClipboardPlusIcon,
@@ -645,7 +648,12 @@ const goToPage = (page: number) => {
 };
 
 // Add view mode state
-const viewMode = ref('list');
+const viewMode = ref(Cookies.get('formViewMode') || 'list');
+
+// Watch for view mode changes and save to cookie
+watch(viewMode, (newMode) => {
+  Cookies.set('formViewMode', newMode, { expires: 365 }); // Cookie expires in 1 year
+});
 
 onMounted(() => {
   // Check authentication before fetching data

@@ -342,7 +342,7 @@
             class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg shadow-lg hover:bg-green-700 transition-colors"
           >
             <HelpCircleIcon class="w-5 h-5" />
-            <span>Support</span>
+            <span class="hidden sm:inline">Support</span>
           </button>
         </div>
 
@@ -410,13 +410,12 @@ const showSearchResults = ref(false);
 const searchResults = ref([]);
 
 const documentItems = [
-  { name: 'Documents', path: '/documents', icon: FileTextIcon, description: 'Manage and organize your company documents' },
-  { name: 'Doc Types', path: '/doctypes', icon: FileTextIcon, description: 'Manage and organize your company documents' },
+  // { name: 'Documents', path: '/documents', icon: FileTextIcon, description: 'Manage and organize your company documents' },
   { name: 'Forms', path: '/forms', icon: ClipboardIcon, description: 'Create and manage company forms' },
-  { name: 'Policies', path: '/policies', icon: BookIcon, description: 'View and update company policies' },
+  // { name: 'Policies', path: '/policies', icon: BookIcon, description: 'View and update company policies' },
   { name: 'Records', path: '/records', icon: FileIcon, description: 'Access and manage records' },
-  { name: 'Templates', path: '/templates', icon: FileBoxIcon, description: 'Manage document templates' },
-  { name: 'Videos', path: '/videos', icon: VideoIcon, description: 'Access training and company videos' },
+  // { name: 'Templates', path: '/templates', icon: FileBoxIcon, description: 'Manage document templates' },
+  // { name: 'Videos', path: '/videos', icon: VideoIcon, description: 'Access training and company videos' },
 ];
 
 
