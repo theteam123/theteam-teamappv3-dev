@@ -133,6 +133,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/forms/:formId/submissions/:submissionId/edit',
+    name: 'form-submission-edit',
+    component: () => import('./pages/FormSubmissionEdit.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/forms/:id/submit',
     name: 'form-submit',
     component: () => import('./pages/FormSubmit.vue'),

@@ -22,7 +22,7 @@
         </button>
         <button
           v-if="form"
-          @click="router.push(`/forms/${form.id}/new`)"
+          @click="form && router.push(`/forms/${form.id}/new`)"
           class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <PlusIcon class="w-5 h-5 mr-2" />
@@ -49,7 +49,7 @@
       <div class="mt-6">
         <button
           v-if="form"
-          @click="router.push(`/forms/${form.id}`)"
+          @click="router.push(`/forms/${(form as Form).id}`)"
           class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <PlusIcon class="w-5 h-5 mr-2" />
@@ -132,7 +132,7 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 <button
                   v-if="canEditSubmission(submission)"
-                  @click.stop="openEditModal(submission)"
+                  @click.stop="router.push(`/forms/${form.id}/submissions/${submission.data.name}/edit`)"
                   class="text-blue-600 hover:text-blue-900 ml-2"
                 >
                   <PencilIcon class="w-5 h-5" />
@@ -233,29 +233,12 @@
       <div class="mt-6">
         <button
           v-if="form"
-          @click="router.push(`/forms/${form.id}`)"
+          @click="router.push(`/forms/${(form as Form).id}`)"
           class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <PlusIcon class="w-5 h-5 mr-2" />
           New Submission
         </button>
-      </div>
-    </div>
-
-    <!-- Edit Modal -->
-    <div v-if="showEditModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20 z-50">
-      <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg w-full flex flex-col items-center">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Edit Submission</h2>
-        <form @submit.prevent="saveEdit" class="w-full space-y-4">
-          <div v-for="field in form.fields" :key="field.fieldname" class="w-full">
-            <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
-            <input v-model="editFormData[field.fieldname]" :id="field.fieldname" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" />
-          </div>
-          <div class="flex gap-3 justify-end mt-6">
-            <button type="button" @click="closeEditModal" class="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">Cancel</button>
-            <button type="submit" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Save</button>
-          </div>
-        </form>
       </div>
     </div>
   </div>
@@ -313,9 +296,6 @@ const form = ref<Form | null>(null);
 const submissions = ref<Submission[]>([]);
 const loading = ref(false);
 const error = ref('');
-const showEditModal = ref(false);
-const editingSubmission = ref<Submission | null>(null);
-const editFormData = ref<Record<string, any>>({});
 const sortField = ref<string>('creation');
 const sortDirection = ref<'asc' | 'desc'>('desc');
 const searchQuery = ref('');
@@ -336,7 +316,7 @@ const paginationEnd = computed(() => {
 });
 
 const displayedPages = computed(() => {
-  const pages = [];
+  const pages: (number | string)[] = [];
   const maxVisiblePages = 5;
   
   if (totalPages.value <= maxVisiblePages) {
@@ -533,59 +513,8 @@ const formatDate = (date: string) => {
 };
 
 const openEditModal = (submission: Submission) => {
-  editingSubmission.value = submission;
-  editFormData.value = JSON.parse(JSON.stringify(submission.data));
-  showEditModal.value = true;
-};
-
-const closeEditModal = () => {
-  showEditModal.value = false;
-  editingSubmission.value = null;
-  editFormData.value = {};
-};
-
-const saveEdit = async () => {
-  if (!editingSubmission.value) return;
-  loading.value = true;
-  error.value = '';
-  try {
-    await updateFormSubmission(
-      form.value.id,
-      editingSubmission.value.data.name,
-      editFormData.value
-    );
-    closeEditModal();
-    await fetchFormAndSubmissions();
-  } catch (err: any) {
-    let errorMsg = err.message || 'Failed to update submission';
-
-    if (err._server_messages) {
-      try {
-        const serverMessages = JSON.parse(err._server_messages);
-        if (Array.isArray(serverMessages) && serverMessages.length > 0) {
-          const msgObj = JSON.parse(serverMessages[0]);
-          if (msgObj && msgObj.message) {
-            errorMsg = msgObj.message;
-          }
-        }
-      } catch (parseErr) {
-        // Ignore parse errors, fallback to default errorMsg
-      }
-    }
-
-    console.log('Error message:', errorMsg);
-
-    if (errorMsg.includes('TimestampMismatchError') || errorMsg.includes('Please refresh to get the latest document')) {
-      error.value = 'This record was updated elsewhere. Please reload and try again.';
-      await fetchFormAndSubmissions();
-    } else {
-      error.value = errorMsg;
-    }
-
-    console.error('Update error:', err);
-  } finally {
-    loading.value = false;
-  }
+  if (!form.value) return;
+  router.push(`/forms/${form.value.id}/submissions/${submission.data.name}/edit`);
 };
 
 const canEditSubmission = (submission: Submission) => {

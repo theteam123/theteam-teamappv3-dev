@@ -28,103 +28,142 @@
       <div class="bg-white shadow rounded-lg p-6">
         <div class="space-y-6">
           <div v-for="field in form?.fields" :key="field.fieldname" class="space-y-2">
-            <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-              {{ field.label }}
-              <span v-if="field.reqd" class="text-red-500">*</span>
-            </label>
-            
+            <!-- Section Break -->
+            <template v-if="field.fieldtype === 'Section Break'">
+              <div class="mt-8 mb-4 border-b border-gray-200 pb-2">
+                <span v-if="field.label" class="text-lg font-semibold text-gray-700">{{ field.label }}</span>
+              </div>
+            </template>
+
             <!-- Text Input -->
-            <input
-              v-if="field.fieldtype === 'Data'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              type="text"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            />
-
-            <!-- Number Input -->
-            <input
-              v-else-if="field.fieldtype === 'Int' || field.fieldtype === 'Float'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              type="number"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            />
-
-            <!-- Date Input -->
-            <input
-              v-else-if="field.fieldtype === 'Date'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              type="date"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            />
-
-            <!-- Select Input -->
-            <select
-              v-else-if="field.fieldtype === 'Select'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            >
-              <option value="">Select an option</option>
-              <option v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" :value="option">
-                {{ option }}
-              </option>
-            </select>
-
-            <!-- Link Input -->
-            <input
-              v-else-if="field.fieldtype === 'Link'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              type="text"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            />
-
-            <!-- Check Input -->
-            <div v-else-if="field.fieldtype === 'Check'" class="flex items-center">
+            <template v-else-if="field.fieldtype === 'Data'">
+              <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+                {{ field.label }}
+                <span v-if="field.reqd" class="text-red-500">*</span>
+              </label>
               <input
                 :id="field.fieldname"
                 v-model="formData[field.fieldname]"
-                type="checkbox"
+                type="text"
                 :required="field.reqd === 1"
-                class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
               />
-              <label :for="field.fieldname" class="ml-2 block text-sm text-gray-900">
+            </template>
+
+            <!-- Number Input -->
+            <template v-else-if="field.fieldtype === 'Int' || field.fieldtype === 'Float'">
+              <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
                 {{ field.label }}
+                <span v-if="field.reqd" class="text-red-500">*</span>
               </label>
-            </div>
+              <input
+                :id="field.fieldname"
+                v-model="formData[field.fieldname]"
+                type="number"
+                :required="field.reqd === 1"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              />
+            </template>
+
+            <!-- Date Input -->
+            <template v-else-if="field.fieldtype === 'Date'">
+              <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+                {{ field.label }}
+                <span v-if="field.reqd" class="text-red-500">*</span>
+              </label>
+              <input
+                :id="field.fieldname"
+                v-model="formData[field.fieldname]"
+                type="date"
+                :required="field.reqd === 1"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              />
+            </template>
+
+            <!-- Select Input -->
+            <template v-else-if="field.fieldtype === 'Select'">
+              <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+                {{ field.label }}
+                <span v-if="field.reqd" class="text-red-500">*</span>
+              </label>
+              <select
+                :id="field.fieldname"
+                v-model="formData[field.fieldname]"
+                :required="field.reqd === 1"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              >
+                <option value="">Select an option</option>
+                <option v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" :value="option">
+                  {{ option }}
+                </option>
+              </select>
+            </template>
+
+            <!-- Link Input -->
+            <template v-else-if="field.fieldtype === 'Link'">
+              <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+                {{ field.label }}
+                <span v-if="field.reqd" class="text-red-500">*</span>
+              </label>
+              <input
+                :id="field.fieldname"
+                v-model="formData[field.fieldname]"
+                type="text"
+                :required="field.reqd === 1"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              />
+            </template>
+
+            <!-- Check Input -->
+            <template v-else-if="field.fieldtype === 'Check'">
+              <div class="flex items-center">
+                <input
+                  :id="field.fieldname"
+                  v-model="formData[field.fieldname]"
+                  type="checkbox"
+                  :required="field.reqd === 1"
+                  class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                />
+                <label :for="field.fieldname" class="ml-2 block text-sm text-gray-900">
+                  {{ field.label }}
+                </label>
+              </div>
+            </template>
 
             <!-- Text Area -->
-            <textarea
-              v-else-if="field.fieldtype === 'Small Text'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              rows="3"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            ></textarea>
+            <template v-else-if="field.fieldtype === 'Small Text'">
+              <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+                {{ field.label }}
+                <span v-if="field.reqd" class="text-red-500">*</span>
+              </label>
+              <textarea
+                :id="field.fieldname"
+                v-model="formData[field.fieldname]"
+                rows="3"
+                :required="field.reqd === 1"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+              ></textarea>
+            </template>
 
             <!-- File Upload -->
-            <input
-              v-else-if="field.fieldtype === 'Attach'"
-              :id="field.fieldname"
-              type="file"
-              @change="handleFileUpload($event, field.fieldname)"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full text-sm text-gray-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-md file:border-0
-                file:text-sm file:font-semibold
-                file:bg-green-50 file:text-green-700
-                hover:file:bg-green-100"
-            />
+            <template v-else-if="field.fieldtype === 'Attach'">
+              <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+                {{ field.label }}
+                <span v-if="field.reqd" class="text-red-500">*</span>
+              </label>
+              <input
+                :id="field.fieldname"
+                type="file"
+                @change="handleFileUpload($event, field.fieldname)"
+                :required="field.reqd === 1"
+                class="mt-1 block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-green-50 file:text-green-700
+                  hover:file:bg-green-100"
+              />
+            </template>
           </div>
         </div>
 
@@ -237,7 +276,7 @@ const fetchFormData = async () => {
     
     // Filter out layout fields and hidden fields
     const formFields = fields.filter(field => 
-      !['Section Break', 'Column Break'].includes(field.fieldtype) && 
+      !['Column Break'].includes(field.fieldtype) && 
       !field.hidden
     );
 
