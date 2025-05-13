@@ -82,7 +82,7 @@
                 Actions
               </th>
               <th
-                v-for="field in form.fields"
+                v-for="field in form.fields.filter(f => !f.label.toLowerCase().includes('[action]'))"
                 :key="field.label"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 @click="sortBy(field.fieldname)"
@@ -94,17 +94,6 @@
                   </span>
                 </div>
               </th>
-              <!-- <th 
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                @click="sortBy('owner')"
-              >
-                <div class="flex items-center gap-1">
-                  Owner
-                  <span v-if="sortField === 'owner'" class="text-gray-400">
-                    {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                  </span>
-                </div>
-              </th> -->
               <th 
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 @click="sortBy('creation')"
@@ -116,43 +105,56 @@
                   </span>
                 </div>
               </th>
-
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr 
               v-for="submission in paginatedSubmissions" 
               :key="submission.id"
-              @click="canEditSubmission(submission) && openEditModal(submission)"
               :class="[
                 canEditSubmission(submission) ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default',
                 submission.data.owner === authStore.user?.email ? 'bg-green-50' : ''
               ]"
             >
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <button
-                  v-if="canEditSubmission(submission)"
-                  @click.stop="router.push(`/forms/${form.id}/submissions/${submission.data.name}/edit`)"
-                  class="text-blue-600 hover:text-blue-900 ml-2"
-                >
-                  <PencilIcon class="w-5 h-5" />
-                </button>
+                <div class="flex items-center gap-2">
+                  <button
+                    v-if="canEditSubmission(submission)"
+                    @click.stop="router.push(`/forms/${form.id}/submissions/${submission.data.name}/edit`)"
+                    class="text-blue-600 hover:text-blue-900"
+                    title="Edit Submission"
+                  >
+                    <PencilIcon class="w-5 h-5" />
+                  </button>
+                  <template v-for="field in actionFields" :key="field.fieldname">
+                    <a
+                      v-if="submission.data[field.fieldname]"
+                      :href="submission.data[field.fieldname]"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-gray-600 hover:text-gray-900"
+                      :title="field.label.replace('[action]', '').trim()"
+                    >
+                      <component 
+                        :is="field.label.toLowerCase().includes('pdf') ? FileTextIcon : 
+                             field.label.toLowerCase().includes('folder') ? FolderIcon : 
+                             LinkIcon" 
+                        class="w-5 h-5"
+                      />
+                    </a>
+                  </template>
+                </div>
               </td>
               <td
-                v-for="field in form.fields"
+                v-for="field in form.fields.filter(f => !f.label.toLowerCase().includes('[action]'))"
                 :key="field.label"
                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
               >
-                <!-- <pre class="text-xs text-gray-500">{{ JSON.stringify(submission.data, null, 2) }}</pre> -->
                 {{ submission.data[field.fieldname] || '-' }}
               </td>
-              <!-- <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ submission.data.owner }}
-              </td> -->
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ formatDate(submission.data.creation) }}
               </td>
-
             </tr>
           </tbody>
         </table>
@@ -262,6 +264,8 @@ import {
   SearchIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  FileTextIcon,
+  FolderIcon,
 } from 'lucide-vue-next';
 
 interface FormField {
@@ -532,6 +536,27 @@ const sortBy = (field: string) => {
     sortDirection.value = 'asc';
   }
 };
+
+const actionFields = computed(() => {
+  if (!form.value) return [];
+  const fields = form.value.fields.filter(field => field.label.toLowerCase().includes('[action]'));
+  console.log('Action Fields:', fields.map(f => ({ fieldname: f.fieldname, label: f.label })));
+  return fields;
+});
+
+watch([submissions, actionFields], ([newSubmissions, fields]) => {
+  if (newSubmissions.length > 0 && fields.length > 0) {
+    console.log('Debug submissions and action fields:', {
+      submissions: newSubmissions.map(s => ({
+        name: s.data.name,
+        actions: fields.map(f => ({
+          fieldname: f.fieldname,
+          value: s.data[f.fieldname]
+        }))
+      }))
+    });
+  }
+}, { immediate: true });
 
 onMounted(fetchFormAndSubmissions);
 </script>

@@ -143,10 +143,46 @@
           hover:file:bg-green-100"
       />
     </template>
+
+    <!-- Image Upload -->
+    <template v-else-if="field.fieldtype === 'Attach Image'">
+      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+        {{ field.label }}
+        <span v-if="field.reqd" class="text-red-500">*</span>
+      </label>
+      <div class="mt-1 flex items-center space-x-4">
+        <input
+          :id="field.fieldname"
+          type="file"
+          accept="image/*"
+          @change="handleImageUpload"
+          :required="field.reqd === 1"
+          class="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-sm file:font-semibold
+            file:bg-green-50 file:text-green-700
+            hover:file:bg-green-100"
+        />
+        <div v-if="imagePreview" class="relative h-20 w-20">
+          <img :src="imagePreview" alt="Preview" class="h-full w-full rounded-md object-cover" />
+          <button
+            @click="clearImage"
+            class="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onUnmounted } from 'vue';
+
 interface FormField {
   fieldname: string;
   label: string;
@@ -166,6 +202,8 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: any): void;
 }>();
 
+const imagePreview = ref<string | null>(null);
+
 const handleFileUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
@@ -175,4 +213,31 @@ const handleFileUpload = async (event: Event) => {
     emit('update:modelValue', file.name);
   }
 };
+
+const handleImageUpload = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    // Create preview URL
+    imagePreview.value = URL.createObjectURL(file);
+    // TODO: Implement image upload to ERPNext
+    // For now, just store the file name
+    emit('update:modelValue', file.name);
+  }
+};
+
+const clearImage = () => {
+  if (imagePreview.value) {
+    URL.revokeObjectURL(imagePreview.value);
+    imagePreview.value = null;
+  }
+  emit('update:modelValue', '');
+};
+
+// Cleanup preview URL when component is unmounted
+onUnmounted(() => {
+  if (imagePreview.value) {
+    URL.revokeObjectURL(imagePreview.value);
+  }
+});
 </script> 
