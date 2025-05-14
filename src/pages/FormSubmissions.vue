@@ -150,7 +150,16 @@
                 :key="field.label"
                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
               >
-                {{ submission.data[field.fieldname] || '-' }}
+                <template v-if="field.fieldtype === 'Signature' && submission.data[field.fieldname]">
+                  <img 
+                    :src="submission.data[field.fieldname]" 
+                    alt="Signature" 
+                    class="max-h-12 object-contain"
+                  />
+                </template>
+                <template v-else>
+                  {{ submission.data[field.fieldname] || '-' }}
+                </template>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ formatDate(submission.data.creation) }}
@@ -419,7 +428,21 @@ const fetchFormAndSubmissions = async () => {
       throw new Error('No form data received');
     }
 
-    const fields = formResponse.data.list_columns || [];
+    console.log('Form Response:', formResponse.data);
+    console.log('Form Response:', formResponse.data.show_list);
+
+    let fields: any[] = [];
+
+    if (formResponse.data.show_list == 1) {
+      fields = formResponse.data.list_columns || [];
+    } else {
+      console.log('Form Response:', formResponse.data.web_form_fields);
+      fields = formResponse.data.web_form_fields || [];
+      console.log('Fields == :', fields);
+    }
+
+    console.log('Fields:', fields);
+
     
     const formFields = fields.filter(field => 
       !['Section Break', 'Column Break'].includes(field.fieldtype) && 
