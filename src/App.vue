@@ -11,7 +11,7 @@
           <div class="flex items-center">
             <img 
               v-if="!isSidebarCollapsed" 
-              src="/theteamlogo with tag line.png" 
+              src="/TeamLogo.png" 
               alt="Team App Logo" 
               class="h-8" 
               @error="handleImageError" 

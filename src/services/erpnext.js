@@ -573,7 +573,7 @@ export const createForm = async (webFormName, data) => {
       'Accept': 'application/json',
       'Authorization': `Bearer ${await getCurrentToken()}`
     },
-    body: JSON.stringify(data)
+    body: JSON.stringify({ data }) // Wrap the data in a data object
   });
 
   if (!response.ok) {
