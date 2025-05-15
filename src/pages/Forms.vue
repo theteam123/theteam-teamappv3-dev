@@ -49,6 +49,11 @@
       <LoaderIcon class="w-8 h-8 animate-spin text-green-600" />
     </div>
 
+    <!-- Permission Check Loading State -->
+    <div v-if="permissionCheckLoading" class="text-sm text-gray-500">
+      Checking form permissions...
+    </div>
+
     <!-- Error State -->
     <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
       {{ error }}
@@ -124,6 +129,12 @@
                 class="px-2 py-1 text-xs font-medium rounded-full bg-pink-100 text-pink-800"
               >
                 Multiple Submissions
+              </span>
+              <span
+                v-if="form.apply_document_permissions"
+                class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800"
+              >
+                Permission Required
               </span>
             </div>
           </div>
@@ -233,6 +244,12 @@
                   class="px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800"
                 >
                   Editable
+                </span>
+                <span
+                  v-if="form.apply_document_permissions"
+                  class="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800"
+                >
+                  Permission Required
                 </span>
               </div>
             </td>
@@ -454,11 +471,14 @@ interface WebForm {
   allow_multiple: boolean;
   updated_at: string;
   created_at: string;
+  apply_document_permissions: boolean;
+  has_permission?: boolean;
 }
 
 const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
+const permissionCheckLoading = ref(false);
 const error = ref<string | null>(null);
 const forms = ref<WebForm[]>([]);
 const searchQuery = ref('');
@@ -540,6 +560,7 @@ const filteredForms = computed(() => {
 
 const fetchForms = async (page = 1) => {
   loading.value = true;
+  permissionCheckLoading.value = true;
   error.value = null;
   try {
     const response = await getWebforms(page, pageSize.value, debouncedSearch.value, selectedCategory.value);
@@ -558,7 +579,9 @@ const fetchForms = async (page = 1) => {
       allow_edit: form.allow_edit,
       allow_multiple: form.allow_multiple,
       updated_at: form.modified,
-      created_at: form.creation
+      created_at: form.creation,
+      apply_document_permissions: form.apply_document_permissions,
+      has_permission: form.has_permission
     }));
     totalItems.value = response.total;
     totalPages.value = response.totalPages;
@@ -568,6 +591,7 @@ const fetchForms = async (page = 1) => {
     error.value = err.response?.data?.message || err.message || 'Failed to fetch webforms';
   } finally {
     loading.value = false;
+    permissionCheckLoading.value = false;
   }
 };
 

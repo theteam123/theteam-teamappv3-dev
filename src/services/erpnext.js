@@ -501,11 +501,16 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
     const total = countResponse.data.message || 0;
     console.log('Total count:', total);
 
-    // Then fetch the data
+    // Then fetch the data with updated fields list
     const response = await erp.get('/api/method/frappe.client.get_list', {
       params: {
         doctype: 'Web Form',
-        fields: '["name", "title", "module", "modified", "creation", "route", "is_standard", "doc_type", "success_url", "success_message", "login_required", "allow_edit", "allow_multiple"]',
+        fields: JSON.stringify([
+          "name", "title", "module", "modified", "creation", "route", 
+          "is_standard", "doc_type", "success_url", "success_message", 
+          "login_required", "allow_edit", "allow_multiple", 
+          "apply_document_permissions"
+        ]),
         filters: JSON.stringify(filters),
         limit_start,
         limit_page_length,
@@ -527,12 +532,29 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
       console.warn('Unexpected response format:', response.data);
     }
 
+    // Post-process the forms to check permissions
+    const processedForms = await Promise.all(
+      data.map(async (form) => {
+        let hasPermission = true;
+        if (form.apply_document_permissions) {
+          hasPermission = await checkDocTypePermission(form.doc_type);
+        }
+        return {
+          ...form,
+          has_permission: hasPermission
+        };
+      })
+    );
+
+    // Filter out forms without permission
+    const accessibleForms = processedForms.filter(form => form.has_permission);
+
     return {
-      data,
-      total,
+      data: accessibleForms,
+      total: accessibleForms.length,
       page,
       pageSize,
-      totalPages: Math.ceil(total / pageSize)
+      totalPages: Math.ceil(accessibleForms.length / pageSize)
     };
   } catch (error) {
     console.error('Error fetching webforms:', {
@@ -685,4 +707,23 @@ export const updateFormSubmission = async (webFormName, recordName, data) => {
   }
 
   return await response.json();
+};
+
+export const checkDocTypePermission = async (docType) => {
+  try {
+    const token = await getCurrentToken();
+    const response = await erp.get('/api/method/frappe.client.has_permission', {
+      params: {
+        doctype: docType,
+        ptype: 'read'
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.data.message;
+  } catch (error) {
+    console.error('Error checking permission:', error);
+    return false;
+  }
 };
