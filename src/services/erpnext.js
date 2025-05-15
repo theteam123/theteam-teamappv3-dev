@@ -546,11 +546,16 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
       })
     );
 
-    // Filter out forms without permission
-    const accessibleForms = processedForms.filter(form => form.has_permission);
+    // Filter out forms without permission BEFORE calculating pagination
+    const accessibleForms = processedForms.filter(form => form.has_permission === true);
+
+    // Calculate pagination based on accessible forms
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedForms = accessibleForms.slice(startIndex, endIndex);
 
     return {
-      data: accessibleForms,
+      data: paginatedForms,
       total: accessibleForms.length,
       page,
       pageSize,
@@ -715,6 +720,7 @@ export const checkDocTypePermission = async (docType) => {
     const response = await erp.get('/api/method/frappe.client.has_permission', {
       params: {
         doctype: docType,
+        docname: '', // Empty string for DocType level permission check
         ptype: 'read'
       },
       headers: {
