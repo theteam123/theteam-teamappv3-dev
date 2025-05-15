@@ -583,6 +583,7 @@ const fetchForms = async (page = 1) => {
       apply_document_permissions: form.apply_document_permissions,
       has_permission: form.has_permission
     }));
+    console.log(forms.value);
     totalItems.value = response.total;
     totalPages.value = response.totalPages;
     currentPage.value = response.page;

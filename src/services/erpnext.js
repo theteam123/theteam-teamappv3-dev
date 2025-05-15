@@ -532,13 +532,15 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
       console.warn('Unexpected response format:', response.data);
     }
 
+    console.log('Forms data:', data);
+
     // Post-process the forms to check permissions
     const processedForms = await Promise.all(
       data.map(async (form) => {
         let hasPermission = true;
-        if (form.apply_document_permissions) {
+        // if (form.apply_document_permissions) {
           hasPermission = await checkDocTypePermission(form.doc_type);
-        }
+        // }
         return {
           ...form,
           has_permission: hasPermission
@@ -546,8 +548,12 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
       })
     );
 
+    console.log('Processed forms:', processedForms);
+
     // Filter out forms without permission BEFORE calculating pagination
-    const accessibleForms = processedForms.filter(form => form.has_permission === true);
+    const accessibleForms = processedForms.filter(form => form.has_permission.has_permission === true);
+
+    console.log('Accessible forms:', accessibleForms);
 
     // Calculate pagination based on accessible forms
     const startIndex = (page - 1) * pageSize;
@@ -727,6 +733,7 @@ export const checkDocTypePermission = async (docType) => {
         'Authorization': `Bearer ${token}`
       }
     });
+    console.log('Permission response:', response.data.message);
     return response.data.message;
   } catch (error) {
     console.error('Error checking permission:', error);
