@@ -183,15 +183,33 @@ export const getFormData = async (doctype, name) => {
     const cacheKey = `${doctype}-${name}`;
     const cachedData = getCachedMetadata(cacheKey);
     
-    if (cachedData) {
-      console.log('Using cached metadata for:', cacheKey);
-      return cachedData;
-    }
+    // if (cachedData) {
+    //   console.log('Using cached metadata for:', cacheKey);
+    //   return cachedData;
+    // }
 
-    console.log('Fetching fresh metadata for:', cacheKey);
-    const response = await erp.get(`/api/resource/${doctype}/${name}`);
+    console.log('Debug - Input parameters:', { doctype, name });
+    
+    // First, get the web form details
+    const webFormResponse = await erp.get(`/api/resource/Web Form/${name}`);
+    const webFormData = webFormResponse.data.data;
+    
+    console.log('Web Form Data:', webFormData);
+
+    // Get the doctype metadata using the getdoctype endpoint
+    const response = await erp.get(`/api/method/frappe.desk.form.load.getdoctype`, {
+      params: {
+        doctype: webFormData.doc_type
+      }
+    });
+    console.log('Response from getdoctype:', response.data);
     setCachedMetadata(cacheKey, response.data);
-    return response.data;
+    return {
+      data: {
+        ...webFormData,
+        doctype_meta: response.data
+      }
+    };
   } catch (error) {
     console.error('Error fetching form data:', error.response?.data || error);
     throw error;

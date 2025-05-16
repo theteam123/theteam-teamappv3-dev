@@ -31,12 +31,28 @@
 
       <!-- Form -->
       <form v-else @submit.prevent="saveEdit" class="space-y-6 bg-white shadow rounded-lg p-6">
-        <FormField
-          v-for="field in form?.fields"
-          :key="field.fieldname"
-          :field="field"
-          v-model="formData[field.fieldname]"
-        />
+        <div class="space-y-8">
+          <div v-for="(section, sectionIndex) in processedSections" :key="sectionIndex">
+            <!-- Section Title -->
+            <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
+              <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+            </div>
+            
+            <!-- Fields Grid -->
+            <div :class="{
+              'grid gap-6': true,
+              'grid-cols-2': section.columnCount === 2,
+              'grid-cols-1': section.columnCount <= 1
+            }">
+              <FormField
+                v-for="field in section.fields"
+                :key="field.fieldname"
+                :field="field"
+                v-model="formData[field.fieldname]"
+              />
+            </div>
+          </div>
+        </div>
 
         <div class="flex flex-col sm:flex-row gap-3 justify-end pt-6 border-t">
           <button
@@ -59,11 +75,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { getFormData, getFormSubmissions, updateFormSubmission } from '../services/erpnext';
 import FormField from '../components/FormField.vue';
+import { useFormSections } from '../composables/useFormSections';
 import {
   ArrowLeftIcon,
   LoaderIcon,
@@ -104,6 +121,8 @@ const formData = ref<Record<string, any>>({});
 const loading = ref(false);
 const error = ref('');
 
+const { processedSections } = useFormSections(computed(() => form.value?.fields));
+
 const fetchFormAndSubmission = async () => {
   loading.value = true;
   error.value = '';
@@ -115,24 +134,20 @@ const fetchFormAndSubmission = async () => {
       throw new Error('No form data received');
     }
 
-    const fields = formResponse.data.web_form_fields || [];
+    const fields = formResponse.data.doctype_meta.docs[0].fields || [];
     
-    const formFields = fields.filter(field => 
-      !['Column Break'].includes(field.fieldtype) && 
-      !field.hidden
-    );
-
     form.value = {
       id: route.params.formId as string,
       name: formResponse.data.title || 'Untitled Form',
       description: formResponse.data.description || '',
-      fields: formFields.map(field => ({
+      fields: fields.map(field => ({
         fieldname: field.fieldname,
         label: field.label,
         fieldtype: field.fieldtype,
         reqd: field.reqd || 0,
         options: field.options || '',
-        depends_on: field.depends_on
+        depends_on: field.depends_on,
+        hidden: field.hidden || 0
       })),
       created_at: formResponse.data.creation
     };

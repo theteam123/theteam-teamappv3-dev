@@ -25,14 +25,29 @@
 
     <!-- Form -->
     <form v-else @submit.prevent="handleSubmit" class="max-w-3xl mx-auto">
+
       <div class="bg-white shadow rounded-lg p-6">
-        <div class="space-y-6">
-          <FormField
-            v-for="field in form?.fields"
-            :key="field.fieldname"
-            :field="field"
-            v-model="formData[field.fieldname]"
-          />
+        <div class="space-y-8">
+          <div v-for="(section, sectionIndex) in processedSections" :key="sectionIndex">
+            <!-- Section Title -->
+            <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
+              <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+            </div>
+            
+            <!-- Fields Grid -->
+            <div :class="{
+              'grid gap-6': true,
+              'grid-cols-2': section.columnCount === 2,
+              'grid-cols-1': section.columnCount <= 1
+            }">
+              <FormField
+                v-for="field in section.fields"
+                :key="field.fieldname"
+                :field="field"
+                v-model="formData[field.fieldname]"
+              />
+            </div>
+          </div>
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
@@ -70,11 +85,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { getFormData, createForm } from '../services/erpnext';
 import FormField from '../components/FormField.vue';
+import { useFormSections } from '../composables/useFormSections';
 import {
   ArrowLeftIcon,
   Loader2Icon,
@@ -118,6 +134,8 @@ const form = ref<Form | null>(null);
 const formData = ref<Record<string, any>>({});
 const showSubmittedModal = ref(false);
 
+const { processedSections } = useFormSections(computed(() => form.value?.fields));
+
 const fetchFormData = async () => {
   loading.value = true;
   error.value = null;
@@ -131,47 +149,47 @@ const fetchFormData = async () => {
     }
 
     console.log('Raw API response:', response.data);
+    console.log('Raw API response doctype_meta:', response.data.doctype_meta.docs[0].fields);
 
     // Get the fields from the web form's web_form_fields property
     let fields: RawFormField[] = [];
     try {
       if (response.data.web_form_fields) {
-        fields = response.data.web_form_fields;
+        // fields = response.data.web_form_fields;
+        fields = response.data.doctype_meta.docs[0].fields;
       }
     } catch (err) {
       console.error('Error parsing fields:', err);
       fields = [];
     }
-    
-    // Filter out layout fields and hidden fields
-    const formFields = fields.filter(field => 
-      !['Column Break'].includes(field.fieldtype) && 
-      !field.hidden
-    );
 
     form.value = {
       id: route.params.id as string,
       title: response.data.title || 'Job Creation Form',
       description: response.data.description || '',
-      fields: formFields.map((field: RawFormField) => ({
+      fields: fields.map((field: RawFormField) => ({
         fieldname: field.fieldname,
         label: field.label,
         fieldtype: field.fieldtype,
         reqd: field.reqd || 0,
         options: field.options || '',
-        depends_on: field.depends_on
+        depends_on: field.depends_on,
+        hidden: field.hidden || 0
       }))
     };
     
     // Initialize form data with empty values
     formData.value = {};
     form.value.fields.forEach((field: FormField) => {
-      formData.value[field.fieldname] = '';
+      if (!['Section Break', 'Column Break'].includes(field.fieldtype) && !field.hidden) {
+        formData.value[field.fieldname] = '';
+      }
     });
 
     console.log('Form data:', response.data);
     console.log('Form fields:', fields);
     console.log('Processed form:', form.value);
+    console.log('Processed sections:', processedSections.value);
   } catch (err: any) {
     console.error('Error fetching form data:', err);
     error.value = err.message || 'Failed to load form data';
@@ -201,7 +219,9 @@ const resetFormForNewSubmission = () => {
   // Re-initialize form fields
   if (form.value) {
     form.value.fields.forEach((field: FormField) => {
-      formData.value[field.fieldname] = '';
+      if (!['Section Break', 'Column Break'].includes(field.fieldtype) && !field.hidden) {
+        formData.value[field.fieldname] = '';
+      }
     });
   }
 };
@@ -216,4 +236,14 @@ onMounted(async () => {
   await fetchFormData();
   loading.value = false;
 });
-</script> 
+</script>
+
+<style>
+.grid-cols-1 {
+  grid-template-columns: 1fr;
+}
+
+.grid-cols-2 {
+  grid-template-columns: 1fr 1fr;
+}
+</style> 

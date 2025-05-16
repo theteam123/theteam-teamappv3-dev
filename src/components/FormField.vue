@@ -154,25 +154,18 @@
         {{ field.label }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
-      <div class="mt-1 flex rounded-md shadow-sm">
-        <input
-          :id="field.fieldname"
-          :value="modelValue"
-          @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-          type="text"
-          :required="field.reqd === 1"
-          class="block w-full rounded-l-md border-gray-300 focus:border-green-500 focus:ring-green-500"
-        />
-        <button
-          type="button"
-          class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-gray-500 hover:bg-gray-100"
-        >
-          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-          </svg>
-        </button>
-      </div>
+      <select
+        :id="field.fieldname"
+        :value="modelValue"
+        @input="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
+        :required="field.reqd === 1"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+      >
+        <option value="">Select {{ field.label }}</option>
+        <option v-for="option in linkOptions" :key="option.name" :value="option.name">
+          {{ option.name }}
+        </option>
+      </select>
     </template>
 
     <!-- Check Input -->
@@ -448,6 +441,7 @@
 import { ref, onUnmounted, watch, onMounted, nextTick } from 'vue';
 import { VueTelInput } from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
+import { getFormList } from '../services/erpnext';
 
 interface FormField {
   fieldname: string;
@@ -478,6 +472,7 @@ const durationString = ref('');
 const durationPopupRef = ref<HTMLElement | null>(null);
 const durationWrapperRef = ref<HTMLElement | null>(null);
 const phoneValue = ref(typeof props.modelValue === 'string' ? props.modelValue : '');
+const linkOptions = ref<any[]>([]);
 
 watch(() => props.modelValue, (val) => {
   durationString.value = typeof val === 'string' ? val : formatDurationString();
@@ -565,9 +560,24 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+// Fetch options for Link field type
+const fetchLinkOptions = async () => {
+  if (props.field.fieldtype === 'Link' && props.field.options) {
+    try {
+      const response = await getFormList(props.field.options);
+      linkOptions.value = response.data || [];
+    } catch (error) {
+      console.error('Error fetching link options:', error);
+      linkOptions.value = [];
+    }
+  }
+};
+
 onMounted(() => {
+  fetchLinkOptions();
   document.addEventListener('mousedown', handleClickOutside);
 });
+
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
 });
