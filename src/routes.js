@@ -7,8 +7,8 @@ import Roles from './pages/Roles.vue'
 import Forms from './pages/Forms.vue'
 import FormSubmissions from './pages/FormSubmissions.vue'
 import FormSubmit from './pages/FormSubmit.vue'
+import FormNew from './pages/FormNew.vue'
 import PublicFormSubmit from './pages/PublicFormSubmit.vue'
-import FormAnalytics from './pages/FormAnalytics.vue'
 import Tags from './pages/Tags.vue'
 import Categories from './pages/Categories.vue'
 import Content from './pages/Content.vue'
@@ -19,6 +19,8 @@ import Records from './pages/Records.vue'
 import Templates from './pages/Templates.vue'
 import Videos from './pages/Videos.vue'
 import DocType from './pages/DocType.vue'
+import DocTypeDocuments from './pages/DocTypeDocuments.vue'
+import DocTypeForm from './pages/DocTypeForm.vue'
 import { useAuthStore } from './stores/auth'
 
 const routes = [
@@ -33,6 +35,15 @@ const routes = [
     name: 'auth',
     component: Auth,
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/oauth-callback',
+    name: 'oauth-callback',
+    component: () => import('./pages/OAuthCallback.vue'),
+    meta: { 
+      requiresAuth: false,
+      isOAuthCallback: true
+    }
   },
   {
     path: '/users',
@@ -95,21 +106,48 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/doctypes/taktec-portal',
+    name: 'taktec-doctypes',
+    component: DocType,
+    meta: { 
+      requiresAuth: true,
+      portal: 'taktec'
+    }
+  },
+  {
+    path: '/doctypes/:id/documents',
+    name: 'doctype-documents',
+    component: DocTypeDocuments,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/doctypes/:id/new',
+    name: 'doctype-form',
+    component: DocTypeForm,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/forms/:id/submissions',
     name: 'form-submissions',
-    component: FormSubmissions,
+    component: () => import('./pages/FormSubmissions.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/forms/:formId/submissions/:submissionId/edit',
+    name: 'form-submission-edit',
+    component: () => import('./pages/FormSubmissionEdit.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/forms/:id/submit',
     name: 'form-submit',
-    component: FormSubmit,
+    component: () => import('./pages/FormSubmit.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/forms/:id/analytics',
-    name: 'form-analytics',
-    component: FormAnalytics,
+    path: '/forms/:id/new',
+    name: 'form-new',
+    component: () => import('./pages/FormNew.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -176,6 +214,12 @@ router.beforeEach((to, from, next) => {
 
   const authStore = useAuthStore()
 
+  // Always allow OAuth callback
+  if (to.path === '/oauth-callback') {
+    next();
+    return;
+  }
+
   // Check if the route requires authentication
   if (to.meta.requiresAuth) {
     // Check if user is authenticated
@@ -184,7 +228,6 @@ router.beforeEach((to, from, next) => {
       next({ name: 'auth' })
       return
     }
-
   }
 
   next()

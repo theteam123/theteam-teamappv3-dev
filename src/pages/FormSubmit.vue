@@ -140,20 +140,8 @@ const formData = ref({});
 const fetchForm = async () => {
   loading.value = true;
   try {
-    const { data, error: fetchError } = await supabase
-      .from('forms')
-      .select('*')
-      .eq('id', route.params.id)
-      .single();
-
-    if (fetchError) throw fetchError;
-    form.value = data;
-
-    // Initialize form data with empty values
-    formData.value = form.value.fields.reduce((acc, field) => {
-      acc[field.label] = '';
-      return acc;
-    }, {});
+    // TODO: Implement your form fetching logic here
+    form.value = null;
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -164,16 +152,7 @@ const fetchForm = async () => {
 const handleSubmit = async () => {
   submitting.value = true;
   try {
-    const { error: submitError } = await supabase
-      .from('form_submissions')
-      .insert({
-        form_id: route.params.id,
-        submitted_by: authStore.user?.id,
-        data: formData.value
-      });
-
-    if (submitError) throw submitError;
-
+    // TODO: Implement your form submission logic here
     submitted.value = true;
     formData.value = form.value.fields.reduce((acc, field) => {
       acc[field.label] = '';
