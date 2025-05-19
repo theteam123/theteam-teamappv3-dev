@@ -1,5 +1,11 @@
 <template>
-  <div v-if="shouldShowField" class="space-y-2">
+  <!-- <pre>{{ shouldShowField }}</pre> -->
+  <!-- <pre>{{ field.fieldtype}}</pre> -->
+
+  <div :class="[
+    'transition-all duration-200 ease-in-out',
+    shouldShowField ? 'space-y-2' : 'hidden'
+  ]">
     <!-- Section Break -->
     <template v-if="field.fieldtype === 'Section Break'">
       <div class="mt-8 mb-4 border-b border-gray-200 pb-2">
@@ -442,6 +448,7 @@ import { ref, onUnmounted, watch, onMounted, nextTick, computed } from 'vue';
 import { VueTelInput } from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
 import { getFormList } from '../services/erpnext';
+import { evaluateFieldDependency } from '../utils/fieldDependency';
 
 interface FormField {
   fieldname: string;
@@ -476,32 +483,7 @@ const phoneValue = ref(typeof props.modelValue === 'string' ? props.modelValue :
 const linkOptions = ref<any[]>([]);
 
 const shouldShowField = computed(() => {
-  if (!props.field.depends_on) return true;
-  
-  const dependsOn = props.field.depends_on;
-  if (!dependsOn.startsWith('eval:doc.')) return true;
-
-  try {
-    const condition = dependsOn.replace('eval:doc.', '');
-    
-    if (!condition.includes('!=') && !condition.includes('==')) {
-      return !!props.formData?.[condition];
-    }
-
-    const [fieldName, operator, value] = condition.split(/(!=|==)/);
-    const fieldValue = props.formData?.[fieldName.trim()];
-
-    if (operator === '!=') {
-      return fieldValue !== value.replace(/['"]/g, '');
-    } else if (operator === '==') {
-      return fieldValue === value.replace(/['"]/g, '');
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Error evaluating field dependency:', error);
-    return true;
-  }
+  return evaluateFieldDependency(props.field, props.formData);
 });
 
 watch(() => props.modelValue, (val) => {

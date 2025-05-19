@@ -27,7 +27,14 @@
     <form v-else @submit.prevent="handleSubmit" class="max-w-3xl mx-auto">
       <div class="bg-white shadow rounded-lg p-6">
         <div class="space-y-8">
-          <div v-for="(section, sectionIndex) in processedSections" :key="sectionIndex">
+          <div 
+            v-for="(section, sectionIndex) in processedSections" 
+            :key="sectionIndex" 
+            :class="[
+              'transition-all duration-200 ease-in-out',
+              { 'opacity-0 h-0 overflow-hidden': section.hidden }
+            ]"
+          >
             <!-- Section Title -->
             <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
               <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
@@ -109,7 +116,10 @@ const error = ref<string | null>(null);
 const docType = ref<DocType | null>(null);
 const formData = ref<Record<string, any>>({});
 
-const { processedSections } = useFormSections(computed(() => docType.value?.fields));
+const { processedSections } = useFormSections(
+  computed(() => docType.value?.fields),
+  computed(() => formData.value)
+);
 
 const fetchDocType = async () => {
   try {
