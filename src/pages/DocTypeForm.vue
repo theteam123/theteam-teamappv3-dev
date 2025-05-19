@@ -26,85 +26,25 @@
     <!-- Form -->
     <form v-else @submit.prevent="handleSubmit" class="max-w-3xl mx-auto">
       <div class="bg-white shadow rounded-lg p-6">
-        <div class="space-y-6">
-          <div v-for="field in docType?.fields" :key="field.fieldname" class="space-y-2">
-            <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-              {{ field.label }}
-              <span v-if="field.reqd" class="text-red-500">*</span>
-            </label>
+        <div class="space-y-8">
+          <div v-for="(section, sectionIndex) in processedSections" :key="sectionIndex">
+            <!-- Section Title -->
+            <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
+              <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+            </div>
             
-            <!-- Text Input -->
-            <input
-              v-if="field.fieldtype === 'Data'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              type="text"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            />
-
-            <!-- Number Input -->
-            <input
-              v-else-if="field.fieldtype === 'Int' || field.fieldtype === 'Float'"
-              :id="field.fieldname"
-              v-model.number="formData[field.fieldname]"
-              type="number"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            />
-
-            <!-- Date Input -->
-            <input
-              v-else-if="field.fieldtype === 'Date'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              type="date"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            />
-
-            <!-- Select Input -->
-            <select
-              v-else-if="field.fieldtype === 'Select'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              :required="field.reqd === 1"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            >
-              <option value="">Select {{ field.label }}</option>
-              <option
-                v-for="option in field.options?.split('\n')"
-                :key="option"
-                :value="option"
-              >
-                {{ option }}
-              </option>
-            </select>
-
-            <!-- Textarea Input -->
-            <textarea
-              v-else-if="field.fieldtype === 'Text'"
-              :id="field.fieldname"
-              v-model="formData[field.fieldname]"
-              :required="field.reqd === 1"
-              rows="3"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-            ></textarea>
-
-            <!-- File Upload -->
-            <div v-else-if="field.fieldtype === 'Attach' || field.fieldtype === 'Attach Image'">
-              <input
-                :id="field.fieldname"
-                type="file"
-                :accept="field.fieldtype === 'Attach Image' ? 'image/*' : undefined"
-                @change="handleFileUpload($event, field.fieldname)"
-                :required="field.reqd === 1"
-                class="mt-1 block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-green-50 file:text-green-700
-                  hover:file:bg-green-100"
+            <!-- Fields Grid -->
+            <div :class="{
+              'grid gap-6': true,
+              'grid-cols-2': section.columnCount === 2,
+              'grid-cols-1': section.columnCount <= 1
+            }">
+              <FormField
+                v-for="field in section.fields"
+                :key="field.fieldname"
+                :field="field"
+                v-model="formData[field.fieldname]"
+                :formData="formData"
               />
             </div>
           </div>
@@ -132,15 +72,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { getFormData, createForm } from '../services/erpnext';
+import { getFormData, createForm, getDocTypeData } from '../services/erpnext';
+import { getErpNextApiUrl } from '../utils/api';
+import { getCurrentToken } from '../services/oauth';
 import {
   FileIcon,
   LoaderIcon,
   ArrowLeftIcon
 } from 'lucide-vue-next';
+import FormField from '../components/FormField.vue';
+import { useFormSections } from '../composables/useFormSections';
 
 interface DocTypeField {
   fieldname: string;
@@ -165,29 +109,39 @@ const error = ref<string | null>(null);
 const docType = ref<DocType | null>(null);
 const formData = ref<Record<string, any>>({});
 
+const { processedSections } = useFormSections(computed(() => docType.value?.fields));
+
 const fetchDocType = async () => {
   try {
-    const response = await getFormData('DocType', route.params.id as string);
-    docType.value = response.data;
+    const response = await getDocTypeData(route.params.id as string);
+    console.log('DocType response:', response); // Debug log
+    
+    // Check if we have the expected data structure
+    if (!response || !response.docs || !Array.isArray(response.docs) || response.docs.length === 0) {
+      throw new Error('Invalid response format from DocType API');
+    }
+
+    const docTypeData = response.docs[0];
+    
+    docType.value = {
+      name: docTypeData.name || route.params.id,
+      description: docTypeData.description || '',
+      fields: docTypeData.fields || []
+    };
     
     // Initialize form data with empty values
-    formData.value = response.data.fields.reduce((acc: Record<string, any>, field: DocTypeField) => {
-      acc[field.fieldname] = '';
-      return acc;
-    }, {});
+    if (Array.isArray(docTypeData.fields)) {
+      formData.value = docTypeData.fields.reduce((acc: Record<string, any>, field: DocTypeField) => {
+        acc[field.fieldname] = '';
+        return acc;
+      }, {});
+    } else {
+      console.warn('No fields found in DocType response');
+      formData.value = {};
+    }
   } catch (err: any) {
     console.error('Error fetching DocType:', err);
     error.value = err.message;
-  }
-};
-
-const handleFileUpload = async (event: Event, fieldname: string) => {
-  const input = event.target as HTMLInputElement;
-  if (input.files && input.files[0]) {
-    const file = input.files[0];
-    // TODO: Implement file upload to ERPNext
-    // For now, just store the file name
-    formData.value[fieldname] = file.name;
   }
 };
 
@@ -215,4 +169,14 @@ onMounted(async () => {
   await fetchDocType();
   loading.value = false;
 });
-</script> 
+</script>
+
+<style>
+.grid-cols-1 {
+  grid-template-columns: 1fr;
+}
+
+.grid-cols-2 {
+  grid-template-columns: 1fr 1fr;
+}
+</style> 

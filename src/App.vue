@@ -410,7 +410,7 @@ const showSearchResults = ref(false);
 const searchResults = ref([]);
 
 const documentItems = [
-  // { name: 'Documents', path: '/documents', icon: FileTextIcon, description: 'Manage and organize your company documents' },
+  { name: 'DocType', path: '/doctypes', icon: FileTextIcon, description: 'Manage and organize your company documents' },
   { name: 'Forms', path: '/forms', icon: ClipboardIcon, description: 'Create and manage company forms' },
   // { name: 'Policies', path: '/policies', icon: BookIcon, description: 'View and update company policies' },
   { name: 'Records', path: '/records', icon: FileIcon, description: 'Access and manage records' },

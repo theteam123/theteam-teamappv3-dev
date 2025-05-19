@@ -758,3 +758,24 @@ export const checkDocTypePermission = async (docType) => {
     return false;
   }
 };
+
+export const getDocTypeData = async (doctypeName) => {
+  try {
+    const token = await getCurrentToken();
+    const response = await fetch(`${getErpNextApiUrl()}/api/method/frappe.desk.form.load.getdoctype?doctype=${doctypeName}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch DocType data');
+    }
+    
+    return await response.json();
+  } catch (err) {
+    console.error('Error fetching DocType:', err);
+    throw err;
+  }
+};

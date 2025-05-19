@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-2">
+  <div v-if="shouldShowField" class="space-y-2">
     <!-- Section Break -->
     <template v-if="field.fieldtype === 'Section Break'">
       <div class="mt-8 mb-4 border-b border-gray-200 pb-2">
@@ -438,7 +438,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, watch, onMounted, nextTick } from 'vue';
+import { ref, onUnmounted, watch, onMounted, nextTick, computed } from 'vue';
 import { VueTelInput } from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
 import { getFormList } from '../services/erpnext';
@@ -459,6 +459,7 @@ interface FormField {
 const props = defineProps<{
   field: FormField;
   modelValue: any;
+  formData?: Record<string, any>;
 }>();
 
 const emit = defineEmits<{
@@ -474,6 +475,35 @@ const durationWrapperRef = ref<HTMLElement | null>(null);
 const phoneValue = ref(typeof props.modelValue === 'string' ? props.modelValue : '');
 const linkOptions = ref<any[]>([]);
 
+const shouldShowField = computed(() => {
+  if (!props.field.depends_on) return true;
+  
+  const dependsOn = props.field.depends_on;
+  if (!dependsOn.startsWith('eval:doc.')) return true;
+
+  try {
+    const condition = dependsOn.replace('eval:doc.', '');
+    
+    if (!condition.includes('!=') && !condition.includes('==')) {
+      return !!props.formData?.[condition];
+    }
+
+    const [fieldName, operator, value] = condition.split(/(!=|==)/);
+    const fieldValue = props.formData?.[fieldName.trim()];
+
+    if (operator === '!=') {
+      return fieldValue !== value.replace(/['"]/g, '');
+    } else if (operator === '==') {
+      return fieldValue === value.replace(/['"]/g, '');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error evaluating field dependency:', error);
+    return true;
+  }
+});
+
 watch(() => props.modelValue, (val) => {
   durationString.value = typeof val === 'string' ? val : formatDurationString();
   if (typeof val === 'string' && val !== phoneValue.value) {
@@ -484,7 +514,6 @@ watch(() => props.modelValue, (val) => {
 durationString.value = typeof props.modelValue === 'string' ? props.modelValue : '';
 
 function parseDurationString() {
-  // Reset
   durationParts.value = { days: 0, hours: 0, minutes: 0, seconds: 0 };
   const str = durationString.value || '';
   const regex = /(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/;
@@ -526,8 +555,6 @@ const handleFileUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
     const file = input.files[0];
-    // TODO: Implement file upload to ERPNext
-    // For now, just store the file name
     emit('update:modelValue', file.name);
   }
 };
@@ -536,10 +563,7 @@ const handleImageUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
     const file = input.files[0];
-    // Create preview URL
     imagePreview.value = URL.createObjectURL(file);
-    // TODO: Implement image upload to ERPNext
-    // For now, just store the file name
     emit('update:modelValue', file.name);
   }
 };
@@ -552,7 +576,6 @@ const clearImage = () => {
   emit('update:modelValue', '');
 };
 
-// Click outside handler for duration popup
 function handleClickOutside(event: MouseEvent) {
   const wrapper = durationWrapperRef.value;
   if (wrapper && !wrapper.contains(event.target as Node)) {
@@ -560,7 +583,6 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
-// Fetch options for Link field type
 const fetchLinkOptions = async () => {
   if (props.field.fieldtype === 'Link' && props.field.options) {
     try {
