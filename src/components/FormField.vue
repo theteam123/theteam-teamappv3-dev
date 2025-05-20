@@ -415,31 +415,91 @@
       </div>
     </template>
 
-    <!-- Table Input -->
-    <template v-else-if="field.fieldtype === 'Table'">
+    <!-- Multiple Upload Table -->
+    <template v-else-if="field.fieldtype === 'Table' && field.label.toLowerCase().includes('[multiple-upload]')">
       <label class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ field.label.replace('[multiple-upload]', '').trim() }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="mt-1">
-        <div class="border border-gray-300 rounded-md">
-          <div class="px-4 py-3 bg-gray-50 border-b border-gray-300">
-            <div class="flex items-center justify-between">
-              <h3 class="text-sm font-medium text-gray-700">{{ field.options }}</h3>
-              <button
-                type="button"
-                class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-              >
-                Add Row
-              </button>
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
+          <div class="text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+              <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <div class="mt-4 flex text-sm text-gray-600">
+              <label class="relative cursor-pointer rounded-md bg-white font-medium text-green-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:ring-offset-2 hover:text-green-500">
+                <span>Upload files</span>
+                <input 
+                  type="file" 
+                  multiple 
+                  class="sr-only" 
+                  @change="handleMultipleFileUpload"
+                  accept="image/*"
+                />
+              </label>
+              <p class="pl-1">or drag and drop</p>
+            </div>
+            <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+          </div>
+
+          <!-- Preview Grid -->
+          <div v-if="uploadedFiles.length > 0" class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+            <div v-for="(file, index) in uploadedFiles" :key="index" class="relative group">
+              <img :src="file.preview" class="h-24 w-full rounded-lg object-cover" />
+              <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-200 rounded-lg">
+                <button
+                  @click="removeFile(index)"
+                  class="hidden group-hover:block p-1 rounded-full bg-red-500 text-white hover:bg-red-600"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="px-4 py-3">
-            <p class="text-sm text-gray-500">No rows added yet</p>
+
+          <!-- Upload Progress -->
+          <div v-if="uploading" class="mt-4">
+            <div class="flex items-center justify-between text-sm text-gray-600">
+              <span>Uploading files...</span>
+              <span>{{ uploadProgress }}%</span>
+            </div>
+            <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-green-600 h-2 rounded-full" :style="{ width: `${uploadProgress}%` }"></div>
+            </div>
           </div>
         </div>
       </div>
     </template>
+
+  <!-- Table Input -->
+  <template v-else-if="field.fieldtype === 'Table'">
+    <label class="block text-sm font-medium text-gray-700">
+      {{ field.label }}
+      <span v-if="field.reqd" class="text-red-500">*</span>
+    </label>
+    <div class="mt-1">
+      <div class="border border-gray-300 rounded-md">
+        <div class="px-4 py-3 bg-gray-50 border-b border-gray-300">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-medium text-gray-700">{{ field.options }}</h3>
+            <button
+              type="button"
+              class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              Add Row
+            </button>
+          </div>
+        </div>
+        <div class="px-4 py-3">
+          <p class="text-sm text-gray-500">No rows added yet</p>
+        </div>
+      </div>
+    </div>
+  </template>
+
   </div>
 </template>
 
@@ -447,7 +507,7 @@
 import { ref, onUnmounted, watch, onMounted, nextTick, computed } from 'vue';
 import { VueTelInput } from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
-import { getFormList } from '../services/erpnext';
+import { getFormList, uploadFile } from '../services/erpnext';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 
 interface FormField {
@@ -461,6 +521,13 @@ interface FormField {
   max_length?: number;
   max_value?: number;
   precision?: string;
+}
+
+interface UploadedFile {
+  file: File;
+  preview: string;
+  uploaded?: boolean;
+  fileUrl?: string;
 }
 
 const props = defineProps<{
@@ -481,6 +548,9 @@ const durationPopupRef = ref<HTMLElement | null>(null);
 const durationWrapperRef = ref<HTMLElement | null>(null);
 const phoneValue = ref(typeof props.modelValue === 'string' ? props.modelValue : '');
 const linkOptions = ref<any[]>([]);
+const uploading = ref(false);
+const uploadProgress = ref(0);
+const uploadedFiles = ref<UploadedFile[]>([]);
 
 const shouldShowField = computed(() => {
   return evaluateFieldDependency(props.field, props.formData);
@@ -584,6 +654,94 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside);
+});
+
+const handleMultipleFileUpload = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files) {
+    const newFiles = Array.from(input.files).map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      uploaded: false
+    }));
+    uploadedFiles.value = [...uploadedFiles.value, ...newFiles];
+    
+    // Start upload process
+    await uploadFiles();
+  }
+};
+
+const uploadFiles = async () => {
+  if (uploadedFiles.value.length === 0) return;
+
+  uploading.value = true;
+  uploadProgress.value = 0;
+  const totalFiles = uploadedFiles.value.length;
+  let completedFiles = 0;
+
+  try {
+    // Get the parent document name from the form data
+    const parentDocName = props.formData?.name;
+    if (!parentDocName) {
+      throw new Error('Parent document name is required for file upload');
+    }
+
+    // Upload each file
+    for (let i = 0; i < uploadedFiles.value.length; i++) {
+      const file = uploadedFiles.value[i];
+      if (file.uploaded) continue;
+
+      try {
+        const response = await uploadFile(
+          file.file,
+          props.field.options || '', // Child table doctype
+          parentDocName,
+          false // isPrivate
+        );
+
+        // Update the file with upload status
+        uploadedFiles.value[i] = {
+          ...file,
+          uploaded: true,
+          fileUrl: response.message.file_url
+        };
+
+        completedFiles++;
+        uploadProgress.value = Math.round((completedFiles / totalFiles) * 100);
+      } catch (error) {
+        console.error(`Error uploading file ${i + 1}:`, error);
+      }
+    }
+
+    // Emit the updated value with file URLs
+    emit('update:modelValue', uploadedFiles.value
+      .filter(f => f.uploaded && f.fileUrl)
+      .map(f => ({ image: f.fileUrl }))
+    );
+  } catch (error) {
+    console.error('Error in upload process:', error);
+  } finally {
+    uploading.value = false;
+  }
+};
+
+const removeFile = (index: number) => {
+  // Revoke the object URL to prevent memory leaks
+  URL.revokeObjectURL(uploadedFiles.value[index].preview);
+  uploadedFiles.value.splice(index, 1);
+  
+  // Emit the updated value
+  emit('update:modelValue', uploadedFiles.value
+    .filter(f => f.uploaded && f.fileUrl)
+    .map(f => ({ image: f.fileUrl }))
+  );
+};
+
+// Clean up object URLs when component is unmounted
+onUnmounted(() => {
+  uploadedFiles.value.forEach(file => {
+    URL.revokeObjectURL(file.preview);
+  });
 });
 
 defineExpose({ VueTelInput });

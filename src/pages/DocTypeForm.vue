@@ -160,8 +160,32 @@ const handleSubmit = async () => {
   error.value = null;
 
   try {
-    await createForm(route.params.id as string, formData.value);
-    router.push(`/doctypes/${route.params.id}/documents`);
+    // First, submit the parent form without the file data
+    const formDataToSubmit = { ...formData.value };
+    
+    // Find any multiple upload fields and temporarily remove them
+    const multipleUploadFields = docType.value?.fields.filter(
+      field => field.fieldtype === 'Table' && field.label.toLowerCase().includes('[multiple-upload]')
+    ) || [];
+
+    multipleUploadFields.forEach(field => {
+      formDataToSubmit[field.fieldname] = []; // Initialize with empty array
+    });
+
+    // Submit the parent form
+    const response = await createForm(route.params.id as string, formDataToSubmit);
+    
+    // Get the name of the newly created document
+    const docName = response.data.name;
+    
+    // Update formData with the document name
+    formData.value.name = docName;
+
+    // Now that we have the document name, we can proceed with file uploads
+    // The FormField component will handle the actual file uploads
+    // as it now has access to the parent document name
+
+    router.push(`/doctypes/${route.params.id}`);
   } catch (err: any) {
     error.value = err.message;
   } finally {

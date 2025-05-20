@@ -82,10 +82,10 @@ erp.interceptors.response.use(
     if (error.response?.status === 401 || error.response?.status === 403) {
       // Only redirect if not already on auth page
       if (!window.location.pathname.includes('/auth')) {
-        localStorage.removeItem('oauth_token');
-        localStorage.removeItem('oauth_token_expiry');
-        localStorage.removeItem('oauth_refresh_token');      
-        window.location.href = '/auth';
+        // localStorage.removeItem('oauth_token');
+        // localStorage.removeItem('oauth_token_expiry');
+        // localStorage.removeItem('oauth_refresh_token');      
+        // window.location.href = '/auth';
         throw new Error('Authentication failed');
       }
     }
@@ -781,5 +781,65 @@ export const getDocTypeData = async (doctypeName) => {
   } catch (err) {
     console.error('Error fetching DocType:', err);
     throw err;
+  }
+};
+
+export const getChildTableData = async (doctype, name) => {
+  try {
+    const response = await fetch(`${getErpNextApiUrl()}/api/resource/${encodeURIComponent(doctype)}/${name}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${await getCurrentToken()}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch child table data');
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Server did not return JSON');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error in getChildTableData:', error);
+    throw error;
+  }
+};
+
+export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('doctype', doctype);
+    formData.append('docname', docname);
+    formData.append('is_private', isPrivate ? '1' : '0');
+
+    const response = await fetch(`${getErpNextApiUrl()}/api/method/upload_file`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${await getCurrentToken()}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload file');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
   }
 };

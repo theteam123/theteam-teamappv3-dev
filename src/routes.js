@@ -19,9 +19,10 @@ import Records from './pages/Records.vue'
 import Templates from './pages/Templates.vue'
 import Videos from './pages/Videos.vue'
 import DocType from './pages/DocType.vue'
-import DocTypeDocuments from './pages/DocTypeDocuments.vue'
+import DocTypeSubmissions from './pages/DocTypeSubmissions.vue'
 import DocTypeForm from './pages/DocTypeForm.vue'
 import DocTypeDocumentEdit from './pages/DocTypeDocumentEdit.vue'
+import DocTypeImages from './pages/DocTypeImages.vue'
 import { useAuthStore } from './stores/auth'
 
 const routes = [
@@ -117,8 +118,8 @@ const routes = [
   },
   {
     path: '/doctypes/:id',
-    name: 'doctype-documents',
-    component: DocTypeDocuments,
+    name: 'doctype-submissions',
+    component: DocTypeSubmissions,
     meta: { requiresAuth: true }
   },
   {
@@ -131,6 +132,12 @@ const routes = [
     path: '/doctypes/:id/:documentId/edit',
     name: 'doctype-document-edit',
     component: DocTypeDocumentEdit,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/doctypes/:id/:documentId/images',
+    name: 'doctype-images',
+    component: DocTypeImages,
     meta: { requiresAuth: true }
   },
   {

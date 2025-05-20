@@ -168,7 +168,7 @@ const handleSubmit = async () => {
       route.params.documentId as string,
       formData.value
     );
-    router.push(`/doctypes/${route.params.id}/documents`);
+    router.push(`/doctypes/${route.params.id}`);
   } catch (err: any) {
     error.value = err.message || 'Failed to update document';
   } finally {
