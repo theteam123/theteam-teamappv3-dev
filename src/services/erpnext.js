@@ -69,10 +69,8 @@ const createAxiosInstanceWithFallback = () => {
 const erp = createAxiosInstance();
 erp.interceptors.request.use(async (config) => {
   const token = await getCurrentToken();
-  console.log('Request interceptor - Token:', token ? 'Present' : 'Missing');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('Request headers:', config.headers);
   }
   return config;
 });
@@ -199,11 +197,9 @@ export const getFormData = async (doctype, name) => {
     const webFormData = webFormResponse.data.data;
     let doctype_param = doctype;
     if (doctype === 'Web Form') {
-      doctype_param = webFormData.docType;
+      doctype_param = webFormData.doc_type;
     }
     
-    console.log('Web Form Data:', webFormData);
-
     // Get the doctype metadata using the getdoctype endpoint
     const response = await erp.get(`/api/method/frappe.desk.form.load.getdoctype`, {
       params: {

@@ -21,6 +21,7 @@ import Videos from './pages/Videos.vue'
 import DocType from './pages/DocType.vue'
 import DocTypeDocuments from './pages/DocTypeDocuments.vue'
 import DocTypeForm from './pages/DocTypeForm.vue'
+import DocTypeDocumentEdit from './pages/DocTypeDocumentEdit.vue'
 import { useAuthStore } from './stores/auth'
 
 const routes = [
@@ -115,7 +116,7 @@ const routes = [
     }
   },
   {
-    path: '/doctypes/:id/documents',
+    path: '/doctypes/:id',
     name: 'doctype-documents',
     component: DocTypeDocuments,
     meta: { requiresAuth: true }
@@ -124,6 +125,12 @@ const routes = [
     path: '/doctypes/:id/new',
     name: 'doctype-form',
     component: DocTypeForm,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/doctypes/:id/:documentId/edit',
+    name: 'doctype-document-edit',
+    component: DocTypeDocumentEdit,
     meta: { requiresAuth: true }
   },
   {

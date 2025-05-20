@@ -23,20 +23,20 @@
       </div>
       <div class="flex gap-4">
         <button
-          @click="isGridView = true"
+          @click="viewMode = 'grid'"
           :class="[
             'p-2 rounded-lg',
-            isGridView ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+            viewMode === 'grid' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
           ]"
           title="Grid View"
         >
           <GridIcon class="w-5 h-5" />
         </button>
         <button
-          @click="isGridView = false"
+          @click="viewMode = 'list'"
           :class="[
             'p-2 rounded-lg',
-            !isGridView ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+            viewMode === 'list' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
           ]"
           title="List View"
         >
@@ -81,23 +81,16 @@
 
     <!-- Content Area -->
     <div v-else>
-      <!-- DocTypes Grid -->
-      <div v-if="docTypes.length > 0" :class="[
-        isGridView 
-          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-          : 'space-y-4'
-      ]">
+      <!-- Grid View -->
+      <div v-if="docTypes.length > 0 && viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
           v-for="doctype in docTypes"
           :key="doctype.id"
-          :class="[
-            'bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow',
-            !isGridView && 'flex items-center'
-          ]"
+          class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
         >
-          <div :class="[isGridView ? 'p-6' : 'p-4 flex-1 flex items-center']">
-            <div :class="[isGridView ? 'flex justify-between items-start' : 'flex-1 flex items-center gap-4']">
-              <div :class="[isGridView ? 'flex items-start gap-3' : 'flex items-center gap-3']">
+          <div class="p-6">
+            <div class="flex justify-between items-start">
+              <div class="flex items-start gap-3">
                 <div class="p-2 bg-green-50 rounded-lg">
                   <FileIcon class="w-8 h-8 text-green-600" />
                 </div>
@@ -124,7 +117,7 @@
               </div>
             </div>
 
-            <div :class="[isGridView ? 'mt-4' : 'ml-4']">
+            <div class="mt-4">
               <div class="flex flex-wrap gap-2">
                 <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                   {{ doctype.module }}
@@ -132,7 +125,7 @@
               </div>
             </div>
 
-            <div :class="[isGridView ? 'mt-4 text-sm text-gray-500' : 'ml-4 text-sm text-gray-500']">
+            <div class="mt-4 text-sm text-gray-500">
               <div class="flex items-center gap-2">
                 <ClockIcon class="w-4 h-4" />
                 <span>Updated {{ formatDate(doctype.updated_at) }}</span>
@@ -146,10 +139,86 @@
         </div>
       </div>
 
+      <!-- List View -->
+      <div v-else-if="docTypes.length > 0 && viewMode === 'list'" class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Document Type
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Description
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Category
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Updated
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Submissions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="doctype in docTypes" :key="doctype.id" class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <div class="flex justify-end gap-2">
+                  <button
+                    @click="router.push(`/doctypes/${doctype.id}/new`)"
+                    class="text-gray-700 hover:text-gray-600"
+                    title="New Document"
+                  >
+                    <FilePlusIcon class="w-5 h-5" />
+                  </button>
+                  <button
+                    @click="viewDocuments(doctype)"
+                    class="text-gray-700 hover:text-gray-600"
+                    title="View Documents"
+                  >
+                    <FileTextIcon class="w-5 h-5" />
+                  </button>
+                </div>
+              </td>            
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center">
+                    <FileIcon class="h-6 w-6 text-green-600" />
+                  </div>
+                  <div class="ml-4">
+                    <div class="text-sm font-medium text-gray-900">{{ doctype.name }}</div>
+                    <div class="text-sm text-gray-500">{{ doctype.module }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm text-gray-900">{{ doctype.description }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                  {{ doctype.module }}
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ formatDate(doctype.updated_at) }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ doctype.documents_count || 0 }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- Empty State -->
       <div v-else class="text-center py-12">
         <FileIcon class="mx-auto h-12 w-12 text-gray-400" />
         <h3 class="mt-2 text-sm font-medium text-gray-900">No document types</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by creating a new document type.</p>
       </div>
 
       <!-- Pagination Controls -->
@@ -224,6 +293,7 @@ interface DocType {
   name: string;
   description: string;
   category: string;
+  module: string;
   fields: DocTypeField[];
   updated_at: string;
   created_at: string;
@@ -285,6 +355,7 @@ const docTypeData = ref<Omit<DocType, 'updated_at' | 'created_at' | 'documents_c
   name: '',
   description: '',
   category: '',
+  module: '',
   fields: []
 });
 
@@ -379,13 +450,14 @@ const editDocType = (doctype: DocType) => {
     name: doctype.name,
     description: doctype.description || '',
     category: doctype.category || '',
+    module: doctype.module || '',
     fields: doctype.fields || []
   };
   showModal.value = true;
 };
 
 const viewDocuments = (doctype: DocType) => {
-  router.push(`/doctypes/${doctype.id}/documents`);
+  router.push(`/doctypes/${doctype.id}`);
 };
 
 const viewAnalytics = (doctype: DocType) => {
@@ -507,7 +579,7 @@ const goToPage = (page: number) => {
 };
 
 // Change default to list view
-const isGridView = ref(false);
+const viewMode = ref('list');
 
 onMounted(() => {
   // Check authentication before fetching data

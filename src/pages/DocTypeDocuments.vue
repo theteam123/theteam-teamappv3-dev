@@ -60,6 +60,9 @@
               <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                   <tr>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                     <th
                       v-for="field in docType?.fields"
                       :key="field.fieldname"
@@ -86,7 +89,33 @@
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="doc in filteredDocuments" :key="doc.name" class="hover:bg-gray-50">
+                  <tr 
+                    v-for="doc in filteredDocuments" 
+                    :key="doc.name" 
+                    :class="[
+                      canEditDocument(doc) ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default',
+                      doc.owner === authStore.user?.email ? 'bg-green-50' : ''
+                    ]"
+                  >
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div class="flex justify-end gap-2">
+                        <button
+                          v-if="canEditDocument(doc)"
+                          @click="router.push(`/doctypes/${route.params.id}/${doc.name}/edit`)"
+                          class="text-white hover:text-green-600 border border-green-600 hover:bg-white bg-green-600 p-1 rounded"
+                          title="Edit Document"
+                        >
+                          <PencilIcon class="w-5 h-5" />
+                        </button>
+                        <button
+                          @click="router.push(`/doctypes/${route.params.id}/${doc.name}`)"
+                          class="text-white hover:text-green-600 border border-green-600 hover:bg-white bg-green-600 p-1 rounded"
+                          title="View Document"
+                        >
+                          <FileTextIcon class="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
                     <td
                       v-for="field in docType?.fields"
                       :key="field.fieldname"
@@ -166,7 +195,8 @@ import {
   ArrowLeftIcon,
   SearchIcon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  FileTextIcon
 } from 'lucide-vue-next';
 
 interface DocTypeField {
@@ -319,6 +349,13 @@ const sortByColumn = (column: string) => {
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
+
+const canEditDocument = (doc: Document) => {
+  if (authStore.user?.roles?.includes('System Manager')) {
+    return true;
+  }
+  return doc.owner === authStore.user?.email;
+};
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
