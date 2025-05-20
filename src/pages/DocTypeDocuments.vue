@@ -248,6 +248,7 @@ const filteredDocuments = computed(() => {
 // Methods
 const fetchDocType = async () => {
   try {
+    console.log('Fetching DocType:', route.params.id);
     const response = await getFormData('DocType', route.params.id as string);
     console.log('DocType Response:', response);
     console.log('DocType Data:', response.data);

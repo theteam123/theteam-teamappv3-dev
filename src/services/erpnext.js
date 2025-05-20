@@ -84,7 +84,11 @@ erp.interceptors.response.use(
     if (error.response?.status === 401 || error.response?.status === 403) {
       // Only redirect if not already on auth page
       if (!window.location.pathname.includes('/auth')) {
-        // window.location.href = '/auth';
+        localStorage.removeItem('oauth_token');
+        localStorage.removeItem('oauth_token_expiry');
+        localStorage.removeItem('oauth_refresh_token');      
+        window.location.href = '/auth';
+        throw new Error('Authentication failed');
       }
     }
     return Promise.reject(error);
@@ -191,15 +195,19 @@ export const getFormData = async (doctype, name) => {
     console.log('Debug - Input parameters:', { doctype, name });
     
     // First, get the web form details
-    const webFormResponse = await erp.get(`/api/resource/Web Form/${name}`);
+    const webFormResponse = await erp.get(`/api/resource/${doctype}/${name}`);
     const webFormData = webFormResponse.data.data;
+    let doctype_param = doctype;
+    if (doctype === 'Web Form') {
+      doctype_param = webFormData.docType;
+    }
     
     console.log('Web Form Data:', webFormData);
 
     // Get the doctype metadata using the getdoctype endpoint
     const response = await erp.get(`/api/method/frappe.desk.form.load.getdoctype`, {
       params: {
-        doctype: webFormData.doc_type
+        doctype: doctype_param
       }
     });
     console.log('Response from getdoctype:', response.data);
