@@ -79,7 +79,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { getFormData, updateFormSubmission } from '../services/erpnext';
+import { getFormData, updateDoctypeSubmission } from '../services/erpnext';
 import FormField from '../components/FormField.vue';
 import { useFormSections } from '../composables/useFormSections';
 import {
@@ -163,7 +163,7 @@ const handleSubmit = async () => {
   error.value = '';
 
   try {
-    await updateFormSubmission(
+    await updateDoctypeSubmission(
       route.params.id as string,
       route.params.documentId as string,
       formData.value

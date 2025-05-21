@@ -599,6 +599,30 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
   }
 };
 
+export const createDoctypeSubmission = async (doctypeName, data) => {
+  try {
+    const response = await fetch(`${getErpNextApiUrl()}/api/resource/${doctypeName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${await getCurrentToken()}`
+      },
+      body: JSON.stringify({ data })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to submit form');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error submitting doctype form:', error);
+    throw error;
+  }
+};
+
 export const createForm = async (webFormName, data) => {
   // 1. Fetch the Web Form to get the DocType
   const webFormResponse = await fetch(`${getErpNextApiUrl()}/api/resource/Web Form/${webFormName}`, {
@@ -692,6 +716,30 @@ export const getFormSubmissions = async (formId) => {
     };
   } catch (error) {
     console.error('Error fetching form submissions:', error);
+    throw error;
+  }
+};
+
+export const updateDoctypeSubmission = async (doctypeName, recordName, data) => {
+  try {
+    const response = await fetch(`${getErpNextApiUrl()}/api/resource/${doctypeName}/${recordName}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${await getCurrentToken()}`
+      },
+      body: JSON.stringify({ data })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update submission');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating doctype submission:', error);
     throw error;
   }
 };

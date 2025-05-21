@@ -82,7 +82,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { getFormData, createForm, getDocTypeData } from '../services/erpnext';
+import { getFormData, createDoctypeSubmission, getDocTypeData } from '../services/erpnext';
 import { getErpNextApiUrl } from '../utils/api';
 import { getCurrentToken } from '../services/oauth';
 import {
@@ -172,8 +172,8 @@ const handleSubmit = async () => {
       formDataToSubmit[field.fieldname] = []; // Initialize with empty array
     });
 
-    // Submit the parent form
-    const response = await createForm(route.params.id as string, formDataToSubmit);
+    // Submit the doctype form
+    const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
     
     // Get the name of the newly created document
     const docName = response.data.name;

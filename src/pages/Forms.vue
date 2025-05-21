@@ -562,6 +562,7 @@ const fetchForms = async (page = 1) => {
   loading.value = true;
   permissionCheckLoading.value = true;
   error.value = null;
+  console.log('Fetching forms');
   try {
     const response = await getWebforms(page, pageSize.value, debouncedSearch.value, selectedCategory.value);
     forms.value = response.data.map(form => ({
@@ -588,7 +589,7 @@ const fetchForms = async (page = 1) => {
     totalPages.value = response.totalPages;
     currentPage.value = response.page;
   } catch (err) {
-    console.error('Error fetching webforms:', err);
+    console.error('Error fetching webformsssss:', err);
     error.value = err.response?.data?.message || err.message || 'Failed to fetch webforms';
   } finally {
     loading.value = false;

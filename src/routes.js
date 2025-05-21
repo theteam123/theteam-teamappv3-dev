@@ -25,6 +25,7 @@ import DocTypeDocumentEdit from './pages/DocTypeDocumentEdit.vue'
 import DocTypeImages from './pages/DocTypeImages.vue'
 import VoiceAssistant from './views/VoiceAssistant.vue'
 import { useAuthStore } from './stores/auth'
+import { useErrorStore } from './stores/error'
 
 const routes = [
   {
@@ -82,7 +83,10 @@ const routes = [
     path: '/voice-assistant',
     name: 'voice-assistant',
     component: VoiceAssistant,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Dizza', 'Admin', 'Manager']
+    }
   },
   {
     path: '/policies',
@@ -112,7 +116,10 @@ const routes = [
     path: '/doctypes',
     name: 'doctypes',
     component: DocType,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager']
+    }
   },
   {
     path: '/doctypes/taktec-portal',
@@ -120,6 +127,7 @@ const routes = [
     component: DocType,
     meta: { 
       requiresAuth: true,
+      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager'],
       portal: 'taktec'
     }
   },
@@ -127,25 +135,37 @@ const routes = [
     path: '/doctypes/:id',
     name: 'doctype-submissions',
     component: DocTypeSubmissions,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager']
+    }
   },
   {
     path: '/doctypes/:id/new',
     name: 'doctype-form',
     component: DocTypeForm,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager']
+    }
   },
   {
     path: '/doctypes/:id/:documentId/edit',
     name: 'doctype-document-edit',
     component: DocTypeDocumentEdit,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager']
+    }
   },
   {
     path: '/doctypes/:id/:documentId/images',
     name: 'doctype-images',
     component: DocTypeImages,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager']
+    }
   },
   {
     path: '/forms/:id/submissions',
@@ -222,6 +242,9 @@ const router = createRouter({
 
 // Add debug logging
 router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+  const errorStore = useErrorStore()
+
   console.log('Route navigation:', {
     to: to.fullPath,
     from: from.fullPath,
@@ -232,8 +255,6 @@ router.beforeEach(async (to, from, next) => {
       name: r.name
     }))
   })
-
-  const authStore = useAuthStore()
 
   // Always allow OAuth callback
   if (to.path === '/oauth-callback') {
@@ -250,9 +271,26 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth) {
     // Check if user is authenticated
     if (!authStore.isAuthenticated) {
-      // Redirect to auth page if not authenticated
-      next({ name: 'auth' })
-      return
+      const message = 'Please log in to access this page';
+      console.log(message);
+      errorStore.$patch({ message, type: 'error' });
+      next({ name: 'auth' });
+      return;
+    }
+
+    // Check for required roles
+    if (to.meta.requiredRoles) {
+      const hasRequiredRole = to.meta.requiredRoles.some(role => 
+        authStore.user?.roles?.includes(role)
+      );
+      
+      if (!hasRequiredRole) {
+        const message = 'Access denied: You do not have the required permissions to view this page';
+        console.log(message);
+        errorStore.$patch({ message, type: 'error' });
+        next({ name: 'home' });
+        return;
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <ErrorMessage />
     <div v-if="authStore.isAuthenticated" class="flex h-screen">
       <!-- Sidebar -->
       <aside 
@@ -102,7 +103,7 @@
           <!-- Document Management Section -->
           <div class="pt-4">
             <router-link 
-              v-for="item in documentItems" 
+              v-for="item in filteredDocumentItems" 
               :key="item.path"
               :to="item.path"
               class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
@@ -125,6 +126,7 @@
               <span v-if="!isSidebarCollapsed">{{ item.name }}</span>
             </router-link>
           </div>
+          <!-- <pre>{{ authStore.user.roles }}</pre> -->
 
           <!-- Admin Settings -->
           <div v-if="authStore.isSystemManager" class="border-gray-200">
@@ -342,7 +344,10 @@
           </button>
 
           <!-- Center Logo -->
-          <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          <div 
+            v-if="route.path !== '/'" 
+            class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          >
             <img 
               src="/TeamLogo.png" 
               alt="Team App Logo" 
@@ -384,6 +389,7 @@ import { useAuthStore } from './stores/auth';
 import { getErpNextApiUrl } from './utils/api';
 import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
+import ErrorMessage from './components/ErrorMessage.vue';
 import { 
   HomeIcon, 
   FileTextIcon, 
@@ -410,31 +416,57 @@ import {
   MicIcon
 } from 'lucide-vue-next';
 
+interface SearchResult {
+  id: string;
+  type: string;
+  name: string;
+}
+
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
 const isSidebarCollapsed = ref(true);
-
-const toggleSidebar = () => {
-  isSidebarCollapsed.value = !isSidebarCollapsed.value;
-};
-
+const loading = ref(false);
+const error = ref('');
 const searchQuery = ref('');
 const showSearchResults = ref(false);
-const searchResults = ref([]);
+const searchResults = ref<SearchResult[]>([]);
+const showUserModal = ref(false);
+const isEditing = ref(false);
+const isSaving = ref(false);
+const userData = ref(null);
+const sidebarRef = ref<HTMLElement | null>(null);
 
 const documentItems = [
-  { name: 'DocType', path: '/doctypes', icon: FileTextIcon, description: 'Manage and organize your company documents' },
-  { name: 'Forms', path: '/forms', icon: ClipboardIcon, description: 'Create and manage company forms' },
-  { name: 'Voice Assistant', path: '/voice-assistant', icon: MicIcon, description: 'AI Voice Assistant' },
-  { name: 'Records', path: '/records', icon: FileIcon, description: 'Access and manage records' },
-  // { name: 'Templates', path: '/templates', icon: FileBoxIcon, description: 'Manage document templates' },
-  // { name: 'Videos', path: '/videos', icon: VideoIcon, description: 'Access training and company videos' },
+  { 
+    name: 'DocType',
+    path: '/doctypes',
+    icon: FileTextIcon,
+    description: 'Manage and organize your company documents',
+    requiredRoles: ['Taktec User', 'Taktec Admin','System Manager'] 
+  },
+  // { name: 'Forms', path: '/forms', icon: ClipboardIcon, description: 'Create and manage company forms', requiredRoles: ['Taktec User', 'Taktec Admin','System Manager'] },
+  { 
+    name: 'Voice Assistant', 
+    path: '/voice-assistant', 
+    icon: MicIcon, 
+    description: 'AI Voice Assistant', 
+    requiredRoles: ['Dizza'] 
+  },
 ];
 
+const filteredDocumentItems = computed(() => {
+  return documentItems.filter(item => {
+    // If no requiredRoles is specified, show the item
+    if (!item.requiredRoles) return true;
+    
+    // Check if user has any of the required roles
+    return item.requiredRoles.some(role => authStore.user?.roles?.includes(role));
+  });
+});
 
-const allMenuItems = [...documentItems];
+const allMenuItems = computed(() => [...filteredDocumentItems.value]);
 
 const currentPageTitle = computed(() => {
   if (route.path === '/') return 'Welcome';
@@ -453,7 +485,7 @@ const currentPageDescription = computed(() => {
 const filteredMenuItems = computed(() => {
   if (!searchQuery.value) return [];
   const query = searchQuery.value.toLowerCase();
-  return allMenuItems.filter(item => 
+  return allMenuItems.value.filter(item => 
     item.name.toLowerCase().includes(query)
   );
 });
@@ -513,10 +545,6 @@ const handleSupportClick = () => {
 };
 
 // Add new refs and methods
-const showUserModal = ref(false);
-const isEditing = ref(false);
-const isSaving = ref(false);
-const userData = ref(null);
 const editForm = ref({
   language: '',
   first_name: '',
@@ -558,8 +586,6 @@ const handleSaveProfile = async () => {
   }
 };
 
-const sidebarRef = ref(null);
-
 // Handle click outside
 const handleClickOutside = (event: MouseEvent) => {
   if (
@@ -580,6 +606,10 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 });
+
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value;
+};
 </script>
 
 <style>
