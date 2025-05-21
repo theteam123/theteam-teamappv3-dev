@@ -3,11 +3,12 @@
     <div v-if="authStore.isAuthenticated" class="flex h-screen">
       <!-- Sidebar -->
       <aside 
-        class="bg-white border-r border-gray-200 flex flex-col transition-all duration-300"
-        :class="isSidebarCollapsed ? 'w-0 -translate-x-full' : 'w-64'"
+        ref="sidebarRef"
+        class="fixed top-0 left-0 h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shadow-lg z-50"
+        :class="isSidebarCollapsed ? '-translate-x-full' : 'w-64'"
       >
         <!-- Logo -->
-        <div class="flex items-center h-16 px-4" :class="{ 'border-b border-gray-200': !isSidebarCollapsed }">
+        <div class="flex items-center justify-between h-16 px-4" :class="{ 'border-b border-gray-200': !isSidebarCollapsed }">
           <div class="flex items-center">
             <img 
               v-if="!isSidebarCollapsed" 
@@ -16,7 +17,13 @@
               class="h-8" 
             />
           </div>
-
+          <button 
+            v-if="!isSidebarCollapsed"
+            @click="toggleSidebar" 
+            class="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ChevronLeftIcon class="w-5 h-5 text-gray-500" />
+          </button>
         </div>
         
         <!-- Search Bar -->
@@ -325,10 +332,10 @@
 
       <div class="flex-1 flex flex-col">
         <!-- Toggle Button -->        
-        <div class="flex items-center p-4">
+        <div class="fixed top-4 left-4 z-40">
           <button 
             @click="toggleSidebar"
-            class="p-2 rounded-lg hover:bg-gray-100 bg-gray-50 border border-gray-200 shadow-sm z-10"
+            class="p-2 rounded-lg hover:bg-gray-100 bg-white border border-gray-200 shadow-sm"
           >
             <MenuIcon class="w-5 h-5 text-gray-600" />
           </button>
@@ -363,7 +370,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { getErpNextApiUrl } from './utils/api';
@@ -541,6 +548,29 @@ const handleSaveProfile = async () => {
     isSaving.value = false;
   }
 };
+
+const sidebarRef = ref(null);
+
+// Handle click outside
+const handleClickOutside = (event: MouseEvent) => {
+  if (
+    !isSidebarCollapsed.value && 
+    sidebarRef.value && 
+    !sidebarRef.value.contains(event.target as Node) &&
+    !(event.target as Element).closest('button')
+  ) {
+    isSidebarCollapsed.value = true;
+  }
+};
+
+// Add and remove event listeners
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <style>
