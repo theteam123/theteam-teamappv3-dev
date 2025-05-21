@@ -23,6 +23,7 @@ import DocTypeSubmissions from './pages/DocTypeSubmissions.vue'
 import DocTypeForm from './pages/DocTypeForm.vue'
 import DocTypeDocumentEdit from './pages/DocTypeDocumentEdit.vue'
 import DocTypeImages from './pages/DocTypeImages.vue'
+import VoiceAssistant from './views/VoiceAssistant.vue'
 import { useAuthStore } from './stores/auth'
 
 const routes = [
@@ -75,6 +76,12 @@ const routes = [
     path: '/forms',
     name: 'forms',
     component: Forms,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/voice-assistant',
+    name: 'voice-assistant',
+    component: VoiceAssistant,
     meta: { requiresAuth: true }
   },
   {

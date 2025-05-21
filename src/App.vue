@@ -331,29 +331,37 @@
       </div>
 
       <div class="flex-1 flex flex-col">
-        <!-- Toggle Button -->        
-        <div class="fixed top-4 left-4 z-40">
+        <!-- Top Navigation Bar -->
+        <div class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 fixed top-0 left-0 right-0 z-40">
+          <!-- Toggle Button -->
           <button 
             @click="toggleSidebar"
-            class="p-2 rounded-lg hover:bg-gray-100 bg-white border border-gray-200 shadow-sm"
+            class="p-2 rounded-lg hover:bg-gray-100 border border-gray-200"
           >
             <MenuIcon class="w-5 h-5 text-gray-600" />
           </button>
-        </div>
 
-        <!-- Support Button -->
-        <div class="fixed top-4 right-4 z-50">
+          <!-- Center Logo -->
+          <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <img 
+              src="/TeamLogo.png" 
+              alt="Team App Logo" 
+              class="h-8" 
+            />
+          </div>
+
+          <!-- Support Button -->
           <button
             @click="handleSupportClick"
-            class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg shadow-lg hover:bg-green-700 transition-colors"
+            class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 transition-colors"
           >
             <HelpCircleIcon class="w-5 h-5" />
             <span class="hidden sm:inline">Support</span>
           </button>
         </div>
 
-        <!-- Main Content -->
-        <main class="flex-1 overflow-auto">
+        <!-- Main Content with adjusted padding for fixed header -->
+        <main class="flex-1 overflow-auto pt-16">
           <router-view></router-view>
         </main>
 
@@ -398,7 +406,8 @@ import {
   ChevronRightIcon,
   HelpCircleIcon,
   XIcon,
-  LoaderIcon
+  LoaderIcon,
+  MicIcon
 } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -418,7 +427,7 @@ const searchResults = ref([]);
 const documentItems = [
   { name: 'DocType', path: '/doctypes', icon: FileTextIcon, description: 'Manage and organize your company documents' },
   { name: 'Forms', path: '/forms', icon: ClipboardIcon, description: 'Create and manage company forms' },
-  // { name: 'Policies', path: '/policies', icon: BookIcon, description: 'View and update company policies' },
+  { name: 'Voice Assistant', path: '/voice-assistant', icon: MicIcon, description: 'AI Voice Assistant' },
   { name: 'Records', path: '/records', icon: FileIcon, description: 'Access and manage records' },
   // { name: 'Templates', path: '/templates', icon: FileBoxIcon, description: 'Manage document templates' },
   // { name: 'Videos', path: '/videos', icon: VideoIcon, description: 'Access training and company videos' },
