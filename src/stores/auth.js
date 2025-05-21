@@ -11,19 +11,58 @@ export const useAuthStore = defineStore('auth', {
       loading: false,
       error: null,
       isLoggedIn: false,
-      isSystemManager: false
+      isSystemManager: false,
+      isInitialized: false
     };
 
-    return persistedState ? JSON.parse(persistedState) : initialState;
+    return persistedState ? { ...JSON.parse(persistedState), isInitialized: false } : initialState;
   },
 
   getters: {
     isAuthenticated: (state) => {
-      return state.isLoggedIn;
+      return state.isLoggedIn && state.isInitialized;
     }
   },
 
   actions: {
+    async initialize() {
+      if (this.isInitialized) return;
+      
+      try {
+        const token = await getCurrentToken();
+        if (!token) {
+          this.resetState();
+          return;
+        }
+
+        // Validate token by getting user info
+        const apiUrl = getErpNextApiUrl();
+        const response = await fetch(`${apiUrl}/api/method/frappe.auth.get_logged_user`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Invalid token');
+        }
+
+        const userData = await response.json();
+        
+        // If we have a valid token and user data, restore the session
+        if (userData.message) {
+          await this.setToken(token);
+        } else {
+          throw new Error('Invalid user data');
+        }
+      } catch (error) {
+        console.error('Failed to initialize auth state:', error);
+        this.resetState();
+      } finally {
+        this.isInitialized = true;
+      }
+    },
+
     async signIn() {
       this.loading = true;
       this.error = null;
@@ -199,7 +238,11 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       this.isLoggedIn = false;
       this.isSystemManager = false;
+      this.isInitialized = true;
       localStorage.removeItem('authState');
+      localStorage.removeItem('oauth_token');
+      localStorage.removeItem('oauth_token_expiry');
+      localStorage.removeItem('oauth_refresh_token');
     },
 
     clearError() {

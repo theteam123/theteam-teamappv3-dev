@@ -214,7 +214,7 @@ const router = createRouter({
 })
 
 // Add debug logging
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   console.log('Route navigation:', {
     to: to.fullPath,
     from: from.fullPath,
@@ -232,6 +232,11 @@ router.beforeEach((to, from, next) => {
   if (to.path === '/oauth-callback') {
     next();
     return;
+  }
+
+  // Initialize auth state if not already initialized
+  if (!authStore.isInitialized) {
+    await authStore.initialize();
   }
 
   // Check if the route requires authentication

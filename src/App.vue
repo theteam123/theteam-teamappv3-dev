@@ -14,7 +14,6 @@
               src="/TeamLogo.png" 
               alt="Team App Logo" 
               class="h-8" 
-              @error="handleImageError" 
             />
           </div>
 
@@ -399,7 +398,7 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
-const isSidebarCollapsed = ref(false);
+const isSidebarCollapsed = ref(true);
 
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value;
@@ -484,20 +483,6 @@ const handleSignOut = async () => {
     router.push('/login');
   } catch (error) {
     console.error('Error signing out:', error);
-  }
-};
-
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement;
-  console.error('Failed to load logo:', img.src);
-  // Fallback to text if image fails to load
-  img.style.display = 'none';
-  const container = img.parentElement;
-  if (container) {
-    const fallback = document.createElement('span');
-    fallback.textContent = 'TheTeam';
-    fallback.className = 'text-xl font-semibold text-gray-900';
-    container.appendChild(fallback);
   }
 };
 
