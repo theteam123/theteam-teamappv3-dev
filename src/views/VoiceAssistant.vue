@@ -3,8 +3,8 @@
     <div class="max-w-4xl mx-auto">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Voice Assistant</h1>
-        <p class="mt-2 text-gray-600">Your AI-powered voice assistant to help you with tasks and queries.</p>
+        <h1 class="text-3xl font-bold text-gray-900 text-center">Voice Assistant</h1>
+        <p class="mt-2 text-gray-600 text-center">Your AI-powered voice assistant to help you with tasks and queries.</p>
       </div>
 
       <!-- Main Content -->
