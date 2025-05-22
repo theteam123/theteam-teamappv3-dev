@@ -52,6 +52,7 @@
                 :field="field"
                 v-model="formData[field.fieldname]"
                 :formData="formData"
+                :parentDocName="route.params.id as string"
               />
             </div>
           </div>
@@ -160,31 +161,21 @@ const handleSubmit = async () => {
   error.value = null;
 
   try {
-    // First, submit the parent form without the file data
+    // Create a copy of the form data for submission
     const formDataToSubmit = { ...formData.value };
     
-    // Find any multiple upload fields and temporarily remove them
+    // Find any multiple upload fields
     const multipleUploadFields = docType.value?.fields.filter(
       field => field.fieldtype === 'Table' && field.label.toLowerCase().includes('[multiple-upload]')
     ) || [];
 
-    multipleUploadFields.forEach(field => {
-      formDataToSubmit[field.fieldname] = []; // Initialize with empty array
-    });
+    // The file URLs are already in the correct format in formData
+    // No need to modify them as FormField component has formatted them correctly
+    // They will be submitted as part of the child table rows
 
-    // Submit the doctype form
+    // Submit the doctype form with all data including file URLs
     const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
     
-    // Get the name of the newly created document
-    const docName = response.data.name;
-    
-    // Update formData with the document name
-    formData.value.name = docName;
-
-    // Now that we have the document name, we can proceed with file uploads
-    // The FormField component will handle the actual file uploads
-    // as it now has access to the parent document name
-
     router.push(`/doctypes/${route.params.id}`);
   } catch (err: any) {
     error.value = err.message;

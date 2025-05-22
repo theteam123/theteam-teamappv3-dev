@@ -873,6 +873,8 @@ export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
     formData.append('docname', docname);
     formData.append('is_private', isPrivate ? '1' : '0');
 
+    console.log(formData);
+
     const response = await fetch(`${getErpNextApiUrl()}/api/method/upload_file`, {
       method: 'POST',
       headers: {

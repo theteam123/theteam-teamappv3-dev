@@ -534,6 +534,7 @@ const props = defineProps<{
   field: FormField;
   modelValue: any;
   formData?: Record<string, any>;
+  parentDocName?: string;
 }>();
 
 const emit = defineEmits<{
@@ -680,26 +681,21 @@ const uploadFiles = async () => {
   let completedFiles = 0;
 
   try {
-    // Get the parent document name from the form data
-    const parentDocName = props.formData?.name;
-    if (!parentDocName) {
-      throw new Error('Parent document name is required for file upload');
-    }
-
-    // Upload each file
+    // Upload each file as temporary (unattached)
     for (let i = 0; i < uploadedFiles.value.length; i++) {
       const file = uploadedFiles.value[i];
       if (file.uploaded) continue;
 
       try {
+        // Upload without doctype and docname for temporary storage
         const response = await uploadFile(
           file.file,
-          props.field.options || '', // Child table doctype
-          parentDocName,
+          '', // No doctype for temporary upload
+          '', // No docname for temporary upload
           false // isPrivate
         );
 
-        // Update the file with upload status
+        // Update the file with upload status and URL
         uploadedFiles.value[i] = {
           ...file,
           uploaded: true,
@@ -713,7 +709,7 @@ const uploadFiles = async () => {
       }
     }
 
-    // Emit the updated value with file URLs
+    // Emit the updated value with just the file URLs for the form submission
     emit('update:modelValue', uploadedFiles.value
       .filter(f => f.uploaded && f.fileUrl)
       .map(f => ({ image: f.fileUrl }))
