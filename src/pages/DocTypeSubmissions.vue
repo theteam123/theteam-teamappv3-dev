@@ -127,8 +127,8 @@
                         {{ field.label }}
                       </div>
                       
-                      <template v-if="field.fieldtype === 'Table' && field.fieldname === 'multiple_images'">
-                        <button
+                      <template v-if="field.fieldtype === 'Table' && field.label.includes('[multiple-upload]')">
+                        <button 
                           @click="handleImageClick(doc)"
                           class="text-gray-500 hover:text-gray-700"
                           title="View Images"
