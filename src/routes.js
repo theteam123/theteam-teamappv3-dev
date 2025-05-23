@@ -168,6 +168,15 @@ const routes = [
     }
   },
   {
+    path: '/doctypes/:id/:documentId/image/:fieldname',
+    name: 'doctype-single-image',
+    component: () => import('./pages/DocTypeSingleImage.vue'),
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager']
+    }
+  },
+  {
     path: '/forms/:id/submissions',
     name: 'form-submissions',
     component: () => import('./pages/FormSubmissions.vue'),

@@ -546,6 +546,7 @@ import { VueTelInput } from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
 import { getFormList, uploadFile } from '../services/erpnext';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
+import { useErrorStore } from '../stores/error';
 
 interface FormField {
   fieldname: string;
@@ -591,6 +592,10 @@ const uploading = ref(false);
 const uploadProgress = ref(0);
 const uploadedFiles = ref<UploadedFile[]>([]);
 
+const errorStore = useErrorStore();
+
+const mediaQueryMatches = ref(false);
+
 const shouldShowField = computed(() => {
   return evaluateFieldDependency(props.field, props.formData);
 });
@@ -599,6 +604,15 @@ const formattedLabel = computed(() => {
   if (!props.field.label) return '';
   // Remove any text within square brackets
   return props.field.label.replace(/\[.*?\]/g, '').trim();
+});
+
+const isMobile = computed(() => {
+  if (typeof window === 'undefined') return false;
+  return mediaQueryMatches.value;
+});
+
+const shouldUseCameraInput = computed(() => {
+  return isMobile.value && props.field.label?.includes('[camera]');
 });
 
 watch(() => props.modelValue, (val) => {
@@ -667,6 +681,9 @@ const handleImageUpload = async (event: Event) => {
     uploadProgress.value = 0;
     
     try {
+      // Set progress to 10% to indicate upload is starting
+      uploadProgress.value = 10;
+      
       const response = await uploadFile(
         file,
         props.field.parent || '', // doctype
@@ -674,13 +691,25 @@ const handleImageUpload = async (event: Event) => {
         false // isPrivate
       );
       
+      // Set progress to 90% to indicate file is uploaded and processing
+      uploadProgress.value = 90;
+      
       // Update the model value with the file URL
       emit('update:modelValue', response.message.file_url);
+      
+      // Set progress to 100% when complete
+      uploadProgress.value = 100;
+      
+      // Reset progress after a short delay
+      setTimeout(() => {
+        uploading.value = false;
+        uploadProgress.value = 0;
+      }, 1000);
     } catch (error) {
       console.error('Error uploading file:', error);
-    } finally {
+      errorStore.setError(error.message || 'Failed to upload file');
       uploading.value = false;
-      uploadProgress.value = 100;
+      uploadProgress.value = 0;
     }
   }
 };
@@ -716,6 +745,19 @@ const fetchLinkOptions = async () => {
 onMounted(() => {
   fetchLinkOptions();
   document.addEventListener('mousedown', handleClickOutside);
+
+  const mediaQuery = window.matchMedia('(max-width: 768px)');
+  mediaQueryMatches.value = mediaQuery.matches;
+  
+  const handleResize = (e: MediaQueryListEvent) => {
+    mediaQueryMatches.value = e.matches;
+  };
+  
+  mediaQuery.addEventListener('change', handleResize);
+  
+  onUnmounted(() => {
+    mediaQuery.removeEventListener('change', handleResize);
+  });
 });
 
 onUnmounted(() => {
@@ -803,16 +845,6 @@ onUnmounted(() => {
   uploadedFiles.value.forEach(file => {
     URL.revokeObjectURL(file.preview);
   });
-});
-
-// Add these computed properties after the other computed properties
-const isMobile = computed(() => {
-  if (typeof window === 'undefined') return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-});
-
-const shouldUseCameraInput = computed(() => {
-  return isMobile.value && props.field.label?.includes('[camera]');
 });
 
 // Add the camera input ref and openCamera method in the script section

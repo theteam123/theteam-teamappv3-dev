@@ -123,10 +123,6 @@
                       class="px-6 py-4 text-sm text-gray-900"
                       :class="{'whitespace-nowrap': !field.fieldtype.includes('Text')}"
                     >
-                      <div class="sm:hidden font-medium text-gray-500 mb-1">
-                        {{ field.label }}
-                      </div>
-                      
                       <template v-if="field.fieldtype === 'Table' && field.label.includes('[multiple-upload]')">
                         <button 
                           @click="handleImageClick(doc, field.fieldname)"
@@ -222,7 +218,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { getFormList, getFormData } from '../services/erpnext';
@@ -281,6 +277,14 @@ const totalPages = ref(0);
 const showImageModal = ref(false);
 const selectedDocument = ref<Document | null>(null);
 const selectedFieldname = ref<string>('');
+
+// Add this with other refs
+const mediaQueryMatches = ref(false);
+
+// Add this computed property
+const isMobile = computed(() => {
+  return mediaQueryMatches.value;
+});
 
 // Computed
 const filteredDocuments = computed(() => {
@@ -406,8 +410,7 @@ const canEditDocument = (doc: Document) => {
 };
 
 const handleImageClick = (doc: Document, fieldname: string) => {
-  // Check if we're on mobile (screen width less than 768px)
-  if (window.innerWidth < 768) {
+  if (isMobile.value) {
     router.push(`/doctypes/${route.params.id}/${doc.name}/images`);
   } else {
     selectedDocument.value = doc;
@@ -417,9 +420,14 @@ const handleImageClick = (doc: Document, fieldname: string) => {
 };
 
 const handleSingleImageClick = (doc: Document, fieldname: string) => {
-  selectedDocument.value = doc;
-  selectedFieldname.value = fieldname;
-  showImageModal.value = true;
+  if (isMobile.value) {
+    // Route to the single image view page
+    router.push(`/doctypes/${route.params.id}/${doc.name}/image/${fieldname}`);
+  } else {
+    selectedDocument.value = doc;
+    selectedFieldname.value = fieldname;
+    showImageModal.value = true;
+  }
 };
 
 onMounted(async () => {
@@ -427,6 +435,19 @@ onMounted(async () => {
     router.push('/auth');
     return;
   }
+
+  const mediaQuery = window.matchMedia('(max-width: 768px)');
+  mediaQueryMatches.value = mediaQuery.matches;
+  
+  const handleResize = (e: MediaQueryListEvent) => {
+    mediaQueryMatches.value = e.matches;
+  };
+  
+  mediaQuery.addEventListener('change', handleResize);
+  
+  onUnmounted(() => {
+    mediaQuery.removeEventListener('change', handleResize);
+  });
   
   await fetchDocType();
   await fetchDocuments();

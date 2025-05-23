@@ -26,7 +26,7 @@
     </div>
 
     <!-- Form -->
-    <form v-else @submit.prevent="handleSubmit" class="space-y-6 bg-white rounded-lg p-6">
+    <form v-else @submit.prevent="handleSubmit" class="space-y-6 bg-white rounded-lg sm:p-6">
       <div class="bg-white shadow rounded-lg p-6">
         <div class="space-y-8">
           <div 

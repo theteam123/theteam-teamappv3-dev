@@ -190,7 +190,7 @@ export const getFormData = async (doctype, name) => {
     //   return cachedData;
     // }
 
-    console.log('Debug - Input parameters:', { doctype, name });
+    // console.log('Debug - Input parameters:', { doctype, name });
     
     // First, get the web form details
     const webFormResponse = await erp.get(`/api/resource/${doctype}/${name}`);
@@ -206,7 +206,7 @@ export const getFormData = async (doctype, name) => {
         doctype: doctype_param
       }
     });
-    console.log('Response from getdoctype:', response.data);
+    // console.log('Response from getdoctype:', response.data);
     setCachedMetadata(cacheKey, response.data);
     return {
       data: {
