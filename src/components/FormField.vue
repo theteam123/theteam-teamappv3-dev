@@ -704,12 +704,78 @@ const handleFileUpload = async (event: Event) => {
   }
 };
 
+const MAX_WIDTH = 1920;
+const MAX_HEIGHT = 1080;
+const JPEG_QUALITY = 0.8;
+
+const optimizeImage = (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions while maintaining aspect ratio
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > MAX_WIDTH) {
+        height = (height * MAX_WIDTH) / width;
+        width = MAX_WIDTH;
+      }
+      
+      if (height > MAX_HEIGHT) {
+        width = (width * MAX_HEIGHT) / height;
+        height = MAX_HEIGHT;
+      }
+
+      // Create canvas for resizing
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+
+      // Draw resized image
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to blob with compression
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          // Create new file with same name but optimized content
+          const optimizedFile = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          resolve(optimizedFile);
+        },
+        'image/jpeg',
+        JPEG_QUALITY
+      );
+    };
+
+    img.onerror = () => resolve(file);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+};
+
 const handleImageUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
     const file = input.files[0];
     
-    // Create preview from original file
+    // Show original preview immediately
     imagePreview.value = URL.createObjectURL(file);
     
     // Start upload process
@@ -720,12 +786,15 @@ const handleImageUpload = async (event: Event) => {
       // Set progress to 10% to indicate upload is starting
       uploadProgress.value = 10;
       
-      // Add watermark if field has [camera] tag
-      const fileToUpload = props.field.label?.includes('[camera]') ? 
-        await addWatermark(file) : file;
-      
-      // Set progress to 30% after watermark is added
+      // Optimize the image first
+      const optimizedFile = await optimizeImage(file);
       uploadProgress.value = 30;
+      
+      // Add watermark if needed
+      const fileToUpload = props.field.label?.includes('[camera]') ? 
+        await addWatermark(optimizedFile) : optimizedFile;
+      
+      uploadProgress.value = 50;
       
       const response = await uploadFile(
         fileToUpload,
@@ -734,16 +803,13 @@ const handleImageUpload = async (event: Event) => {
         false // isPrivate
       );
       
-      // Set progress to 90% to indicate file is uploaded and processing
       uploadProgress.value = 90;
       
       // Update the model value with the file URL
       emit('update:modelValue', response.message.file_url);
       
-      // Set progress to 100% when complete
       uploadProgress.value = 100;
       
-      // Reset progress after a short delay
       setTimeout(() => {
         uploading.value = false;
         uploadProgress.value = 0;
