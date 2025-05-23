@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { LoaderIcon, ImageIcon } from 'lucide-vue-next';
 import { getFormData, getChildTableData } from '../services/erpnext';
@@ -97,6 +97,7 @@ const props = defineProps<{
   isOpen: boolean;
   docTypeId: string;
   documentId: string;
+  fieldname: string;
 }>();
 
 const emit = defineEmits<{
@@ -116,23 +117,11 @@ const fetchImages = async () => {
   error.value = null;
   
   try {
-    // Fetch DocType metadata
-    const docTypeResponse = await getFormData('DocType', props.docTypeId);
-    
-    // Find the multiple_images field to get its options (child table name)
-    const multipleImagesField = docTypeResponse.data.fields.find(
-      (field: any) => field.fieldname === 'multiple_images' && field.fieldtype === 'Table'
-    );
-
-    if (!multipleImagesField?.options) {
-      throw new Error('Multiple Images table configuration not found');
-    }
-
     // Fetch the parent document with its child table data
     const response = await getChildTableData(props.docTypeId, props.documentId);
     
-    // Extract the images from the child table and construct proper URLs
-    images.value = response.data.multiple_images.map((item: any) => ({
+    // Extract the images from the child table using the provided fieldname
+    images.value = response.data[props.fieldname].map((item: any) => ({
       name: item.name,
       image: `${getErpNextApiUrl().replace(/\/$/, '')}${item.image}`,
       description: item.description
@@ -145,9 +134,13 @@ const fetchImages = async () => {
   }
 };
 
-onMounted(() => {
-  if (props.isOpen) {
-    fetchImages();
+// Watch for changes in documentId or isOpen
+watch(
+  [() => props.documentId, () => props.isOpen],
+  ([newDocId, newIsOpen]) => {
+    if (newIsOpen) {
+      fetchImages();
+    }
   }
-});
+);
 </script> 

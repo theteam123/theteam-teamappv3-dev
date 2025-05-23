@@ -129,12 +129,14 @@
                       
                       <template v-if="field.fieldtype === 'Table' && field.label.includes('[multiple-upload]')">
                         <button 
-                          @click="handleImageClick(doc)"
+                          @click="handleImageClick(doc, field.fieldname)"
                           class="text-gray-500 hover:text-gray-700"
                           title="View Images"
+                          v-if="doc[field.fieldname]?.length"
                         >
                           <ImageIcon class="w-5 h-5" />
                         </button>
+                        <span v-else class="text-gray-400 text-sm">No images added</span>
                       </template>
                       <template v-else>
                         {{ doc[field.fieldname] }}
@@ -198,6 +200,7 @@
       :is-open="showImageModal"
       :doc-type-id="route.params.id as string"
       :document-id="selectedDocument.name"
+      :fieldname="selectedFieldname"
       @close="showImageModal = false"
     />
   </div>
@@ -262,6 +265,7 @@ const totalPages = ref(0);
 
 const showImageModal = ref(false);
 const selectedDocument = ref<Document | null>(null);
+const selectedFieldname = ref<string>('');
 
 // Computed
 const filteredDocuments = computed(() => {
@@ -386,12 +390,13 @@ const canEditDocument = (doc: Document) => {
   return doc.owner === authStore.user?.email;
 };
 
-const handleImageClick = (doc: Document) => {
+const handleImageClick = (doc: Document, fieldname: string) => {
   // Check if we're on mobile (screen width less than 768px)
   if (window.innerWidth < 768) {
     router.push(`/doctypes/${route.params.id}/${doc.name}/images`);
   } else {
     selectedDocument.value = doc;
+    selectedFieldname.value = fieldname;
     showImageModal.value = true;
   }
 };
