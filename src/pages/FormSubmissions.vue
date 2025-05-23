@@ -72,7 +72,6 @@
           <SearchIcon class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
         </div>
       </div>
-      <!-- <pre>{{ form }}</pre> -->
 
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">

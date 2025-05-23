@@ -126,7 +126,6 @@
               <span v-if="!isSidebarCollapsed">{{ item.name }}</span>
             </router-link>
           </div>
-          <!-- <pre>{{ authStore.user.roles }}</pre> -->
 
           <!-- Admin Settings -->
           <div v-if="authStore.isSystemManager" class="border-gray-200">
