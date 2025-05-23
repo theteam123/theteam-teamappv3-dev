@@ -19,14 +19,42 @@
         {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
-      <input
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-        type="text"
-        :required="field.reqd === 1"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-      />
+      <div class="relative mt-1">
+        <input
+          :id="field.fieldname"
+          :value="modelValue"
+          @input="!isGeolocationField && $emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          type="text"
+          :required="field.reqd === 1"
+          :disabled="isGettingLocation || isGeolocationField"
+          :readonly="isGeolocationField"
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{ 
+            'pr-10': isGeolocationField,
+            'bg-gray-50': isGeolocationField,
+            'cursor-not-allowed': isGeolocationField
+          }"
+          :placeholder="isGeolocationField ? 'Click the location icon to get current location' : ''"
+        />
+        <div v-if="isGeolocationField" class="absolute inset-y-0 right-0 flex items-center pr-3">
+          <button
+            v-if="!isGettingLocation"
+            @click="getCurrentLocation"
+            type="button"
+            class="text-gray-400 hover:text-gray-500"
+            title="Get current location"
+          >
+            <MapPinIcon class="h-5 w-5" />
+          </button>
+          <LoaderIcon v-else class="h-5 w-5 animate-spin text-gray-400" />
+        </div>
+      </div>
+      <p v-if="locationError" class="mt-1 text-sm text-red-600">{{ locationError }}</p>
+      <p v-else-if="isGeolocationField" class="mt-1 text-xs text-gray-500">
+        {{ geolocationFieldType === 'lat' ? 'Latitude' : 
+           geolocationFieldType === 'lng' ? 'Longitude' : 
+           'Address' }} will be automatically populated. Click the location icon to update the current location.
+      </p>
     </template>
 
     <!-- Number Input -->
@@ -547,6 +575,7 @@ import 'vue-tel-input/dist/vue-tel-input.css';
 import { getFormList, uploadFile } from '../services/erpnext';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 import { useErrorStore } from '../stores/error';
+import { MapPinIcon, LoaderIcon } from 'lucide-vue-next';
 
 interface FormField {
   fieldname: string;
@@ -855,6 +884,79 @@ const openCamera = () => {
     cameraInput.value.click();
   }
 };
+
+// Add geolocation state
+const isGettingLocation = ref(false);
+const locationError = ref<string | null>(null);
+
+// Helper to check if field is a geolocation field
+const isGeolocationField = computed(() => {
+  return props.field.label.includes('[geolocation-');
+});
+
+const geolocationFieldType = computed(() => {
+  if (!isGeolocationField.value) return null;
+  const match = props.field.label.match(/\[geolocation-(.*?)\]/);
+  return match ? match[1] : null;
+});
+
+// Function to get current location
+const getCurrentLocation = async () => {
+  if (!isGeolocationField.value || !navigator.geolocation) return;
+  
+  isGettingLocation.value = true;
+  locationError.value = null;
+
+  try {
+    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      });
+    });
+
+    switch (geolocationFieldType.value) {
+      case 'lat':
+        emit('update:modelValue', position.coords.latitude.toString());
+        break;
+      case 'lng':
+        emit('update:modelValue', position.coords.longitude.toString());
+        break;
+      case 'address':
+        // Get address using reverse geocoding
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`,
+            {
+              headers: {
+                'Accept-Language': 'en-US,en;q=0.9',
+                'User-Agent': 'TheTeam App (https://theteam.net.au)'
+              }
+            }
+          );
+          const data = await response.json();
+          emit('update:modelValue', data.display_name);
+        } catch (error) {
+          console.error('Error getting address:', error);
+          locationError.value = 'Failed to get address from coordinates';
+        }
+        break;
+    }
+  } catch (error: any) {
+    console.error('Geolocation error:', error);
+    locationError.value = error.message || 'Failed to get location';
+  } finally {
+    isGettingLocation.value = false;
+  }
+};
+
+// Get location on mount if field is a geolocation field and value is empty
+onMounted(() => {
+  if (isGeolocationField.value && !props.modelValue) {
+    getCurrentLocation();
+  }
+});
 
 defineExpose({ VueTelInput });
 </script> 
