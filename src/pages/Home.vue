@@ -1,57 +1,28 @@
 <template>
   <div class="p-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Forms & Records -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="flex items-start">
-          <ClipboardIcon class="w-8 h-8 text-green-600 mr-4" />
-          <div>
-            <h2 class="text-xl font-semibold text-gray-900">Forms & Records</h2>
-            <p class="text-gray-600 mt-1">Access and manage all your forms and records in one place.</p>
-          </div>
-        </div>
+    <div class="flex flex-col items-center space-y-6">
+      <img 
+        src="/TeamLogo.png" 
+        alt="Team App Logo" 
+        class="h-12" 
+      />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
+        <h2>Welcome to the Home Page</h2>
       </div>
-
-      <!-- User Management -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="flex items-start">
-          <UsersIcon class="w-8 h-8 text-green-600 mr-4" />
-          <div>
-            <h2 class="text-xl font-semibold text-gray-900">User Management</h2>
-            <p class="text-gray-600 mt-1">Manage user accounts, roles, and permissions.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Company Management -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="flex items-start">
-          <BuildingIcon class="w-8 h-8 text-green-600 mr-4" />
-          <div>
-            <h2 class="text-xl font-semibold text-gray-900">Company Management</h2>
-            <p class="text-gray-600 mt-1">Organize and manage company information.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Role Management -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="flex items-start">
-          <ShieldIcon class="w-8 h-8 text-green-600 mr-4" />
-          <div>
-            <h2 class="text-xl font-semibold text-gray-900">Role Management</h2>
-            <p class="text-gray-600 mt-1">Configure roles and their associated permissions.</p>
-          </div>
+      <div class="max-w-xl w-full">
+        <div class="relative">
+          <input 
+            type="text" 
+            placeholder="Search..." 
+            class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+          <SearchIcon class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
       </div>
     </div>
-
-    <p class="text-gray-500 text-sm mt-8">
-      Need help? Contact your administrator for assistance.
-    </p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ClipboardIcon, UsersIcon, BuildingIcon, ShieldIcon } from 'lucide-vue-next'
+import { ClipboardIcon, UsersIcon, BuildingIcon, ShieldIcon, SearchIcon } from 'lucide-vue-next'
 </script>

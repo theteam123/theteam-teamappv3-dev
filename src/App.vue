@@ -1,15 +1,34 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <ErrorMessage />
     <div v-if="authStore.isAuthenticated" class="flex h-screen">
       <!-- Sidebar -->
-      <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <aside 
+        ref="sidebarRef"
+        class="fixed top-0 left-0 h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shadow-lg" style="z-index: 100;"
+        :class="isSidebarCollapsed ? '-translate-x-full' : 'w-64'"
+      >
         <!-- Logo -->
-        <div class="flex items-center justify-start h-16 px-4 border-b border-gray-200">
-			    <img src="/team-app-logo.webp" alt="Team App Logo" class="" @error="handleImageError" />
+        <div class="flex items-center justify-between h-16 px-4" :class="{ 'border-b border-gray-200': !isSidebarCollapsed }">
+          <div class="flex items-center">
+            <img 
+              v-if="!isSidebarCollapsed" 
+              src="/TeamLogo.png" 
+              alt="Team App Logo" 
+              class="h-8" 
+            />
+          </div>
+          <button 
+            v-if="!isSidebarCollapsed"
+            @click="toggleSidebar" 
+            class="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ChevronLeftIcon class="w-5 h-5 text-gray-500" />
+          </button>
         </div>
         
         <!-- Search Bar -->
-        <div class="px-4 py-3 border-b border-gray-200">
+        <div v-if="!isSidebarCollapsed" class="px-4 py-3 border-b border-gray-200">
           <div class="relative">
             <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -71,59 +90,61 @@
         </div>
         
         <!-- Navigation -->
-        <nav class="flex-1 p-4 space-y-1">
+        <nav v-if="!isSidebarCollapsed" class="flex-1 p-4 space-y-1">
           <router-link 
             to="/" 
-            class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+            class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
             :class="{ 'bg-green-50 text-green-700': $route.path === '/' }"
           >
-            <HomeIcon class="w-5 h-5 mr-3" />
-            Home
+            <HomeIcon class="w-5 h-5" :class="isSidebarCollapsed ? '' : 'mr-3'" />
+            <span v-if="!isSidebarCollapsed">Home</span>
           </router-link>
 
           <!-- Document Management Section -->
           <div class="pt-4">
             <router-link 
-              v-for="item in documentItems" 
+              v-for="item in filteredDocumentItems" 
               :key="item.path"
               :to="item.path"
-              class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-              :class="{ 'bg-green-50 text-green-700': $route.path === item.path }"
+              class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+              :class="{ 
+                'bg-green-50 text-green-700': $route.path === item.path,
+                'justify-center px-2': isSidebarCollapsed,
+                'justify-start px-4': !isSidebarCollapsed
+              }"
               @click="handleDocumentClick(item)"
+              :title="isSidebarCollapsed ? item.name : ''"
             >
-              <component :is="item.icon" class="w-5 h-5 mr-3" />
-              {{ item.name }}
+              <component 
+                :is="item.icon" 
+                class="w-5 h-5 transition-colors duration-200" 
+                :class="[
+                  isSidebarCollapsed ? 'text-gray-600' : 'mr-3 text-gray-500',
+                  $route.path === item.path ? 'text-green-600' : ''
+                ]"
+              />
+              <span v-if="!isSidebarCollapsed">{{ item.name }}</span>
             </router-link>
+          </div>
+
+          <!-- Admin Settings -->
+          <div v-if="authStore.isSystemManager" class="border-gray-200">
+            <a 
+              :href="`${getErpNextApiUrl()}/app/build`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg"
+            >
+              <SettingsIcon class="w-5 h-5 mr-3" />
+              Admin Settings
+            </a>
           </div>
         </nav>
 
-        <!-- Admin Settings Section -->
-        <div class="p-4 border-t border-gray-200">
-          <details class="group">
-            <summary class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg">
-              <SettingsIcon class="w-5 h-5 mr-3" />
-              Admin Settings
-              <ChevronDownIcon class="w-4 h-4 ml-auto transition-transform group-open:rotate-180" />
-            </summary>
-            <div class="mt-1 space-y-1">
-              <router-link 
-                v-for="item in adminItems" 
-                :key="item.path"
-                :to="item.path"
-                class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 pl-12"
-                :class="{ 'bg-green-50 text-green-700': $route.path === item.path }"
-              >
-                <component :is="item.icon" class="w-5 h-5 mr-3" />
-                {{ item.name }}
-              </router-link>
-            </div>
-          </details>
-        </div>
-
         <!-- User Menu -->
-        <div class="border-t border-gray-200">
+        <div v-if="!isSidebarCollapsed" class="border-t border-gray-200">
           <div class="p-4">
-            <div class="flex items-center">
+            <div class="flex items-center cursor-pointer" @click="showUserModal = true">
               <div class="flex-shrink-0">
                 <img
                   :src="authStore.user?.profile?.avatar_url || 'https://www.gravatar.com/avatar/?d=mp'"
@@ -136,7 +157,7 @@
                   {{ authStore.user?.profile?.full_name }}
                 </p>
                 <button
-                  @click="handleSignOut"
+                  @click.stop="handleSignOut"
                   class="text-sm font-medium text-gray-500 hover:text-gray-700"
                 >
                   Sign out
@@ -147,28 +168,213 @@
         </div>
       </aside>
 
-      <div class="flex-1 flex flex-col">
-        <!-- Header -->
-        <header class="bg-white border-b border-gray-200">
-          <div class="flex items-center justify-between h-16 px-8">
-            <div>
-              <h1 class="text-xl font-semibold text-gray-900">
-                {{ currentPageTitle }}
-              </h1>
-              <p v-if="currentPageDescription" class="text-sm text-gray-500">
-                {{ currentPageDescription }}
-              </p>
+      <!-- User Profile Modal -->
+      <div v-if="showUserModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+          <!-- Modal Header -->
+          <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900">User Profile</h3>
+            <button @click="showUserModal = false" class="text-gray-400 hover:text-gray-500">
+              <XIcon class="w-6 h-6" />
+            </button>
+          </div>
+
+          <!-- Modal Content -->
+          <div class="px-6 py-4">
+            <div v-if="loading" class="flex justify-center py-8">
+              <LoaderIcon class="w-8 h-8 animate-spin text-green-600" />
             </div>
-            <div class="w-64">
-              <CompanySelectionDropdown />
+            <div v-else-if="error" class="text-red-600 p-4 bg-red-50 rounded-lg">
+              {{ error }}
+            </div>
+            <div v-else class="space-y-6">
+              <!-- Profile Header -->
+              <div class="flex items-center space-x-4">
+                <img
+                  :src="authStore.user?.profile?.avatar_url || 'https://www.gravatar.com/avatar/?d=mp'"
+                  class="h-16 w-16 rounded-full"
+                  alt=""
+                />
+                <div>
+                  <h4 class="text-xl font-semibold text-gray-900">{{ authStore.user?.profile?.full_name }}</h4>
+                  <p class="text-sm text-gray-500">{{ authStore.user?.profile?.email }}</p>
+                </div>
+              </div>
+
+              <!-- User Details -->
+              <div class="space-y-6">
+                <!-- Basic Information -->
+                <div>
+                  <div class="flex justify-between items-center mb-4">
+                    <h5 class="text-sm font-medium text-gray-500">Basic Information</h5>
+                    <button
+                      @click="isEditing = !isEditing"
+                      class="text-sm font-medium text-green-600 hover:text-green-700"
+                    >
+                      {{ isEditing ? 'Cancel' : 'Edit' }}
+                    </button>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Email</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.email || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Full Name</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.full_name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Username</h6>
+                      <p class="mt-1 text-sm text-gray-900">{{ authStore.user?.name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Language</h6>
+                      <select
+                        v-if="isEditing"
+                        v-model="editForm.language"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      >
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="zh">Chinese</option>
+                      </select>
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.language || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">First Name</h6>
+                      <input
+                        v-if="isEditing"
+                        v-model="editForm.first_name"
+                        type="text"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      />
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.first_name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Middle Name</h6>
+                      <input
+                        v-if="isEditing"
+                        v-model="editForm.middle_name"
+                        type="text"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      />
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.middle_name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Last Name</h6>
+                      <input
+                        v-if="isEditing"
+                        v-model="editForm.last_name"
+                        type="text"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      />
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.last_name || 'Not specified' }}</p>
+                    </div>
+                    <div>
+                      <h6 class="text-xs font-medium text-gray-400">Timezone</h6>
+                      <select
+                        v-if="isEditing"
+                        v-model="editForm.time_zone"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                      >
+                        <option value="UTC">UTC</option>
+                        <option value="America/New_York">Eastern Time</option>
+                        <option value="America/Chicago">Central Time</option>
+                        <option value="America/Denver">Mountain Time</option>
+                        <option value="America/Los_Angeles">Pacific Time</option>
+                        <option value="Australia/Sydney">Sydney</option>
+                        <option value="Australia/Melbourne">Melbourne</option>
+                        <option value="Australia/Perth">Perth</option>
+                      </select>
+                      <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.time_zone || 'Not specified' }}</p>
+                    </div>
+                  </div>
+                  <!-- Additional User Data -->
+                  <div v-if="userData" class="mt-6">
+                    <h5 class="text-sm font-medium text-gray-500 mb-2">Additional Information</h5>
+                    <pre class="bg-gray-50 p-4 rounded-lg text-xs overflow-auto max-h-48">{{ JSON.stringify(userData, null, 2) }}</pre>
+                  </div>
+                </div>
+
+                <!-- Save Button -->
+                <div v-if="isEditing" class="flex justify-end space-x-3">
+                  <button
+                    @click="isEditing = false"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    @click="handleSaveProfile"
+                    :disabled="isSaving"
+                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                  >
+                    <LoaderIcon v-if="isSaving" class="w-4 h-4 animate-spin inline-block mr-2" />
+                    Save Changes
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </header>
 
-        <!-- Main Content -->
-        <main class="flex-1 overflow-auto">
+          <!-- Modal Footer -->
+          <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            <button
+              @click="showUserModal = false"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-1 flex flex-col">
+        <!-- Top Navigation Bar -->
+        <div class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 fixed top-0 left-0 right-0 z-40">
+          <!-- Toggle Button -->
+          <button 
+            @click="toggleSidebar"
+            class="p-2 rounded-lg hover:bg-gray-100 border border-gray-200"
+          >
+            <MenuIcon class="w-5 h-5 text-gray-600" />
+          </button>
+
+          <!-- Center Logo -->
+          <div 
+            v-if="route.path !== '/'" 
+            class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+          >
+            <img 
+              src="/TeamLogo.png" 
+              alt="Team App Logo" 
+              class="h-8" 
+            />
+          </div>
+
+          <!-- Support Button -->
+          <button
+            @click="handleSupportClick"
+            class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 transition-colors"
+          >
+            <HelpCircleIcon class="w-5 h-5" />
+            <span class="hidden sm:inline">Support</span>
+          </button>
+        </div>
+
+        <!-- Main Content with adjusted padding for fixed header -->
+        <main class="flex-1 overflow-auto pt-16">
           <router-view></router-view>
         </main>
+
+        <!-- Footer -->
+        <footer class="py-4 px-8 border-t border-gray-200 bg-white">
+          <div class="text-center text-sm text-gray-500">
+            Powered by <a href="https://frappe.io" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-700">Frappe</a> and <a href="https://theteam.net.au" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-700">theteam.net.au</a>
+          </div>
+        </footer>
       </div>
     </div>
     <router-view v-else></router-view>
@@ -176,10 +382,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import { getErpNextApiUrl } from './utils/api';
+import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
+import ErrorMessage from './components/ErrorMessage.vue';
 import { 
   HomeIcon, 
   FileTextIcon, 
@@ -196,48 +405,78 @@ import {
   TagIcon,
   FolderIcon,
   ChevronDownIcon,
-  SearchIcon
+  SearchIcon,
+  MenuIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  HelpCircleIcon,
+  XIcon,
+  LoaderIcon,
+  MicIcon
 } from 'lucide-vue-next';
+
+interface SearchResult {
+  id: string;
+  type: string;
+  name: string;
+}
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
+const isSidebarCollapsed = ref(true);
+const loading = ref(false);
+const error = ref('');
 const searchQuery = ref('');
 const showSearchResults = ref(false);
-const searchResults = ref([]);
+const searchResults = ref<SearchResult[]>([]);
+const showUserModal = ref(false);
+const isEditing = ref(false);
+const isSaving = ref(false);
+const userData = ref(null);
+const sidebarRef = ref<HTMLElement | null>(null);
 
 const documentItems = [
-  { name: 'Documents', path: '/documents', icon: FileTextIcon, description: 'Manage and organize your company documents' },
-  { name: 'Doc Types', path: '/doctypes', icon: FileTextIcon, description: 'Manage and organize your company documents' },
-  { name: 'Forms', path: '/forms', icon: ClipboardIcon, description: 'Create and manage company forms' },
-  { name: 'Policies', path: '/policies', icon: BookIcon, description: 'View and update company policies' },
-  { name: 'Records', path: '/records', icon: FileIcon, description: 'Access and manage records' },
-  { name: 'Templates', path: '/templates', icon: FileBoxIcon, description: 'Manage document templates' },
-  { name: 'Videos', path: '/videos', icon: VideoIcon, description: 'Access training and company videos' },
+  { 
+    name: 'DocType',
+    path: '/doctypes',
+    icon: FileTextIcon,
+    description: 'Manage and organize your company documents',
+    requiredRoles: ['Taktec User', 'Taktec Admin','System Manager'] 
+  },
+  // { name: 'Forms', path: '/forms', icon: ClipboardIcon, description: 'Create and manage company forms', requiredRoles: ['Taktec User', 'Taktec Admin','System Manager'] },
+  { 
+    name: 'Voice Assistant', 
+    path: '/voice-assistant', 
+    icon: MicIcon, 
+    description: 'AI Voice Assistant', 
+    requiredRoles: ['Dizza'] 
+  },
 ];
 
-const adminItems = [
-  { name: 'Users', path: '/users', icon: UsersIcon, description: 'Manage users and their roles within your organization' },
-  { name: 'Companies', path: '/companies', icon: BuildingIcon, description: "Manage your organization's companies and their settings" },
-  { name: 'Roles', path: '/roles', icon: ShieldIcon, description: 'Configure and manage user roles and permissions' },
-  { name: 'Content', path: '/content', icon: FileEditIcon, description: 'Organize and manage all content types' },
-  { name: 'Tags', path: '/tags', icon: TagIcon, description: 'Manage and organize content tags' },
-  { name: 'Categories', path: '/categories', icon: FolderIcon, description: 'Manage content categories and hierarchies' },
-];
+const filteredDocumentItems = computed(() => {
+  return documentItems.filter(item => {
+    // If no requiredRoles is specified, show the item
+    if (!item.requiredRoles) return true;
+    
+    // Check if user has any of the required roles
+    return item.requiredRoles.some(role => authStore.user?.roles?.includes(role));
+  });
+});
 
-const allMenuItems = [...documentItems, ...adminItems];
+const allMenuItems = computed(() => [...filteredDocumentItems.value]);
 
 const currentPageTitle = computed(() => {
   if (route.path === '/') return 'Welcome';
-  const allItems = [...documentItems, ...adminItems];
+  const allItems = [...documentItems];
   const currentItem = allItems.find(item => item.path === route.path);
   return currentItem?.name || 'TheTeam';
 });
 
 const currentPageDescription = computed(() => {
   if (route.path === '/') return 'Your one-stop location for managing forms, records, users, and companies';
-  const allItems = [...documentItems, ...adminItems];
+  const allItems = [...documentItems];
   const currentItem = allItems.find(item => item.path === route.path);
   return currentItem?.description || '';
 });
@@ -245,7 +484,7 @@ const currentPageDescription = computed(() => {
 const filteredMenuItems = computed(() => {
   if (!searchQuery.value) return [];
   const query = searchQuery.value.toLowerCase();
-  return allMenuItems.filter(item => 
+  return allMenuItems.value.filter(item => 
     item.name.toLowerCase().includes(query)
   );
 });
@@ -294,23 +533,81 @@ const handleSignOut = async () => {
   }
 };
 
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement;
-  console.error('Failed to load logo:', img.src);
-  // Fallback to text if image fails to load
-  img.style.display = 'none';
-  const container = img.parentElement;
-  if (container) {
-    const fallback = document.createElement('span');
-    fallback.textContent = 'TheTeam';
-    fallback.className = 'text-xl font-semibold text-gray-900';
-    container.appendChild(fallback);
-  }
-};
-
 const handleDocumentClick = (item) => {
   console.log('Navigating to:', item.path);
   router.push(item.path);
+};
+
+const handleSupportClick = () => {
+  // TODO: Implement support functionality
+  window.open('https://support.theteam.net.au', '_blank');
+};
+
+// Add new refs and methods
+const editForm = ref({
+  language: '',
+  first_name: '',
+  middle_name: '',
+  last_name: '',
+  time_zone: ''
+});
+
+// Watch for modal opening
+watch(showUserModal, (newValue) => {
+  if (newValue) {
+    // Initialize edit form with current values
+    editForm.value = {
+      language: authStore.user?.profile?.language || '',
+      first_name: authStore.user?.profile?.first_name || '',
+      middle_name: authStore.user?.profile?.middle_name || '',
+      last_name: authStore.user?.profile?.last_name || '',
+      time_zone: authStore.user?.profile?.time_zone || ''
+    };
+
+    // Get user data from auth store
+    userData.value = authStore.user?.details || null;
+  } else {
+    isEditing.value = false;
+    userData.value = null;
+  }
+});
+
+const handleSaveProfile = async () => {
+  isSaving.value = true;
+  try {
+    await authStore.updateUserDetails(editForm.value);
+    isEditing.value = false;
+  } catch (error) {
+    console.error('Error saving profile:', error);
+    // You might want to show an error message to the user here
+  } finally {
+    isSaving.value = false;
+  }
+};
+
+// Handle click outside
+const handleClickOutside = (event: MouseEvent) => {
+  if (
+    !isSidebarCollapsed.value && 
+    sidebarRef.value && 
+    !sidebarRef.value.contains(event.target as Node) &&
+    !(event.target as Element).closest('button')
+  ) {
+    isSidebarCollapsed.value = true;
+  }
+};
+
+// Add and remove event listeners
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
+const toggleSidebar = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value;
 };
 </script>
 
@@ -320,5 +617,12 @@ details > summary {
 }
 details > summary::-webkit-details-marker {
   display: none;
+}
+
+/* Add smooth transition for sidebar */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
 }
 </style>
