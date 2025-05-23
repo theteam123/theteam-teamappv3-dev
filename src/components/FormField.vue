@@ -1,7 +1,4 @@
 <template>
-  <!-- <pre>{{ shouldShowField }}</pre> -->
-  <!-- <pre>{{ field.fieldtype}}</pre> -->
-
   <div :class="[
     'transition-all duration-200 ease-in-out',
     shouldShowField ? 'space-y-2' : 'hidden'
@@ -598,11 +595,19 @@ interface UploadedFile {
   fileUrl?: string;
 }
 
+interface GeolocationData {
+  fieldname: string;
+  label: string;
+  value: string;
+  type: 'lat' | 'lng' | 'address';
+}
+
 const props = defineProps<{
   field: FormField;
   modelValue: any;
   formData?: Record<string, any>;
   parentDocName?: string;
+  geoLocationFields: GeolocationData[];
 }>();
 
 const emit = defineEmits<{
@@ -631,7 +636,7 @@ const shouldShowField = computed(() => {
 
 const formattedLabel = computed(() => {
   if (!props.field.label) return '';
-  // Remove any text within square brackets
+  // Only remove text within square brackets
   return props.field.label.replace(/\[.*?\]/g, '').trim();
 });
 
@@ -703,6 +708,8 @@ const handleImageUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
     const file = input.files[0];
+    
+    // Create preview from original file
     imagePreview.value = URL.createObjectURL(file);
     
     // Start upload process
@@ -713,8 +720,15 @@ const handleImageUpload = async (event: Event) => {
       // Set progress to 10% to indicate upload is starting
       uploadProgress.value = 10;
       
+      // Add watermark if field has [camera] tag
+      const fileToUpload = props.field.label?.includes('[camera]') ? 
+        await addWatermark(file) : file;
+      
+      // Set progress to 30% after watermark is added
+      uploadProgress.value = 30;
+      
       const response = await uploadFile(
-        file,
+        fileToUpload,
         props.field.parent || '', // doctype
         props.parentDocName || '', // docname
         false // isPrivate
@@ -787,6 +801,8 @@ onMounted(() => {
   onUnmounted(() => {
     mediaQuery.removeEventListener('change', handleResize);
   });
+
+  console.log('Component mounted, initializing geolocation fields');
 });
 
 onUnmounted(() => {
@@ -957,6 +973,109 @@ onMounted(() => {
     getCurrentLocation();
   }
 });
+
+// Update addWatermark to use the prop
+const addWatermark = async (imageFile: File): Promise<File> => {
+  console.log('Adding watermark with geoLocationFields:', props.geoLocationFields);
+  if (props.geoLocationFields.length === 0) return imageFile;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Create canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(imageFile);
+        return;
+      }
+
+      // Set canvas size to image size
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // Draw original image
+      ctx.drawImage(img, 0, 0);
+
+      // Find lat/lng values
+      const latField = props.geoLocationFields.find(f => f.type === 'lat');
+      const lngField = props.geoLocationFields.find(f => f.type === 'lng');
+      const addressField = props.geoLocationFields.find(f => f.type === 'address');
+
+      // Configure watermark style
+      ctx.font = '18px monospace';
+      
+      // Draw semi-transparent black bars at top and bottom
+      const barHeight = addressField ? 70 : 45; // Increased height for two lines when address exists
+      const textPadding = 15; // Padding from top/bottom of bar
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(0, 0, canvas.width, barHeight); // Top bar
+      ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight); // Bottom bar
+
+      // Draw text in white
+      ctx.fillStyle = 'white';
+      ctx.textBaseline = 'middle';
+
+      // Top bar content (GPS coordinates)
+      if (latField && lngField) {
+        ctx.textAlign = 'left';
+        const leftPadding = 10;
+        ctx.fillText(`Lat: ${latField.value}`, leftPadding, textPadding);
+        ctx.fillText(`Lng: ${lngField.value}`, leftPadding, barHeight - textPadding);
+      }
+
+      // Bottom bar content (Address and timestamp)
+      ctx.textAlign = 'left';
+      const now = new Date();
+      const timestamp = now.toLocaleDateString('en-AU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }) + ' ' + now.toLocaleTimeString('en-AU', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+
+      if (addressField) {
+        // Draw address on first line
+        ctx.fillText(`Address: ${addressField.value}`, 10, canvas.height - barHeight + 20);
+        // Draw timestamp on second line
+        ctx.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - barHeight + 50);
+      } else {
+        // Draw only timestamp centered vertically
+        ctx.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - barHeight/2);
+      }
+
+      // Convert canvas back to file
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          resolve(imageFile);
+          return;
+        }
+        const watermarkedFile = new File([blob], imageFile.name, {
+          type: imageFile.type,
+          lastModified: Date.now()
+        });
+        resolve(watermarkedFile);
+      }, imageFile.type);
+    };
+
+    img.onerror = () => {
+      resolve(imageFile);
+    };
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => {
+      resolve(imageFile);
+    };
+    reader.readAsDataURL(imageFile);
+  });
+};
 
 defineExpose({ VueTelInput });
 </script> 

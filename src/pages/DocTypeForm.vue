@@ -55,6 +55,7 @@
                 v-model="formData[field.fieldname]"
                 :formData="formData"
                 :parentDocName="route.params.id as string"
+                :geoLocationFields="field.label?.includes('[camera]') ? geoLocationFields : []"
               />
             </div>
           </div>
@@ -82,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useSuccessStore } from '../stores/success';
@@ -113,6 +114,13 @@ interface DocType {
   fields: DocTypeField[];
 }
 
+interface GeolocationData {
+  fieldname: string;
+  label: string;
+  value: string;
+  type: 'lat' | 'lng' | 'address';
+}
+
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
@@ -122,11 +130,33 @@ const submitting = ref(false);
 const error = ref<string | null>(null);
 const docType = ref<DocType | null>(null);
 const formData = ref<Record<string, any>>({});
+const geoLocationFields = ref<GeolocationData[]>([]);
 
 const { processedSections } = useFormSections(
   computed(() => docType.value?.fields),
   computed(() => formData.value)
 );
+
+const initializeGeolocationFields = (fields: DocTypeField[]) => {
+  const geoFields: GeolocationData[] = [];
+  
+  fields.forEach(field => {
+    if (field.fieldtype === 'Data') {
+      const match = field.label.match(/\[geolocation-(.*?)\]/);
+      if (match) {
+        const type = match[1] as 'lat' | 'lng' | 'address';
+        geoFields.push({
+          fieldname: field.fieldname,
+          label: field.label.replace(/\[.*?\]/g, '').trim(),
+          value: formData.value[field.fieldname] || '',
+          type
+        });
+      }
+    }
+  });
+  
+  geoLocationFields.value = geoFields;
+};
 
 const fetchDocType = async () => {
   try {
@@ -152,6 +182,9 @@ const fetchDocType = async () => {
         acc[field.fieldname] = '';
         return acc;
       }, {});
+      
+      // Initialize geolocation fields
+      initializeGeolocationFields(docTypeData.fields);
     } else {
       console.warn('No fields found in DocType response');
       formData.value = {};
@@ -188,6 +221,14 @@ const handleSubmit = async () => {
     submitting.value = false;
   }
 };
+
+// Add watcher for formData to update geolocation field values
+watch(() => formData.value, (newFormData) => {
+  geoLocationFields.value = geoLocationFields.value.map(field => ({
+    ...field,
+    value: newFormData[field.fieldname]?.toString() || ''
+  }));
+}, { deep: true });
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) {

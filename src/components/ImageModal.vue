@@ -24,8 +24,11 @@
             leave-from="opacity-100 scale-100"
             leave-to="opacity-0 scale-95"
           >
-            <DialogPanel class="w-full max-w-7xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-              <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 mb-4">
+            <DialogPanel :class="[
+              'w-full transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all',
+              isSingleImage ? 'max-h-[90vh] max-w-5xl' : 'p-6 max-w-7xl'
+            ]">
+              <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 mb-4 px-6 pt-6">
                 Images
               </DialogTitle>
 
@@ -35,24 +38,40 @@
               </div>
 
               <!-- Error State -->
-              <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
+              <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg mb-6 mx-6">
                 {{ error }}
               </div>
 
-              <!-- Images Grid -->
-              <div v-else class="grid grid-cols-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <div v-for="image in images" :key="image.name" class="group relative bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                  <div class="aspect-w-4 aspect-h-3 w-full overflow-hidden rounded-t-xl">
-                    <img
-                      :src="image.image"
-                      :alt="image.description || 'Image'"
-                      class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
-                    />
+              <!-- Single Image View -->
+              <div v-else-if="isSingleImage && images.length > 0" class="flex flex-col">
+                <div class="flex-1 overflow-hidden">
+                  <img
+                    :src="images[0].image"
+                    :alt="images[0].description || 'Image'"
+                    class="w-full h-auto max-h-[70vh] object-contain"
+                  />
+                </div>
+                <div v-if="images[0].description" class="p-4 bg-gray-50">
+                  <p class="text-sm text-gray-600">{{ images[0].description }}</p>
+                </div>
+              </div>
+
+              <!-- Multiple Images Grid -->
+              <div v-else-if="!isSingleImage" class="px-6">
+                <div class="grid grid-cols-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  <div v-for="image in images" :key="image.name" class="group relative bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
+                    <div class="aspect-w-4 aspect-h-3 w-full overflow-hidden rounded-t-xl">
+                      <img
+                        :src="image.image"
+                        :alt="image.description || 'Image'"
+                        class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                    <div class="p-4" v-if="image.description">
+                      <p class="text-sm text-gray-600 line-clamp-2">{{ image.description }}</p>
+                    </div>
+                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-300 rounded-xl"></div>
                   </div>
-                  <div class="p-4" v-if="image.description">
-                    <p class="text-sm text-gray-600 line-clamp-2">{{ image.description }}</p>
-                  </div>
-                  <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-300 rounded-xl"></div>
                 </div>
               </div>
 
@@ -63,7 +82,7 @@
                 <p class="mt-1 text-sm text-gray-500">No images available for this document.</p>
               </div>
 
-              <div class="mt-6 flex justify-end">
+              <div class="mt-6 flex justify-end px-6 pb-6">
                 <button
                   type="button"
                   class="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
