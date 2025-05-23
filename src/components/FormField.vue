@@ -918,7 +918,10 @@ const geolocationFieldType = computed(() => {
 
 // Function to get current location
 const getCurrentLocation = async () => {
-  if (!isGeolocationField.value || !navigator.geolocation) return;
+  if (!isGeolocationField.value || !navigator.geolocation) {
+    locationError.value = 'Geolocation is not supported by your browser';
+    return;
+  }
   
   isGettingLocation.value = true;
   locationError.value = null;
@@ -927,7 +930,7 @@ const getCurrentLocation = async () => {
     const position = await new Promise<GeolocationPosition>((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
         enableHighAccuracy: true,
-        timeout: 5000,
+        timeout: 10000,
         maximumAge: 0
       });
     });
@@ -961,7 +964,18 @@ const getCurrentLocation = async () => {
     }
   } catch (error: any) {
     console.error('Geolocation error:', error);
-    locationError.value = error.message || 'Failed to get location';
+    if (error.code === 1) {
+      // Permission denied error
+      locationError.value = 'Location permission was denied. Please enable location access in your device settings and try again.';
+    } else if (error.code === 2) {
+      // Position unavailable error
+      locationError.value = 'Unable to determine your location. Please check your device\'s GPS settings and try again.';
+    } else if (error.code === 3) {
+      // Timeout error
+      locationError.value = 'Location request timed out. Please try again.';
+    } else {
+      locationError.value = error.message || 'Failed to get location';
+    }
   } finally {
     isGettingLocation.value = false;
   }
