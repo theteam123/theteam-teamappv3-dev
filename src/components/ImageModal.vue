@@ -49,8 +49,8 @@
                       class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
-                  <div class="p-4">
-                    <p class="text-sm text-gray-600 line-clamp-2">{{ image.description || 'No description' }}</p>
+                  <div class="p-4" v-if="image.description">
+                    <p class="text-sm text-gray-600 line-clamp-2">{{ image.description }}</p>
                   </div>
                   <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-300 rounded-xl"></div>
                 </div>
@@ -98,6 +98,9 @@ const props = defineProps<{
   docTypeId: string;
   documentId: string;
   fieldname: string;
+  isSingleImage?: boolean;
+  singleImageUrl?: string;
+  singleImageName?: string;
 }>();
 
 const emit = defineEmits<{
@@ -117,15 +120,22 @@ const fetchImages = async () => {
   error.value = null;
   
   try {
-    // Fetch the parent document with its child table data
-    const response = await getChildTableData(props.docTypeId, props.documentId);
-    
-    // Extract the images from the child table using the provided fieldname
-    images.value = response.data[props.fieldname].map((item: any) => ({
-      name: item.name,
-      image: `${getErpNextApiUrl().replace(/\/$/, '')}${item.image}`,
-      description: item.description
-    }));
+    if (props.isSingleImage && props.singleImageUrl) {
+      images.value = [{
+        name: props.singleImageName || 'Image',
+        image: `${getErpNextApiUrl().replace(/\/$/, '')}/` + props.singleImageUrl.replace(/^\//, ''),
+      }];
+    } else {
+      // Fetch the parent document with its child table data
+      const response = await getChildTableData(props.docTypeId, props.documentId);
+      
+      // Extract the images from the child table using the provided fieldname
+      images.value = response.data[props.fieldname].map((item: any) => ({
+        name: item.name,
+        image: `${getErpNextApiUrl().replace(/\/$/, '')}/` + item.image.replace(/^\//, ''),
+        description: item.description
+      }));
+    }
   } catch (err: any) {
     console.error('Error fetching images:', err);
     error.value = err.message || 'Failed to load images';
@@ -134,13 +144,21 @@ const fetchImages = async () => {
   }
 };
 
+// Fetch images when component is mounted if modal is open
+onMounted(() => {
+  if (props.isOpen) {
+    fetchImages();
+  }
+});
+
 // Watch for changes in documentId or isOpen
 watch(
   [() => props.documentId, () => props.isOpen],
-  ([newDocId, newIsOpen]) => {
-    if (newIsOpen) {
+  ([newDocId, newIsOpen], [oldDocId, oldIsOpen]) => {
+    if (newIsOpen && (!oldIsOpen || newDocId !== oldDocId)) {
       fetchImages();
     }
-  }
+  },
+  { immediate: true }
 );
 </script> 

@@ -1,5 +1,7 @@
 <template>
   <div class="p-8">
+    <ErrorMessage />
+    <SuccessMessage />
     <!-- Page Title -->
     <div class="mb-6">
       <div class="flex items-center gap-4">
@@ -83,6 +85,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useSuccessStore } from '../stores/success';
 import { getFormData, createDoctypeSubmission, getDocTypeData } from '../services/erpnext';
 import { getErpNextApiUrl } from '../utils/api';
 import { getCurrentToken } from '../services/oauth';
@@ -93,6 +96,8 @@ import {
 } from 'lucide-vue-next';
 import FormField from '../components/FormField.vue';
 import { useFormSections } from '../composables/useFormSections';
+import ErrorMessage from '../components/ErrorMessage.vue';
+import SuccessMessage from '../components/SuccessMessage.vue';
 
 interface DocTypeField {
   fieldname: string;
@@ -111,6 +116,7 @@ interface DocType {
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const successStore = useSuccessStore();
 const loading = ref(false);
 const submitting = ref(false);
 const error = ref<string | null>(null);
@@ -161,22 +167,21 @@ const handleSubmit = async () => {
   error.value = null;
 
   try {
-    // Create a copy of the form data for submission
     const formDataToSubmit = { ...formData.value };
     
-    // Find any multiple upload fields
     const multipleUploadFields = docType.value?.fields.filter(
       field => field.fieldtype === 'Table' && field.label.toLowerCase().includes('[multiple-upload]')
     ) || [];
 
-    // The file URLs are already in the correct format in formData
-    // No need to modify them as FormField component has formatted them correctly
-    // They will be submitted as part of the child table rows
-
-    // Submit the doctype form with all data including file URLs
     const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
     
-    router.push(`/doctypes/${route.params.id}`);
+    // Show success message
+    successStore.showSuccess('Form submitted successfully!');
+    
+    // Wait a brief moment for the success message to be visible
+    setTimeout(() => {
+      router.push(`/doctypes/${route.params.id}`);
+    }, 1000);
   } catch (err: any) {
     error.value = err.message;
   } finally {

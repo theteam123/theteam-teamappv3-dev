@@ -9,14 +9,14 @@
     <!-- Section Break -->
     <template v-if="field.fieldtype === 'Section Break'">
       <div class="mt-8 mb-4 border-b border-gray-200 pb-2">
-        <span v-if="field.label" class="text-lg font-semibold text-gray-700">{{ field.label }}</span>
+        <span v-if="field.label" class="text-lg font-semibold text-gray-700">{{ formattedLabel }}</span>
       </div>
     </template>
 
     <!-- Text Input -->
     <template v-else-if="field.fieldtype === 'Data'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <input
@@ -32,7 +32,7 @@
     <!-- Number Input -->
     <template v-else-if="field.fieldtype === 'Int' || field.fieldtype === 'Float'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <input
@@ -48,7 +48,7 @@
     <!-- Date Input -->
     <template v-else-if="field.fieldtype === 'Date'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <input
@@ -64,7 +64,7 @@
     <!-- Datetime Input -->
     <template v-else-if="field.fieldtype === 'Datetime'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <input
@@ -80,7 +80,7 @@
     <!-- Time Input -->
     <template v-else-if="field.fieldtype === 'Time'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <input
@@ -96,7 +96,7 @@
     <!-- Duration Input -->
     <template v-else-if="field.fieldtype === 'Duration'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="relative mt-1" ref="durationWrapperRef">
@@ -137,7 +137,7 @@
     <!-- Select Input -->
     <template v-else-if="field.fieldtype === 'Select'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <select
@@ -157,7 +157,7 @@
     <!-- Link Input -->
     <template v-else-if="field.fieldtype === 'Link'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <select
@@ -167,7 +167,7 @@
         :required="field.reqd === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
       >
-        <option value="">Select {{ field.label }}</option>
+        <option value="">Select {{ formattedLabel }}</option>
         <option v-for="option in linkOptions" :key="option.name" :value="option.name">
           {{ option.name }}
         </option>
@@ -186,7 +186,7 @@
           class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
         />
         <label :for="field.fieldname" class="ml-2 block text-sm text-gray-900">
-          {{ field.label }}
+          {{ formattedLabel }}
         </label>
       </div>
     </template>
@@ -194,7 +194,7 @@
     <!-- Text Area -->
     <template v-else-if="field.fieldtype === 'Small Text'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <textarea
@@ -210,7 +210,7 @@
     <!-- Text Editor -->
     <template v-else-if="field.fieldtype === 'Text Editor'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="mt-1">
@@ -230,7 +230,7 @@
     <!-- File Upload -->
     <template v-else-if="field.fieldtype === 'Attach'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <input
@@ -250,24 +250,61 @@
     <!-- Image Upload -->
     <template v-else-if="field.fieldtype === 'Attach Image'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="mt-1 flex items-center space-x-4">
-        <input
-          :id="field.fieldname"
-          type="file"
-          accept="image/*"
-          @change="handleImageUpload"
-          :required="field.reqd === 1"
-          class="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-md file:border-0
-            file:text-sm file:font-semibold
-            file:bg-green-50 file:text-green-700
-            hover:file:bg-green-100"
-        />
-        <div v-if="imagePreview" class="relative h-20 w-20">
+        <div class="flex-grow">
+          <!-- Show camera button on mobile when [camera] is present -->
+          <template v-if="shouldUseCameraInput">
+            <button
+              type="button"
+              @click="openCamera"
+              class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+              </svg>
+              Take a Photo
+            </button>
+            <input
+              ref="cameraInput"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              class="hidden"
+              @change="handleImageUpload"
+              :required="field.reqd === 1"
+            />
+          </template>
+          <!-- Show regular file input when not using camera -->
+          <template v-else>
+            <input
+              :id="field.fieldname"
+              type="file"
+              accept="image/*"
+              @change="handleImageUpload"
+              :required="field.reqd === 1"
+              class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-green-50 file:text-green-700
+                hover:file:bg-green-100"
+            />
+          </template>
+          <!-- Upload Progress -->
+          <div v-if="uploading" class="mt-2">
+            <div class="flex items-center justify-between text-sm text-gray-600">
+              <span>Uploading image...</span>
+              <span>{{ uploadProgress }}%</span>
+            </div>
+            <div class="mt-1 w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-green-600 h-2 rounded-full" :style="{ width: `${uploadProgress}%` }"></div>
+            </div>
+          </div>
+        </div>
+        <div v-if="imagePreview" class="relative h-20 w-20 flex-shrink-0">
           <img :src="imagePreview" alt="Preview" class="h-full w-full rounded-md object-cover" />
           <button
             @click="clearImage"
@@ -284,7 +321,7 @@
     <!-- Color Input -->
     <template v-else-if="field.fieldtype === 'Color'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="mt-1 flex items-center space-x-2">
@@ -309,7 +346,7 @@
     <!-- Currency Input -->
     <template v-else-if="field.fieldtype === 'Currency'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="mt-1 relative rounded-md shadow-sm">
@@ -331,7 +368,7 @@
     <!-- Phone Input -->
     <template v-else-if="field.fieldtype === 'Phone'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <vue-tel-input
@@ -361,7 +398,7 @@
     <!-- Password Input -->
     <template v-else-if="field.fieldtype === 'Password'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <input
@@ -377,7 +414,7 @@
     <!-- Rating Input -->
     <template v-else-if="field.fieldtype === 'Rating'">
       <label class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="mt-1 flex items-center space-x-1">
@@ -398,7 +435,7 @@
     <!-- Signature Input -->
     <template v-else-if="field.fieldtype === 'Signature'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ field.label }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="mt-1">
@@ -418,7 +455,7 @@
     <!-- Multiple Upload Table -->
     <template v-else-if="field.fieldtype === 'Table' && field.label.toLowerCase().includes('[multiple-upload]')">
       <label class="block text-sm font-medium text-gray-700">
-        {{ field.label.replace('[multiple-upload]', '').trim() }}
+        {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="mt-1">
@@ -444,9 +481,9 @@
           </div>
 
           <!-- Preview Grid -->
-          <div v-if="uploadedFiles.length > 0" class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          <div v-if="uploadedFiles.length > 0" class="mt-6 grid grid-cols-4 gap-4 sm:grid-cols-3 md:grid-cols-4">
             <div v-for="(file, index) in uploadedFiles" :key="index" class="relative group">
-              <img :src="file.preview" class="h-24 w-full rounded-lg object-cover" />
+              <img :src="file.preview" class="h-48 w-full rounded-lg object-cover" />
               <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-200 rounded-lg">
                 <button
                   @click="removeFile(index)"
@@ -477,7 +514,7 @@
   <!-- Table Input -->
   <template v-else-if="field.fieldtype === 'Table'">
     <label class="block text-sm font-medium text-gray-700">
-      {{ field.label }}
+      {{ formattedLabel }}
       <span v-if="field.reqd" class="text-red-500">*</span>
     </label>
     <div class="mt-1">
@@ -521,6 +558,7 @@ interface FormField {
   max_length?: number;
   max_value?: number;
   precision?: string;
+  parent?: string;
 }
 
 interface UploadedFile {
@@ -555,6 +593,12 @@ const uploadedFiles = ref<UploadedFile[]>([]);
 
 const shouldShowField = computed(() => {
   return evaluateFieldDependency(props.field, props.formData);
+});
+
+const formattedLabel = computed(() => {
+  if (!props.field.label) return '';
+  // Remove any text within square brackets
+  return props.field.label.replace(/\[.*?\]/g, '').trim();
 });
 
 watch(() => props.modelValue, (val) => {
@@ -617,7 +661,27 @@ const handleImageUpload = async (event: Event) => {
   if (input.files && input.files[0]) {
     const file = input.files[0];
     imagePreview.value = URL.createObjectURL(file);
-    emit('update:modelValue', file.name);
+    
+    // Start upload process
+    uploading.value = true;
+    uploadProgress.value = 0;
+    
+    try {
+      const response = await uploadFile(
+        file,
+        props.field.parent || '', // doctype
+        props.parentDocName || '', // docname
+        false // isPrivate
+      );
+      
+      // Update the model value with the file URL
+      emit('update:modelValue', response.message.file_url);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    } finally {
+      uploading.value = false;
+      uploadProgress.value = 100;
+    }
   }
 };
 
@@ -627,6 +691,7 @@ const clearImage = () => {
     imagePreview.value = null;
   }
   emit('update:modelValue', '');
+  uploadProgress.value = 0;
 };
 
 function handleClickOutside(event: MouseEvent) {
@@ -739,6 +804,25 @@ onUnmounted(() => {
     URL.revokeObjectURL(file.preview);
   });
 });
+
+// Add these computed properties after the other computed properties
+const isMobile = computed(() => {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+});
+
+const shouldUseCameraInput = computed(() => {
+  return isMobile.value && props.field.label?.includes('[camera]');
+});
+
+// Add the camera input ref and openCamera method in the script section
+const cameraInput = ref<HTMLInputElement | null>(null);
+
+const openCamera = () => {
+  if (cameraInput.value) {
+    cameraInput.value.click();
+  }
+};
 
 defineExpose({ VueTelInput });
 </script> 

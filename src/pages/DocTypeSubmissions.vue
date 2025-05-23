@@ -138,9 +138,21 @@
                         </button>
                         <span v-else class="text-gray-400 text-sm">No images added</span>
                       </template>
+                      <template v-if="field.fieldtype === 'Attach Image'">
+                        <button 
+                          @click="handleSingleImageClick(doc, field.fieldname)"
+                          class="text-gray-500 hover:text-gray-700"
+                          title="View Image"
+                          v-if="doc[field.fieldname]"
+                        >
+                          <ImageIcon class="w-5 h-5" />
+                        </button>
+                        <span v-else class="text-gray-400 text-sm">No image added</span>
+                      </template>                      
                       <template v-else>
                         {{ doc[field.fieldname] }}
                       </template>
+
                     </td>
                   </tr>
                 </tbody>
@@ -201,6 +213,9 @@
       :doc-type-id="route.params.id as string"
       :document-id="selectedDocument.name"
       :fieldname="selectedFieldname"
+      :is-single-image="selectedDocument[selectedFieldname] && !Array.isArray(selectedDocument[selectedFieldname])"
+      :single-image-url="selectedDocument[selectedFieldname]"
+      :single-image-name="selectedFieldname"
       @close="showImageModal = false"
     />
   </div>
@@ -319,7 +334,7 @@ const fetchDocType = async () => {
     docType.value = {
       ...response.data,
       fields: response.data.fields.filter((field: DocTypeField) => 
-        field.fieldtype === 'Table' || field.in_list_view === 1
+        field.fieldtype === 'Table' || field.in_list_view === 1 || field.fieldtype === 'Attach Image'
       )
     };
   } catch (err: any) {
@@ -399,6 +414,12 @@ const handleImageClick = (doc: Document, fieldname: string) => {
     selectedFieldname.value = fieldname;
     showImageModal.value = true;
   }
+};
+
+const handleSingleImageClick = (doc: Document, fieldname: string) => {
+  selectedDocument.value = doc;
+  selectedFieldname.value = fieldname;
+  showImageModal.value = true;
 };
 
 onMounted(async () => {
