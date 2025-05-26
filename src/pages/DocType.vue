@@ -170,14 +170,14 @@
                 <div class="flex justify-end gap-2">
                   <button
                     @click="router.push(`/doctypes/${doctype.id}/new`)"
-                    class="text-gray-700 hover:text-gray-600"
+                    class="text-white hover:text-green-600 border border-green-600 hover:bg-white bg-green-600 p-1 rounded"
                     title="New Document"
                   >
                     <FilePlusIcon class="w-5 h-5" />
                   </button>
                   <button
                     @click="viewDocuments(doctype)"
-                    class="text-gray-700 hover:text-gray-600"
+                    class="text-white hover:text-green-600 border border-green-600 hover:bg-white bg-green-600 p-1 rounded"
                     title="View Documents"
                   >
                     <FileTextIcon class="w-5 h-5" />

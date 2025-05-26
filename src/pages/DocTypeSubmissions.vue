@@ -108,13 +108,13 @@
                         >
                           <PencilIcon class="w-5 h-5" />
                         </button>
-                        <button
+                        <!-- <button
                           @click="router.push(`/doctypes/${route.params.id}/${doc.name}`)"
                           class="text-white hover:text-green-600 border border-green-600 hover:bg-white bg-green-600 p-1 rounded"
                           title="View Document"
                         >
                           <FileTextIcon class="w-5 h-5" />
-                        </button>
+                        </button> -->
                       </div>
                     </td>
                     <td

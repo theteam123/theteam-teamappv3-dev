@@ -32,6 +32,7 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
     };
 
     console.log('Starting to process fields:', fields.value);
+    console.log('Form data:', formData?.value);
 
     fields.value.forEach((field, index) => {
       console.log(`\nProcessing field ${index}:`, {
