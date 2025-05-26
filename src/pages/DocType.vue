@@ -269,14 +269,10 @@ import { getDocTypes, createDocType, updateDocType, deleteDocType as deleteDocTy
 import {
   FileIcon,
   FilePlusIcon,
-  PencilIcon,
-  TrashIcon,
   LoaderIcon,
   ClockIcon,
   FileTextIcon,
-  BarChartIcon,
   SearchIcon,
-  PlusIcon,
   GridIcon,
   ListIcon
 } from 'lucide-vue-next';
@@ -394,7 +390,14 @@ const fetchDocTypes = async (page = 1) => {
   loading.value = true;
   error.value = null;
   try {
-    const response = await getDocTypes(page, pageSize.value, debouncedSearch.value, selectedCategory.value);
+    const response = await getDocTypes(
+      page, 
+      pageSize.value, 
+      debouncedSearch.value, 
+      selectedCategory.value,
+      'modified',  // order_by field
+      'desc'       // order direction
+    );
     docTypes.value = response.data.map(docType => {
       // Safely parse fields
       let fields = [];

@@ -380,9 +380,24 @@ const fetchDocuments = async (page = 1) => {
   error.value = null;
   
   try {
-    const response = await getFormList(route.params.id as string);
+    // Get total count first
+    const countResponse = await getFormList(route.params.id as string, {
+      fields: ['count(name) as total_count'],
+      limit: 1
+    });
     
-    // Then fetch full data for each document
+    totalItems.value = countResponse.data[0]?.total_count || 0;
+    totalPages.value = Math.ceil(totalItems.value / pageSize.value);
+
+    // Then get paginated data with specific fields
+    const response = await getFormList(route.params.id as string, {
+      limit: pageSize.value,
+      offset: (page - 1) * pageSize.value,
+      order_by: `${sortBy.value} ${sortDirection.value}`,
+      fields: ['name', 'owner', 'creation', 'modified', 'docstatus']
+    });
+    
+    // Fetch full data for each document in the current page
     const fullDocuments = await Promise.all(
       response.data.map(async (doc: { name: string }) => {
         try {
@@ -395,8 +410,6 @@ const fetchDocuments = async (page = 1) => {
     );
     
     documents.value = fullDocuments;
-    totalItems.value = fullDocuments.length;
-    totalPages.value = Math.ceil(totalItems.value / pageSize.value);
     currentPage.value = page;
   } catch (err: any) {
     error.value = err.message;
@@ -426,6 +439,18 @@ const sortByColumn = (column: string) => {
 // Watch for search changes
 watch(searchQuery, () => {
   currentPage.value = 1;
+  fetchDocuments(1);
+});
+
+// Watch for page size changes
+watch(pageSize, () => {
+  currentPage.value = 1;
+  fetchDocuments(1);
+});
+
+// Watch for sorting changes
+watch([sortBy, sortDirection], () => {
+  fetchDocuments(currentPage.value);
 });
 
 const canEditDocument = (doc: Document) => {

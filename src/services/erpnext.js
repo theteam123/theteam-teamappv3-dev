@@ -185,12 +185,12 @@ export const getFormData = async (doctype, name) => {
     const cacheKey = `${doctype}-${name}`;
     const cachedData = getCachedMetadata(cacheKey);
     
-    // if (cachedData) {
-    //   console.log('Using cached metadata for:', cacheKey);
-    //   return cachedData;
-    // }
+    if (cachedData) {
+      console.log('Using cached metadata for:', cacheKey);
+      return cachedData;
+    }
 
-    // console.log('Debug - Input parameters:', { doctype, name });
+    console.log('Debug - Input parameters:', { doctype, name });
     
     // First, get the web form details
     const webFormResponse = await erp.get(`/api/resource/${doctype}/${name}`);
@@ -227,9 +227,23 @@ export const clearMetadataCache = (doctype, name) => {
   console.log('Cleared metadata cache for:', cacheKey);
 };
 
-export const getFormList = async (doctype) => {
+export const getFormList = async (doctype, options = {}) => {
   try {
-    const response = await erp.get(`/api/resource/${doctype}`);
+    const {
+      limit = 20,
+      offset = 0,
+      order_by = 'modified desc',
+      fields = ['name', 'owner', 'creation', 'modified']  // Default fields
+    } = options;
+
+    const params = new URLSearchParams({
+      limit_page_length: limit.toString(),
+      limit_start: offset.toString(),
+      order_by,
+      fields: JSON.stringify(fields)
+    });
+
+    const response = await erp.get(`/api/resource/${doctype}?${params}`);
     return response.data;
   } catch (error) {
     console.error('Error listing forms:', error.response?.data || error);
@@ -237,10 +251,10 @@ export const getFormList = async (doctype) => {
   }
 };
 
-export const getDocTypes = async (page = 1, pageSize = 20, search = '', category = '') => {
+export const getDocTypes = async (page = 1, pageSize = 20, search = '', category = '', order_by = 'modified', order = 'desc') => {
   try {
     // Create a cache key based on the request parameters
-    const cacheKey = `doctypes-${page}-${pageSize}-${search}-${category}`;
+    const cacheKey = `doctypes-${page}-${pageSize}-${search}-${category}-${order_by}-${order}`;
     const cachedData = getCachedMetadata(cacheKey);
     
     if (cachedData) {
@@ -292,7 +306,7 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
     const total = countResponse.data.message || 0;
     console.log('Total count:', total);
 
-    // Then fetch the data
+    // Then fetch the data with order parameters
     const response = await erp.get('/api/method/frappe.client.get_list', {
       params: {
         doctype: 'DocType',
@@ -300,6 +314,7 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
         filters: JSON.stringify(filters),
         limit_start,
         limit_page_length,
+        order_by: `${order_by} ${order}`,
         as_list: 1
       },
       headers: {
