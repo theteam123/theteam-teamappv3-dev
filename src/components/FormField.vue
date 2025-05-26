@@ -258,18 +258,54 @@
         {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
-      <input
-        :id="field.fieldname"
-        type="file"
-        @change="handleFileUpload"
-        :required="field.reqd === 1"
-        class="mt-1 block w-full text-sm text-gray-500
-          file:mr-4 file:py-2 file:px-4
-          file:rounded-md file:border-0
-          file:text-sm file:font-semibold
-          file:bg-green-50 file:text-green-700
-          hover:file:bg-green-100"
-      />
+      <div class="mt-1 flex items-center space-x-4">
+        <div class="flex-grow">
+          <input
+            :id="field.fieldname"
+            type="file"
+            @change="handleFileUpload"
+            :required="field.reqd === 1"
+            class="block w-full text-sm text-gray-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-md file:border-0
+              file:text-sm file:font-semibold
+              file:bg-green-50 file:text-green-700
+              hover:file:bg-green-100"
+          />
+          <!-- Upload Progress -->
+          <div v-if="uploading" class="mt-2">
+            <div class="flex items-center justify-between text-sm text-gray-600">
+              <span>Uploading file...</span>
+              <span>{{ uploadProgress }}%</span>
+            </div>
+            <div class="mt-1 w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-green-600 h-2 rounded-full" :style="{ width: `${uploadProgress}%` }"></div>
+            </div>
+          </div>
+        </div>
+        <!-- File Preview -->
+        <div v-if="filePreview" class="relative h-20 w-20 flex-shrink-0">
+          <!-- Image Preview -->
+          <img v-if="isPreviewableImage" :src="filePreview" alt="Preview" class="h-full w-full rounded-md object-cover" />
+          <!-- Document Icon for non-image files -->
+          <div v-else class="h-full w-full rounded-md bg-gray-100 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+            </svg>
+            <span class="absolute bottom-0 left-0 right-0 text-center text-xs bg-gray-800 text-white rounded-b-md py-1">
+              {{ fileExtension }}
+            </span>
+          </div>
+          <button
+            @click="clearFile"
+            class="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </template>
 
     <!-- Image Upload -->
@@ -696,79 +732,80 @@ function onPhoneInput(val: string) {
   emit('update:modelValue', val);
 }
 
+const filePreview = ref<string | null>(null);
+const fileExtension = ref<string>('');
+const isPreviewableImage = ref(false);
+
+const clearFile = () => {
+  if (filePreview.value) {
+    URL.revokeObjectURL(filePreview.value);
+    filePreview.value = null;
+  }
+  fileExtension.value = '';
+  isPreviewableImage.value = false;
+  emit('update:modelValue', '');
+  uploadProgress.value = 0;
+};
+
 const handleFileUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
     const file = input.files[0];
-    emit('update:modelValue', file.name);
+    
+    // Get file extension
+    fileExtension.value = file.name.split('.').pop()?.toUpperCase() || '';
+    
+    // Check if file is an image
+    isPreviewableImage.value = file.type.startsWith('image/');
+    
+    // Create preview if it's an image
+    if (isPreviewableImage.value) {
+      filePreview.value = URL.createObjectURL(file);
+    } else {
+      filePreview.value = 'document';  // Just a flag to show document icon
+    }
+    
+    // Start upload process
+    uploading.value = true;
+    uploadProgress.value = 0;
+    
+    try {
+      // Set progress to 10% to indicate upload is starting
+      uploadProgress.value = 10;
+      
+      const response = await uploadFile(
+        file,
+        props.field.parent || '', // doctype
+        props.parentDocName || '', // docname
+        false // isPrivate
+      );
+      
+      uploadProgress.value = 90;
+      
+      // Update the model value with the file URL
+      emit('update:modelValue', response.message.file_url);
+      
+      uploadProgress.value = 100;
+      
+      setTimeout(() => {
+        uploading.value = false;
+        uploadProgress.value = 0;
+      }, 1000);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      errorStore.setError(error.message || 'Failed to upload file');
+      uploading.value = false;
+      uploadProgress.value = 0;
+      clearFile();
+    }
   }
 };
 
-const MAX_WIDTH = 1920;
-const MAX_HEIGHT = 1080;
-const JPEG_QUALITY = 0.8;
-
-const optimizeImage = (file: File): Promise<File> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      // Calculate new dimensions while maintaining aspect ratio
-      let width = img.width;
-      let height = img.height;
-      
-      if (width > MAX_WIDTH) {
-        height = (height * MAX_WIDTH) / width;
-        width = MAX_WIDTH;
-      }
-      
-      if (height > MAX_HEIGHT) {
-        width = (width * MAX_HEIGHT) / height;
-        height = MAX_HEIGHT;
-      }
-
-      // Create canvas for resizing
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        resolve(file);
-        return;
-      }
-
-      // Draw resized image
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // Convert to blob with compression
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            resolve(file);
-            return;
-          }
-          // Create new file with same name but optimized content
-          const optimizedFile = new File([blob], file.name, {
-            type: 'image/jpeg',
-            lastModified: Date.now(),
-          });
-          resolve(optimizedFile);
-        },
-        'image/jpeg',
-        JPEG_QUALITY
-      );
-    };
-
-    img.onerror = () => resolve(file);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => resolve(file);
-    reader.readAsDataURL(file);
-  });
-};
+onUnmounted(() => {
+  if (filePreview.value && filePreview.value !== 'document') {
+    URL.revokeObjectURL(filePreview.value);
+  }
+});
 
 const handleImageUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
@@ -1154,6 +1191,72 @@ const addWatermark = async (imageFile: File): Promise<File> => {
       resolve(imageFile);
     };
     reader.readAsDataURL(imageFile);
+  });
+};
+
+const MAX_WIDTH = 1920;
+const MAX_HEIGHT = 1080;
+const JPEG_QUALITY = 0.8;
+
+const optimizeImage = (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions while maintaining aspect ratio
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > MAX_WIDTH) {
+        height = (height * MAX_WIDTH) / width;
+        width = MAX_WIDTH;
+      }
+      
+      if (height > MAX_HEIGHT) {
+        width = (width * MAX_HEIGHT) / height;
+        height = MAX_HEIGHT;
+      }
+
+      // Create canvas for resizing
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+
+      // Draw resized image
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to blob with compression
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          // Create new file with same name but optimized content
+          const optimizedFile = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          resolve(optimizedFile);
+        },
+        'image/jpeg',
+        JPEG_QUALITY
+      );
+    };
+
+    img.onerror = () => resolve(file);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
   });
 };
 

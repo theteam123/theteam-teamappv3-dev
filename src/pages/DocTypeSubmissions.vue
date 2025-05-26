@@ -134,6 +134,22 @@
                         </button>
                         <span v-else class="text-gray-400 text-sm">No images added</span>
                       </template>
+                      <template v-else-if="field.fieldtype === 'Attach'">
+                        <button 
+                          v-if="doc[field.fieldname]"
+                          @click="isImageFile(doc[field.fieldname]) ? 
+                            handleSingleImageClick(doc, field.fieldname) : 
+                            handleFileClick(doc[field.fieldname])"
+                          class="text-gray-500 hover:text-gray-700"
+                          :title="isImageFile(doc[field.fieldname]) ? 'View Image' : 'Open File'"
+                        >
+                          <component 
+                            :is="getFileIcon(doc[field.fieldname])" 
+                            class="w-5 h-5"
+                          />
+                        </button>
+                        <span v-else class="text-gray-400 text-sm">No file added</span>
+                      </template>
                       <template v-else-if="field.fieldtype === 'Attach Image'">
                         <button 
                           @click="handleSingleImageClick(doc, field.fieldname)"
@@ -144,7 +160,7 @@
                           <ImageIcon class="w-5 h-5" />
                         </button>
                         <span v-else class="text-gray-400 text-sm">No image added</span>
-                      </template>                      
+                      </template>
                       <template v-else>
                         {{ doc[field.fieldname] }}
                       </template>
@@ -222,6 +238,7 @@ import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { getFormList, getFormData } from '../services/erpnext';
+import { getErpNextApiUrl } from '../utils/api';
 import {
   FileIcon,
   FilePlusIcon,
@@ -233,7 +250,13 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   FileTextIcon,
-  ImageIcon
+  ImageIcon,
+  FileImageIcon,
+  FileTextIcon as FileDocIcon,
+  FileArchiveIcon,
+  FileVideoIcon,
+  FileAudioIcon,
+  FileCodeIcon
 } from 'lucide-vue-next';
 import ImageModal from '../components/ImageModal.vue';
 
@@ -338,7 +361,10 @@ const fetchDocType = async () => {
     docType.value = {
       ...response.data,
       fields: response.data.fields.filter((field: DocTypeField) => 
-        field.fieldtype === 'Table' || field.in_list_view === 1 || field.fieldtype === 'Attach Image'
+        field.fieldtype === 'Table' || 
+        field.in_list_view === 1 || 
+        field.fieldtype === 'Attach Image' ||
+        field.fieldtype === 'Attach'
       )
     };
   } catch (err: any) {
@@ -428,6 +454,65 @@ const handleSingleImageClick = (doc: Document, fieldname: string) => {
     selectedFieldname.value = fieldname;
     showImageModal.value = true;
   }
+};
+
+const getFileIcon = (filename: string) => {
+  if (!filename) return FileIcon;
+  
+  const extension = filename.split('.').pop()?.toLowerCase();
+  
+  switch (extension) {
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+    case 'webp':
+      return FileImageIcon;
+    case 'pdf':
+      return FileTextIcon;
+    case 'xlsx':
+    case 'xls':
+    case 'csv':
+      return FileCodeIcon;
+    case 'doc':
+    case 'docx':
+    case 'txt':
+      return FileDocIcon;
+    case 'zip':
+    case 'rar':
+    case '7z':
+      return FileArchiveIcon;
+    case 'mp4':
+    case 'avi':
+    case 'mov':
+      return FileVideoIcon;
+    case 'mp3':
+    case 'wav':
+    case 'ogg':
+      return FileAudioIcon;
+    case 'js':
+    case 'ts':
+    case 'html':
+    case 'css':
+    case 'json':
+      return FileCodeIcon;
+    default:
+      return FileIcon;
+  }
+};
+
+// Add these helper functions after getFileIcon and before onMounted
+const isImageFile = (filename: string): boolean => {
+  if (!filename) return false;
+  const extension = filename.split('.').pop()?.toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(extension || '');
+};
+
+const handleFileClick = (fileUrl: string) => {
+  const fullUrl = fileUrl.startsWith('/files/') 
+    ? `${getErpNextApiUrl()}${fileUrl}`
+    : fileUrl;
+  window.open(fullUrl, '_blank');
 };
 
 onMounted(async () => {
