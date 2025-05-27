@@ -2,33 +2,25 @@ import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 import { getCurrentToken } from './oauth';
 import { getErpNextApiUrl } from '../utils/api';
+import { getDomainConfig } from '../config/domains';
 
 // Get the current domain and environment
-const currentDomain = window.location.hostname;
 const isProduction = import.meta.env.PROD;
 
 // Determine which ERPNext instance to use based on domain and environment
 export const getErpNextConfig = () => {
+  const config = getDomainConfig();
+  
   // Production environment
   if (isProduction) {
-    if (currentDomain.includes('teamsite-taktec')) {
-      return {
-        baseURL: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL
-      };
-    }
     return {
-      baseURL: import.meta.env.VITE_ERPNEXT_API_URL
+      baseURL: config.apiUrl
     };
   }
   
   // Development environment
-  if (currentDomain.includes('teamsite-taktec')) {
-    return {
-      baseURL: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL || 'http://taktec.theteam.net.au'
-    };
-  }
   return {
-    baseURL: import.meta.env.VITE_ERPNEXT_API_URL || 'https://erp.theteam.net.au'
+    baseURL: config.apiUrl || config.fallbackUrl
   };
 };
 
@@ -37,7 +29,7 @@ const config = getErpNextConfig();
 // Log configuration in development
 if (!isProduction) {
   console.log('Current Environment:', isProduction ? 'Production' : 'Development');
-  console.log('Current Domain:', currentDomain);
+  console.log('Current Domain:', window.location.hostname);
   console.log('Using API URL:', config.baseURL);
 }
 

@@ -1,32 +1,18 @@
 import axios from 'axios';
 import { getErpNextApiUrl } from '../utils/api';
+import { getOAuthConfig } from '../config/domains';
 
-let clientId = import.meta.env.VITE_OAUTH_CLIENT_ID;
-let clientSecret = import.meta.env.VITE_OAUTH_CLIENT_SECRET;
-let redirectUri = import.meta.env.VITE_OAUTH_REDIRECT_URI;
-let authorizationEndpoint = `${getErpNextApiUrl()}/api/method/frappe.integrations.oauth2.authorize`;
-let tokenEndpoint = `${getErpNextApiUrl()}/api/method/frappe.integrations.oauth2.get_token`;
-const scope = 'all openid';
-
-const currentDomain = window.location.hostname;
-
-if (currentDomain.includes('teamsite-taktec')) {
-  clientId = import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_ID;
-  clientSecret = import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_SECRET;
-  redirectUri = import.meta.env.VITE_OAUTH_TAKTEC_REDIRECT_URI;
-  authorizationEndpoint = `${import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL}/api/method/frappe.integrations.oauth2.authorize`;
-  tokenEndpoint = `${import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL}/api/method/frappe.integrations.oauth2.get_token`;
-}
-
+// Get OAuth configuration
+const oauthConfig = getOAuthConfig();
 
 // OAuth2 configuration
-const oauthConfig = {
-  clientId,
-  clientSecret,
-  redirectUri,
-  authorizationEndpoint,
-  tokenEndpoint,
-  scope
+const config = {
+  clientId: oauthConfig.clientId,
+  clientSecret: oauthConfig.clientSecret,
+  redirectUri: oauthConfig.redirectUri,
+  authorizationEndpoint: `${getErpNextApiUrl()}/api/method/frappe.integrations.oauth2.authorize`,
+  tokenEndpoint: `${getErpNextApiUrl()}/api/method/frappe.integrations.oauth2.get_token`,
+  scope: 'all openid'
 };
 
 // Create axios instance for OAuth requests
@@ -41,22 +27,22 @@ const oauthClient = axios.create({
 // Generate OAuth authorization URL
 export const getAuthorizationUrl = () => {
   const params = new URLSearchParams({
-    client_id: oauthConfig.clientId,
-    redirect_uri: oauthConfig.redirectUri,
+    client_id: config.clientId,
+    redirect_uri: config.redirectUri,
     response_type: 'token',
-    scope: oauthConfig.scope
+    scope: config.scope
   });
 
   console.log('OAuth Configuration:', {
-    clientId: oauthConfig.clientId,
-    clientSecret: oauthConfig.clientSecret ? '***' : 'missing',
-    redirectUri: oauthConfig.redirectUri,
-    authorizationEndpoint: oauthConfig.authorizationEndpoint,
-    tokenEndpoint: oauthConfig.tokenEndpoint,
-    scope: oauthConfig.scope
+    clientId: config.clientId,
+    clientSecret: config.clientSecret ? '***' : 'missing',
+    redirectUri: config.redirectUri,
+    authorizationEndpoint: config.authorizationEndpoint,
+    tokenEndpoint: config.tokenEndpoint,
+    scope: config.scope
   });
 
-  const url = `${oauthConfig.authorizationEndpoint}?${params.toString()}`;
+  const url = `${config.authorizationEndpoint}?${params.toString()}`;
   console.log('Generated Authorization URL:', url);
   return url;
 };
@@ -65,19 +51,19 @@ export const getAuthorizationUrl = () => {
 export const getAccessToken = async (code) => {
   try {
     console.log('Token Request Details:', {
-      endpoint: oauthConfig.tokenEndpoint,
-      clientId: oauthConfig.clientId,
-      clientSecret: oauthConfig.clientSecret ? '***' : 'missing',
-      redirectUri: oauthConfig.redirectUri,
+      endpoint: config.tokenEndpoint,
+      clientId: config.clientId,
+      clientSecret: config.clientSecret ? '***' : 'missing',
+      redirectUri: config.redirectUri,
       code: code
     });
 
-    const response = await oauthClient.post(oauthConfig.tokenEndpoint, {
+    const response = await oauthClient.post(config.tokenEndpoint, {
       grant_type: 'authorization_code',
       code,
-      client_id: oauthConfig.clientId,
-      client_secret: oauthConfig.clientSecret,
-      redirect_uri: oauthConfig.redirectUri
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      redirect_uri: config.redirectUri
     });
 
     if (response.data.access_token) {
@@ -96,11 +82,11 @@ export const getAccessToken = async (code) => {
 // Refresh access token
 export const refreshAccessToken = async (refreshToken) => {
   try {
-    const response = await oauthClient.post(oauthConfig.tokenEndpoint, {
+    const response = await oauthClient.post(config.tokenEndpoint, {
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
-      client_id: oauthConfig.clientId,
-      client_secret: oauthConfig.clientSecret
+      client_id: config.clientId,
+      client_secret: config.clientSecret
     });
 
     if (response.data.access_token) {
