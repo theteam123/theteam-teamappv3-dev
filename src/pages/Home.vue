@@ -2,8 +2,8 @@
   <div class="p-8">
     <div class="flex flex-col items-center space-y-6">
       <img 
-        src="/TeamLogo.png" 
-        alt="Team App Logo" 
+        :src="logo" 
+        alt="App Logo" 
         class="h-12" 
       />
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
@@ -24,5 +24,9 @@
 </template>
 
 <script setup lang="ts">
-import { ClipboardIcon, UsersIcon, BuildingIcon, ShieldIcon, SearchIcon } from 'lucide-vue-next'
+import { computed } from 'vue';
+import { ClipboardIcon, UsersIcon, BuildingIcon, ShieldIcon, SearchIcon } from 'lucide-vue-next';
+import { getLogo } from '../config/domains';
+
+const logo = computed(() => getLogo());
 </script>

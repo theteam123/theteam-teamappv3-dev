@@ -3,8 +3,8 @@
     <div class="max-w-md w-full space-y-8">
       <div class="text-center">
         <div class="flex justify-center">
-          <div class=" rounded-lg flex items-center justify-center">
-            <img src="/TeamLogo.png" alt="Team App Logo" class="" />
+          <div class="rounded-lg flex items-center justify-center">
+            <img :src="logo" alt="App Logo" class="" />
           </div>
         </div>
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
@@ -79,11 +79,12 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue';
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { LockIcon, LoaderIcon, AlertCircleIcon } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
+import { getLogo } from '../config/domains';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -92,6 +93,8 @@ const showDebug = ref(false);
 const emailError = ref('');
 const passwordError = ref('');
 const fullNameError = ref('');
+
+const logo = computed(() => getLogo());
 
 const clearErrors = () => {
   emailError.value = '';

@@ -3,6 +3,7 @@ export const DOMAINS = {
   'teamsite-taktec': {
     apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
     fallbackUrl: 'http://taktec.theteam.net.au',
+    logo: '/TeamLogo.png',
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_ID,
       clientSecret: import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_SECRET,
@@ -12,6 +13,7 @@ export const DOMAINS = {
   'teamsite-sgcloud': {
     apiUrl: import.meta.env.VITE_ERPNEXT_SGCLOUD_API_URL,
     fallbackUrl: 'https://ops.sgcloud.com.au',
+    logo: '/SGCAustralia-Logo.svg',
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_SGCLOUD_CLIENT_ID,
       clientSecret: import.meta.env.VITE_OAUTH_SGCLOUD_CLIENT_SECRET,
@@ -21,6 +23,7 @@ export const DOMAINS = {
   'default': {
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://erp.theteam.net.au',
+    logo: '/TeamLogo.png',
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
       clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET,
@@ -62,4 +65,13 @@ export const getApiUrl = () => {
 export const getOAuthConfig = () => {
   const config = getDomainConfig();
   return config.oauthConfig;
+};
+
+/**
+ * Get logo path for the current domain
+ * @returns {string} Logo path
+ */
+export const getLogo = () => {
+  const config = getDomainConfig();
+  return config.logo;
 }; 

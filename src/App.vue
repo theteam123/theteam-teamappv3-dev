@@ -13,7 +13,7 @@
           <div class="flex items-center">
             <img 
               v-if="!isSidebarCollapsed" 
-              src="/TeamLogo.png" 
+              :src="logo" 
               alt="Team App Logo" 
               class="h-8" 
             />
@@ -348,7 +348,7 @@
             class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
           >
             <img 
-              src="/TeamLogo.png" 
+              :src="logo" 
               alt="Team App Logo" 
               class="h-8" 
             />
@@ -386,6 +386,7 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { getErpNextApiUrl } from './utils/api';
+import { getLogo } from './config/domains';
 import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
 import ErrorMessage from './components/ErrorMessage.vue';
@@ -424,6 +425,7 @@ interface SearchResult {
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const logo = computed(() => getLogo());
 
 const isSidebarCollapsed = ref(true);
 const loading = ref(false);
