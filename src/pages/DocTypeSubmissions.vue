@@ -51,9 +51,8 @@
     </div>
 
     <!-- Submissions List -->
-    <div v-else>
+    <div v-else-if="docType">
       <!-- Submissions Table -->
-
       <div v-if="documents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
         <div class="overflow-x-auto">
           <div class="inline-block min-w-full align-middle">

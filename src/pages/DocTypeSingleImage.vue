@@ -101,12 +101,28 @@ const fetchImage = async () => {
   try {
     // First get the DocType to find the field information
     const docTypeResponse = await getFormData('DocType', route.params.id as string);
+    console.log('DocType Response:', docTypeResponse);
+
+    if (!docTypeResponse?.data?.fields) {
+      throw new Error('Invalid DocType response structure');
+    }
+
     field.value = docTypeResponse.data.fields.find(
       (f: Field) => f.fieldname === route.params.fieldname
     );
 
+    if (!field.value) {
+      throw new Error(`Field ${route.params.fieldname} not found in DocType`);
+    }
+
     // Then get the document data
     const response = await getFormData(route.params.id as string, route.params.documentId as string);
+    console.log('Document Response:', response);
+
+    if (!response?.data) {
+      throw new Error('Invalid document response structure');
+    }
+
     const rawImageUrl = response.data[route.params.fieldname as string];
     
     if (!rawImageUrl) {

@@ -185,10 +185,10 @@ export const getFormData = async (doctype, name) => {
     const cacheKey = `${doctype}-${name}`;
     const cachedData = getCachedMetadata(cacheKey);
     
-    if (cachedData) {
-      console.log('Using cached metadata for:', cacheKey);
-      return cachedData;
-    }
+    // if (cachedData) {
+    //   console.log('Using cached metadata for:', cacheKey);
+    //   return cachedData;
+    // }
 
     console.log('Debug - Input parameters:', { doctype, name });
     
