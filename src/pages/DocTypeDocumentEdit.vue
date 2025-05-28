@@ -1,5 +1,6 @@
 <template>
   <div class="p-8">
+    <SuccessMessage />
     <!-- Page Title -->
     <div class="mb-6">
       <div class="flex items-center gap-4">
@@ -45,6 +46,7 @@
                 :field="field"
                 v-model="formData[field.fieldname]"
                 :disabled="!canEditDocument"
+                :geoLocationFields="[]"
               />
             </div>
           </div>
@@ -82,10 +84,13 @@ import { useAuthStore } from '../stores/auth';
 import { getFormData, updateDoctypeSubmission } from '../services/erpnext';
 import FormField from '../components/FormField.vue';
 import { useFormSections } from '../composables/useFormSections';
+import { useSuccessStore } from '../stores/success';
+import { isEqual } from 'lodash';
 import {
   ArrowLeftIcon,
   LoaderIcon,
 } from 'lucide-vue-next';
+import SuccessMessage from '../components/SuccessMessage.vue';
 
 interface DocTypeField {
   fieldname: string;
@@ -106,8 +111,10 @@ interface DocType {
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const successStore = useSuccessStore();
 const docType = ref<DocType | null>(null);
 const formData = ref<Record<string, any>>({});
+const originalFormData = ref<Record<string, any>>({});
 const loading = ref(false);
 const submitting = ref(false);
 const error = ref('');
@@ -147,6 +154,7 @@ const fetchDocTypeAndDocument = async () => {
     
     if (documentResponse.data) {
       formData.value = JSON.parse(JSON.stringify(documentResponse.data));
+      originalFormData.value = JSON.parse(JSON.stringify(documentResponse.data));
     } else {
       throw new Error('Document not found');
     }
@@ -159,18 +167,59 @@ const fetchDocTypeAndDocument = async () => {
 };
 
 const handleSubmit = async () => {
+  // Check if there are any changes
+  if (isEqual(formData.value, originalFormData.value)) {
+    console.log('No changes detected');
+    successStore.showSuccess('No changes to save');
+    setTimeout(() => {
+      router.back();
+    }, 1500);
+    return;
+  }
+
   submitting.value = true;
   error.value = '';
 
   try {
+    console.log('Calling updateDoctypeSubmission');
     await updateDoctypeSubmission(
       route.params.id as string,
       route.params.documentId as string,
       formData.value
     );
-    router.push(`/doctypes/${route.params.id}`);
+
+    console.log('Update successful');
+    // Show success message
+    successStore.showSuccess('Document updated successfully');
+
+    // Wait for 1.5 seconds before redirecting
+    setTimeout(() => {
+      router.push(`/doctypes/${route.params.id}`);
+    }, 1500);
   } catch (err: any) {
-    error.value = err.message || 'Failed to update document';
+    console.error('Update error:', err);
+    let errorMsg = err.message || 'Failed to update document';
+
+    if (err._server_messages) {
+      try {
+        const serverMessages = JSON.parse(err._server_messages);
+        if (Array.isArray(serverMessages) && serverMessages.length > 0) {
+          const msgObj = JSON.parse(serverMessages[0]);
+          if (msgObj && msgObj.message) {
+            errorMsg = msgObj.message;
+          }
+        }
+      } catch (parseErr) {
+        // Ignore parse errors, fallback to default errorMsg
+      }
+    }
+
+    if (errorMsg.includes('TimestampMismatchError') || errorMsg.includes('Please refresh to get the latest document')) {
+      error.value = 'This record was updated elsewhere. Please reload and try again.';
+      await fetchDocTypeAndDocument();
+    } else {
+      error.value = errorMsg;
+    }
   } finally {
     submitting.value = false;
   }

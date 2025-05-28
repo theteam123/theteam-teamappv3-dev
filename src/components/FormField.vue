@@ -264,7 +264,7 @@
             :id="field.fieldname"
             type="file"
             @change="handleFileUpload"
-            :required="field.reqd === 1"
+            :required="field.reqd === 1 && !hasExistingFile"
             class="block w-full text-sm text-gray-500
               file:mr-4 file:py-2 file:px-4
               file:rounded-md file:border-0
@@ -284,9 +284,14 @@
           </div>
         </div>
         <!-- File Preview -->
-        <div v-if="filePreview" class="relative h-20 w-20 flex-shrink-0">
+        <div v-if="filePreview || hasExistingFile" class="relative h-20 w-20 flex-shrink-0">
           <!-- Image Preview -->
-          <img v-if="isPreviewableImage" :src="filePreview" alt="Preview" class="h-full w-full rounded-md object-cover" />
+          <img 
+            v-if="isPreviewableImage" 
+            :src="filePreview === 'document' ? existingFileUrl : filePreview" 
+            alt="Preview" 
+            class="h-full w-full rounded-md object-cover" 
+          />
           <!-- Document Icon for non-image files -->
           <div v-else class="h-full w-full rounded-md bg-gray-100 flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -297,7 +302,8 @@
             </span>
           </div>
           <button
-            @click="clearFile"
+            @click.stop="clearFile"
+            type="button"
             class="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -326,7 +332,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
               </svg>
-              Take a Photo
+              {{ hasExistingFile ? 'Replace Photo' : 'Take a Photo' }}
             </button>
             <input
               ref="cameraInput"
@@ -335,7 +341,7 @@
               capture="environment"
               class="hidden"
               @change="handleImageUpload"
-              :required="field.reqd === 1"
+              :required="field.reqd === 1 && !hasExistingFile"
             />
           </template>
           <!-- Show regular file input when not using camera -->
@@ -345,7 +351,7 @@
               type="file"
               accept="image/*"
               @change="handleImageUpload"
-              :required="field.reqd === 1"
+              :required="field.reqd === 1 && !hasExistingFile"
               class="block w-full text-sm text-gray-500
                 file:mr-4 file:py-2 file:px-4
                 file:rounded-md file:border-0
@@ -365,10 +371,15 @@
             </div>
           </div>
         </div>
-        <div v-if="imagePreview" class="relative h-20 w-20 flex-shrink-0">
-          <img :src="imagePreview" alt="Preview" class="h-full w-full rounded-md object-cover" />
+        <div v-if="imagePreview || hasExistingFile" class="relative h-20 w-20 flex-shrink-0">
+          <img 
+            :src="imagePreview || existingFileUrl" 
+            alt="Preview" 
+            class="h-full w-full rounded-md object-cover" 
+          />
           <button
-            @click="clearImage"
+            @click.stop="clearImage"
+            type="button"
             class="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -599,6 +610,40 @@
   </template>
 
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="isModalOpen" class="fixed inset-0 flex items-center justify-center z-50">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black bg-opacity-50" @click="closeModal"></div>
+        
+        <!-- Modal -->
+        <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4 relative z-10">
+          <pre>{{ isModalOpen }}</pre>
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Delete Confirmation</h3>
+          <p class="text-sm text-gray-500 mb-6">Are you sure you want to delete the attachment?</p>
+          
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              @click.stop="closeModal"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click.stop="handleConfirmDelete"
+              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -609,6 +654,7 @@ import { getFormList, uploadFile } from '../services/erpnext';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 import { useErrorStore } from '../stores/error';
 import { MapPinIcon, LoaderIcon } from 'lucide-vue-next';
+import { getErpNextApiUrl } from '../utils/api';
 
 interface FormField {
   fieldname: string;
@@ -736,21 +782,84 @@ const filePreview = ref<string | null>(null);
 const fileExtension = ref<string>('');
 const isPreviewableImage = ref(false);
 
+const isModalOpen = ref(false);
+
+const deleteType = ref<'file' | 'image'>('file');
+
+const isDeleting = ref(false);
+
+const showDeleteConfirmation = (type: 'file' | 'image') => {
+  console.log('showDeleteConfirmation', type);
+  deleteType.value = type;
+  isModalOpen.value = true;
+};
+
+const closeModal = () => {
+  console.log('closeModal');
+  isModalOpen.value = false;
+};
+
+const handleConfirmDelete = () => {
+  console.log('handleConfirmDelete');
+  // Set modal state to false first
+  isModalOpen.value = false;
+  
+  // Set deleting flag
+  isDeleting.value = true;
+  
+  // Wait for the next tick before proceeding with deletion
+  nextTick().then(() => {
+    if (deleteType.value === 'file') {
+      // Clear all file-related states
+      if (filePreview.value && filePreview.value !== 'document') {
+        URL.revokeObjectURL(filePreview.value);
+      }
+      filePreview.value = null;  // Clear preview regardless of type
+      fileExtension.value = '';
+      isPreviewableImage.value = false;
+      emit('update:modelValue', '');
+      uploadProgress.value = 0;
+    } else {
+      // Clear all image-related states
+      if (imagePreview.value) {
+        if (imagePreview.value.startsWith('blob:')) {
+          URL.revokeObjectURL(imagePreview.value);
+        }
+        imagePreview.value = null;
+      }
+      emit('update:modelValue', '');
+      uploadProgress.value = 0;
+    }
+    
+    // Reset all states
+    deleteType.value = 'file';
+    
+    // Reset deleting flag after a short delay to ensure all watchers have processed
+    setTimeout(() => {
+      isDeleting.value = false;
+    }, 100);
+  });
+};
+
 const clearFile = () => {
-  if (filePreview.value) {
-    URL.revokeObjectURL(filePreview.value);
-    filePreview.value = null;
-  }
-  fileExtension.value = '';
-  isPreviewableImage.value = false;
-  emit('update:modelValue', '');
-  uploadProgress.value = 0;
+  console.log('clearFile');
+  showDeleteConfirmation('file');
+};
+
+const clearImage = () => {
+  console.log('clearImage');
+  showDeleteConfirmation('image');
 };
 
 const handleFileUpload = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
     const file = input.files[0];
+    
+    // Clear existing preview if any
+    if (filePreview.value && filePreview.value !== 'document') {
+      URL.revokeObjectURL(filePreview.value);
+    }
     
     // Get file extension
     fileExtension.value = file.name.split('.').pop()?.toUpperCase() || '';
@@ -770,6 +879,9 @@ const handleFileUpload = async (event: Event) => {
     uploadProgress.value = 0;
     
     try {
+      // Store the original value in case upload fails
+      const originalValue = props.modelValue;
+      
       // Set progress to 10% to indicate upload is starting
       uploadProgress.value = 10;
       
@@ -812,6 +924,14 @@ const handleImageUpload = async (event: Event) => {
   if (input.files && input.files[0]) {
     const file = input.files[0];
     
+    // Clear existing preview if any
+    if (imagePreview.value) {
+      // Only revoke if it's a blob URL (not an existing file URL)
+      if (imagePreview.value.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview.value);
+      }
+    }
+    
     // Show original preview immediately
     imagePreview.value = URL.createObjectURL(file);
     
@@ -820,6 +940,9 @@ const handleImageUpload = async (event: Event) => {
     uploadProgress.value = 0;
     
     try {
+      // Store the original value in case upload fails
+      const originalValue = props.modelValue;
+      
       // Set progress to 10% to indicate upload is starting
       uploadProgress.value = 10;
       
@@ -856,17 +979,9 @@ const handleImageUpload = async (event: Event) => {
       errorStore.setError(error.message || 'Failed to upload file');
       uploading.value = false;
       uploadProgress.value = 0;
+      clearImage();
     }
   }
-};
-
-const clearImage = () => {
-  if (imagePreview.value) {
-    URL.revokeObjectURL(imagePreview.value);
-    imagePreview.value = null;
-  }
-  emit('update:modelValue', '');
-  uploadProgress.value = 0;
 };
 
 function handleClickOutside(event: MouseEvent) {
@@ -1260,5 +1375,109 @@ const optimizeImage = (file: File): Promise<File> => {
   });
 };
 
+// Add these computed properties after the existing computed properties
+const hasExistingFile = computed(() => {
+  return typeof props.modelValue === 'string' && props.modelValue.length > 0;
+});
+
+const existingFileUrl = computed(() => {
+  if (!hasExistingFile.value) return null;
+  
+  const baseUrl = getErpNextApiUrl();
+  const fileUrl = props.modelValue;
+
+  // If it's already an absolute URL (starts with http:// or https://)
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    return fileUrl;
+  }
+
+  // If it's a relative URL (starts with /)
+  if (fileUrl.startsWith('/')) {
+    return `${baseUrl}${fileUrl}`;
+  }
+
+  // If it's a relative URL without leading slash
+  return `${baseUrl}/${fileUrl}`;
+});
+
+const isExistingFileImage = computed(() => {
+  if (!hasExistingFile.value) return false;
+  const url = props.modelValue.toLowerCase();
+  return url.endsWith('.jpg') || url.endsWith('.jpeg') || 
+         url.endsWith('.png') || url.endsWith('.gif') || 
+         url.endsWith('.webp');
+});
+
+// Update the watch to check the flag
+watch(() => props.modelValue, async (newValue) => {
+  // Skip if we're in the middle of a delete operation
+  if (isDeleting.value) return;
+
+  if (props.field.fieldtype === 'Attach' || props.field.fieldtype === 'Attach Image') {
+    if (newValue && typeof newValue === 'string') {
+      // Clear any existing previews first
+      if (filePreview.value && filePreview.value !== 'document') {
+        URL.revokeObjectURL(filePreview.value);
+      }
+      if (imagePreview.value) {
+        URL.revokeObjectURL(imagePreview.value);
+      }
+      
+      // For Attach Image, set the preview directly
+      if (props.field.fieldtype === 'Attach Image') {
+        imagePreview.value = existingFileUrl.value;
+      } else {
+        // For Attach, set preview based on file type
+        if (isExistingFileImage.value) {
+          filePreview.value = existingFileUrl.value;
+          isPreviewableImage.value = true;
+        } else {
+          filePreview.value = 'document';
+          isPreviewableImage.value = false;
+        }
+        // Set file extension from URL
+        const urlParts = newValue.split('.');
+        if (urlParts.length > 1) {
+          fileExtension.value = urlParts.pop()?.toUpperCase() || '';
+        }
+      }
+    }
+  }
+});
+
+// Add initialization in onMounted
+onMounted(() => {
+  // Initialize file preview if there's an initial value
+  if (props.modelValue && typeof props.modelValue === 'string') {
+    if (props.field.fieldtype === 'Attach Image') {
+      imagePreview.value = existingFileUrl.value;
+    } else if (props.field.fieldtype === 'Attach') {
+      if (isExistingFileImage.value) {
+        filePreview.value = existingFileUrl.value;
+        isPreviewableImage.value = true;
+      } else {
+        filePreview.value = 'document';
+        isPreviewableImage.value = false;
+        const urlParts = props.modelValue.split('.');
+        if (urlParts.length > 1) {
+          fileExtension.value = urlParts.pop()?.toUpperCase() || '';
+        }
+      }
+    }
+  }
+});
+
 defineExpose({ VueTelInput });
-</script> 
+</script>
+
+<style>
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+</style> 
