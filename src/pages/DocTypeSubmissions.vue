@@ -12,9 +12,8 @@
         </div>
       </div>
     </div>
-
     <!-- New Document Button -->
-    <div class="flex justify-start sm:justify-end mb-6">
+    <div class="flex justify-end mb-6">
       <button
         @click="router.push(`/doctypes/${route.params.id}/new`)"
         class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
@@ -23,7 +22,7 @@
         New {{ docType?.name }}
       </button>
     </div>
-
+    
     <!-- Search and Filter -->
     <div class="mb-6 flex flex-col sm:flex-row gap-4">
       <div class="flex-1">
@@ -37,7 +36,35 @@
           />
         </div>
       </div>
-      
+      <div class="flex gap-4">
+        <button
+          @click="viewMode = 'grid'"
+          :class="[
+            'p-2 rounded-lg',
+            viewMode === 'grid' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+          ]"
+          title="Grid View"
+        >
+          <GridIcon class="w-5 h-5" />
+        </button>
+        <button
+          @click="viewMode = 'list'"
+          :class="[
+            'p-2 rounded-lg',
+            viewMode === 'list' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+          ]"
+          title="List View"
+        >
+          <ListIcon class="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+
+
+
+    <!-- DocType Count -->
+    <div class="mb-4 text-sm text-gray-600">
+      Showing {{ filteredDocuments.length }} of {{ totalItems }} submissions
     </div>
 
     <!-- Loading State -->
@@ -50,10 +77,122 @@
       {{ error }}
     </div>
 
-    <!-- Submissions List -->
+    <!-- Submissions Content -->
     <div v-else-if="docType">
-      <!-- Submissions Table -->
-      <div v-if="documents.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
+      <!-- Grid View -->
+      <div v-if="documents.length > 0 && viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          v-for="doc in filteredDocuments"
+          :key="doc.name"
+          :class="[
+            'bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow',
+            doc.owner === authStore.user?.email ? 'border-l-4 border-green-500' : ''
+          ]"
+        >
+          <div class="p-6">
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <div class="flex items-center gap-2">
+                  <div class="p-2 bg-green-50 rounded-lg">
+                    <FileIcon class="w-6 h-6 text-green-600" />
+                  </div>
+                  <div class="flex-1">
+                    <h3 class="text-lg font-semibold text-gray-900 truncate">
+                      {{ doc.name }}
+                    </h3>
+                    <p class="text-sm text-gray-500">
+                      Created {{ formatDate(doc.creation) }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  v-if="canEditDocument(doc)"
+                  @click="router.push(`/doctypes/${route.params.id}/${doc.name}/edit`)"
+                  class="text-gray-600 hover:text-green-600"
+                  title="Edit Document"
+                >
+                  <PencilIcon class="w-5 h-5" />
+                </button>
+                <template v-for="field in actionFields" :key="field.fieldname">
+                  <a
+                    v-if="doc[field.fieldname]"
+                    :href="doc[field.fieldname]"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-gray-600 hover:text-green-600"
+                    :title="field.label.replace('[action]', '').trim()"
+                  >
+                    <component 
+                      :is="field.label.toLowerCase().includes('pdf') ? FileTextIcon : 
+                           field.label.toLowerCase().includes('folder') ? FolderIcon : 
+                           LinkIcon" 
+                      class="w-5 h-5"
+                    />
+                  </a>
+                </template>
+              </div>
+            </div>
+
+            <!-- Document Fields -->
+            <div class="mt-4 space-y-2">
+              <template v-for="field in docType?.fields.filter(f => !f.label.toLowerCase().includes('[action]'))" :key="field.fieldname">
+                <div v-if="doc[field.fieldname]" class="flex items-start gap-2">
+                  <span class="text-sm font-medium text-gray-500">{{ field.label }}:</span>
+                  <span class="text-sm text-gray-900">
+                    <template v-if="field.fieldtype === 'Table' && field.label.includes('[multiple-upload]')">
+                      <button 
+                        @click="handleImageClick(doc, field.fieldname)"
+                        class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        title="View Images"
+                      >
+                        <ImageIcon class="w-4 h-4" />
+                        <span>View Images</span>
+                      </button>
+                    </template>
+                    <template v-else-if="field.fieldtype === 'Attach'">
+                      <button 
+                        @click="isImageFile(doc[field.fieldname]) ? 
+                          handleSingleImageClick(doc, field.fieldname) : 
+                          handleFileClick(doc[field.fieldname])"
+                        class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        :title="isImageFile(doc[field.fieldname]) ? 'View Image' : 'Open File'"
+                      >
+                        <component :is="getFileIcon(doc[field.fieldname])" class="w-4 h-4" />
+                        <span>View File</span>
+                      </button>
+                    </template>
+                    <template v-else-if="field.fieldtype === 'Attach Image'">
+                      <button 
+                        @click="handleSingleImageClick(doc, field.fieldname)"
+                        class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        title="View Image"
+                      >
+                        <ImageIcon class="w-4 h-4" />
+                        <span>View Image</span>
+                      </button>
+                    </template>
+                    <template v-else>
+                      {{ doc[field.fieldname] }}
+                    </template>
+                  </span>
+                </div>
+              </template>
+            </div>
+
+            <div class="mt-4 text-sm text-gray-500">
+              <div class="flex items-center gap-2">
+                <ClockIcon class="w-4 h-4" />
+                <span>Updated {{ formatDate(doc.modified) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- List View -->
+      <div v-else-if="documents.length > 0 && viewMode === 'list'" class="bg-white rounded-lg shadow overflow-hidden">
         <div class="overflow-x-auto">
           <div class="inline-block min-w-full align-middle">
             <div class="overflow-hidden">
@@ -64,7 +203,7 @@
                       Actions
                     </th>
                     <th
-                      v-for="field in docType?.fields"
+                      v-for="field in docType?.fields.filter(f => !f.label.toLowerCase().includes('[action]'))"
                       :key="field.fieldname"
                       class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       @click="sortByColumn(field.fieldname)"
@@ -107,17 +246,27 @@
                         >
                           <PencilIcon class="w-5 h-5" />
                         </button>
-                        <!-- <button
-                          @click="router.push(`/doctypes/${route.params.id}/${doc.name}`)"
-                          class="text-white hover:text-green-600 border border-green-600 hover:bg-white bg-green-600 p-1 rounded"
-                          title="View Document"
-                        >
-                          <FileTextIcon class="w-5 h-5" />
-                        </button> -->
+                        <template v-for="field in actionFields" :key="field.fieldname">
+                          <a
+                            v-if="doc[field.fieldname]"
+                            :href="doc[field.fieldname]"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-gray-600 hover:text-green-600 hover:bg-white border border-green-600 bg-green-600 p-1 rounded text-white"
+                            :title="field.label.replace('[action]', '').trim()"
+                          >
+                            <component 
+                              :is="field.label.toLowerCase().includes('pdf') ? FileTextIcon : 
+                                   field.label.toLowerCase().includes('folder') ? FolderIcon : 
+                                   LinkIcon" 
+                              class="w-5 h-5"
+                            />
+                          </a>
+                        </template>
                       </div>
                     </td>
                     <td
-                      v-for="field in docType?.fields"
+                      v-for="field in docType?.fields.filter(f => !f.label.toLowerCase().includes('[action]'))"
                       :key="field.fieldname"
                       class="px-6 py-4 text-sm text-gray-900"
                       :class="{'whitespace-nowrap': !field.fieldtype.includes('Text')}"
@@ -255,7 +404,11 @@ import {
   FileArchiveIcon,
   FileVideoIcon,
   FileAudioIcon,
-  FileCodeIcon
+  FileCodeIcon,
+  FolderIcon,
+  LinkIcon,
+  GridIcon,
+  ListIcon
 } from 'lucide-vue-next';
 import ImageModal from '../components/ImageModal.vue';
 
@@ -308,6 +461,12 @@ const isMobile = computed(() => {
   return mediaQueryMatches.value;
 });
 
+// Add this computed property before onMounted
+const actionFields = computed(() => {
+  if (!docType.value) return [];
+  return docType.value.fields.filter(field => field.label.toLowerCase().includes('[action]'));
+});
+
 // Computed
 const filteredDocuments = computed(() => {
   let filtered = [...documents.value];
@@ -346,6 +505,9 @@ const filteredDocuments = computed(() => {
 
   return filtered;
 });
+
+// Add viewMode ref with other refs
+const viewMode = ref('list');
 
 // Methods
 const fetchDocType = async () => {
@@ -537,6 +699,26 @@ const handleFileClick = (fileUrl: string) => {
     ? `${getErpNextApiUrl()}${fileUrl}`
     : fileUrl;
   window.open(fullUrl, '_blank');
+};
+
+const formatDate = (date: string) => {
+  if (!date) return 'N/A';
+  try {
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      console.warn('Invalid date:', date);
+      return 'N/A';
+    }
+    
+    return parsedDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (err) {
+    console.warn('Error formatting date:', err);
+    return 'N/A';
+  }
 };
 
 onMounted(async () => {

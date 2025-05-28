@@ -29,64 +29,11 @@
         
         <!-- Search Bar -->
         <div v-if="!isSidebarCollapsed" class="px-4 py-3 border-b border-gray-200">
-          <div class="relative">
-            <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              v-model="searchQuery"
-              placeholder="Search..."
-              class="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500"
-              @focus="showSearchResults = true"
-              @blur="handleSearchBlur"
-            />
-          </div>
-          <!-- Search Results -->
-          <div
-            v-if="showSearchResults && searchQuery"
-            class="absolute z-10 mt-1 w-64 bg-white rounded-md shadow-lg border border-gray-200 max-h-96 overflow-y-auto"
-          >
-            <!-- Menu Items Results -->
-            <div v-if="filteredMenuItems.length > 0" class="py-1">
-              <div class="px-3 py-1 text-xs font-semibold text-gray-500 bg-gray-50">
-                Menu Items
-              </div>
-              <a
-                v-for="item in filteredMenuItems"
-                :key="item.path"
-                :href="item.path"
-                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                @mousedown.prevent="handleMenuItemClick(item)"
-              >
-                <component :is="item.icon" class="w-4 h-4 inline-block mr-2 text-gray-400" />
-                {{ item.name }}
-              </a>
-            </div>
-
-            <!-- Content Results -->
-            <div v-if="searchResults.length > 0" class="py-1 border-t border-gray-200">
-              <div class="px-3 py-1 text-xs font-semibold text-gray-500 bg-gray-50">
-                Content
-              </div>
-              <a
-                v-for="result in searchResults"
-                :key="result.id"
-                href="#"
-                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                @mousedown.prevent="handleSearchResultClick(result)"
-              >
-                <component :is="getContentIcon(result.type)" class="w-4 h-4 inline-block mr-2 text-gray-400" />
-                {{ result.name }}
-              </a>
-            </div>
-
-            <!-- No Results -->
-            <div
-              v-if="filteredMenuItems.length === 0 && searchResults.length === 0"
-              class="px-3 py-2 text-sm text-gray-500"
-            >
-              No results found
-            </div>
-          </div>
+          <DocTypeSearch 
+            placeholder="Search..."
+            :inputClass="'w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500'"
+            @resultClick="handleSearchResultClick"
+          />
         </div>
         
         <!-- Navigation -->
@@ -390,6 +337,7 @@ import { getLogo } from './config/domains';
 import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
 import ErrorMessage from './components/ErrorMessage.vue';
+import DocTypeSearch from './components/DocTypeSearch.vue';
 import { 
   HomeIcon, 
   FileTextIcon, 
@@ -505,11 +453,7 @@ const handleMenuItemClick = (item) => {
 };
 
 const handleSearchResultClick = (result) => {
-  // Navigate to the appropriate page based on content type
-  const path = `/${result.type.toLowerCase()}s/${result.id}`;
-  router.push(path);
-  searchQuery.value = '';
-  showSearchResults.value = false;
+  router.push(`/doctypes/${result.id}`);
 };
 
 const getContentIcon = (type: string) => {

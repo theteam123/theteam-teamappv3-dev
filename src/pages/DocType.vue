@@ -42,25 +42,7 @@
         >
           <ListIcon class="w-5 h-5" />
         </button>
-        <!-- <select
-          id="doctype-category"
-          v-model="selectedCategory"
-          class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
-        >
-          <option value="">All Categories</option>
-          <option v-for="category in categories" :key="category" :value="category">
-            {{ category }}
-          </option>
-        </select>
-        <select
-          id="doctype-sort"
-          v-model="sortBy"
-          class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
-        >
-          <option value="name">Name</option>
-          <option value="updated_at">Last Updated</option>
-          <option value="created_at">Date Created</option>
-        </select> -->
+
       </div>
     </div>
 
@@ -186,9 +168,7 @@
               </td>            
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center">
-                    <FileIcon class="h-6 w-6 text-green-600" />
-                  </div>
+                  
                   <div class="ml-4">
                     <div class="text-sm font-medium text-gray-900">{{ doctype.name }}</div>
                     <div class="text-sm text-gray-500">{{ doctype.module }}</div>
