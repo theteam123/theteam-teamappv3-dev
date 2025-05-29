@@ -2,7 +2,17 @@
 export const DOMAINS = {
   'teamsite-taktec': {
     apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
-    fallbackUrl: 'http://taktec.theteam.net.au',
+    fallbackUrl: 'http://desk.taktec.theteam.net.au',
+    logo: '/TeamLogo.png',
+    oauthConfig: {
+      clientId: import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_ID,
+      clientSecret: import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_SECRET,
+      redirectUri: import.meta.env.VITE_OAUTH_TAKTEC_REDIRECT_URI
+    }
+  },
+  'taktec': {
+    apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
+    fallbackUrl: 'http://desk.taktec.theteam.net.au',
     logo: '/TeamLogo.png',
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_ID,
@@ -22,7 +32,7 @@ export const DOMAINS = {
   },
   'default': {
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
-    fallbackUrl: 'https://erp.theteam.net.au',
+    fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/TeamLogo.png',
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
