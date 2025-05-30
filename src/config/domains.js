@@ -1,6 +1,7 @@
 // Domain configuration for different environments
 export const DOMAINS = {
   'teamsite-taktec': {
+    key: 'TAKTEC',
     apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
     fallbackUrl: 'http://desk.taktec.theteam.net.au',
     logo: '/TeamLogo.png',
@@ -11,6 +12,7 @@ export const DOMAINS = {
     }
   },
   'taktec': {
+    key: 'TAKTEC',
     apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
     fallbackUrl: 'http://desk.taktec.theteam.net.au',
     logo: '/TeamLogo.png',
@@ -21,6 +23,7 @@ export const DOMAINS = {
     }
   },
   'teamsite-sgcloud': {
+    key: 'SGCLOUD',
     apiUrl: import.meta.env.VITE_ERPNEXT_SGCLOUD_API_URL,
     fallbackUrl: 'https://ops.sgcloud.com.au',
     logo: '/SGCAustralia-Logo.svg',
@@ -29,8 +32,21 @@ export const DOMAINS = {
       clientSecret: import.meta.env.VITE_OAUTH_SGCLOUD_CLIENT_SECRET,
       redirectUri: import.meta.env.VITE_OAUTH_SGCLOUD_REDIRECT_URI
     }
+  }
+  ,
+  'theteamapp': {
+    key: 'THETEAMAPP',
+    apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
+    fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
+    logo: '/TeamLogo.png',
+    oauthConfig: {
+      clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
+      clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET,
+      redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI
+    }
   },
   'default': {
+    key: 'DEFAULT',
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/TeamLogo.png',
