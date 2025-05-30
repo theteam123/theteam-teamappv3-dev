@@ -80,9 +80,20 @@
         <!-- Request Body -->
         <div v-if="['POST', 'PUT', 'PATCH'].includes(request.method)">
           <label class="block text-sm font-medium text-gray-700 mb-2">Request Body</label>
-          <textarea v-model="request.body" rows="6" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="{ &quot;key&quot;: &quot;value&quot; }"></textarea>
+          <div v-for="(field, index) in bodyFields" :key="index" class="flex gap-4 mb-2">
+            <input type="text" v-model="field.key" placeholder="Key" 
+                   class="w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="text" v-model="field.value" placeholder="Value" 
+                   class="w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="button" @click="removeBodyField(index)" 
+                    class="px-3 py-2 text-red-600 hover:text-red-800">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <button type="button" @click="addBodyField" 
+                  class="mt-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-800">
+            + Add Field
+          </button>
         </div>
 
         <!-- Submit Button -->
@@ -144,6 +155,7 @@ const isLoading = ref(false)
 const authType = ref('oauth')
 const apiKey = ref('')
 const apiSecret = ref('')
+const bodyFields = ref([{ key: '', value: '' }]);
 
 // Set default API URL if empty
 const apiUrl = getErpNextApiUrl()
@@ -168,9 +180,17 @@ const removeHeader = (index) => {
   request.value.headers.splice(index, 1)
 }
 
+const addBodyField = () => {
+  bodyFields.value.push({ key: '', value: '' });
+};
+
+const removeBodyField = (index) => {
+  bodyFields.value.splice(index, 1);
+};
+
 const sendRequest = async () => {
-  error.value = null
-  isLoading.value = true
+  error.value = null;
+  isLoading.value = true;
   
   try {
     // Validate URL
@@ -213,16 +233,26 @@ const sendRequest = async () => {
     }
 
     // Add body for POST/PUT/PATCH requests
-    if (['POST', 'PUT', 'PATCH'].includes(request.value.method) && request.value.body) {
-      try {
-        // Try to parse as JSON first
-        const parsedBody = JSON.parse(request.value.body)
-        options.body = JSON.stringify(parsedBody)
-        headers['Content-Type'] = 'application/json'
-      } catch (e) {
-        // If not valid JSON, send as is
-        options.body = request.value.body
-      }
+    if (['POST', 'PUT', 'PATCH'].includes(request.value.method)) {
+      // Convert body fields to JSON object
+      const bodyObject = bodyFields.value.reduce((acc, field) => {
+        if (field.key) {
+          try {
+            // Try to parse the value as JSON if it looks like an object or array
+            if (field.value.startsWith('{') || field.value.startsWith('[')) {
+              acc[field.key] = JSON.parse(field.value);
+            } else {
+              acc[field.key] = field.value;
+            }
+          } catch (e) {
+            acc[field.key] = field.value;
+          }
+        }
+        return acc;
+      }, {});
+
+      options.body = JSON.stringify(bodyObject);
+      headers['Content-Type'] = 'application/json';
     }
 
     const startTime = performance.now()

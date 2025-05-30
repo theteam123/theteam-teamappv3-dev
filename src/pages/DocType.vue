@@ -8,34 +8,57 @@
     
     <!-- Role Permissions Display -->
     <div class="mb-6 bg-white rounded-lg shadow p-4">
-      <h2 class="text-lg font-semibold mb-2">ROLE Permissions of "Taktec User" role:</h2>
-      <div v-if="rolePermissions" class="overflow-auto max-h-60">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DocType</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Permissions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="(perms, doctype) in rolePermissions" :key="doctype">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ doctype }}</td>
-              <td class="px-6 py-4 text-sm text-gray-500">
-                <span v-for="(value, perm) in perms" :key="perm" 
-                      :class="value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
-                      class="px-2 py-1 rounded-full text-xs font-medium mr-2">
-                  {{ perm }}: {{ value ? '✓' : '✗' }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div v-else-if="loading" class="text-center py-4">
-        <LoaderIcon class="w-6 h-6 animate-spin text-green-600 mx-auto" />
-      </div>
-      <div v-else class="text-center py-4 text-gray-500">
-        No permissions data available
+      <button 
+        @click="showPermissions = !showPermissions"
+        class="flex items-center justify-between w-full"
+      >
+        <h2 class="text-lg font-semibold">DocTypes with Permissions:</h2>
+        <span class="text-sm text-gray-500">
+          {{ showPermissions ? 'Hide' : 'Show' }} Permissions
+          <span class="ml-2 inline-block transition-transform" :class="{ 'rotate-180': showPermissions }">
+            ▼
+          </span>
+        </span>
+      </button>
+      
+      <div v-if="showPermissions" class="mt-4">
+        <div v-if="docTypes.length > 0" class="overflow-auto max-h-60">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DocType</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Permissions</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Linked DocTypes</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="doctype in docTypes" :key="doctype.id">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {{ doctype.name }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                  <span v-for="(value, perm) in doctype.permissions" :key="perm" 
+                        :class="value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                        class="px-2 py-1 rounded-full text-xs font-medium mr-2">
+                    {{ perm }}: {{ value ? '✓' : '✗' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                  <span v-for="linked in doctype.linked_doctypes" :key="linked" 
+                        class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
+                    {{ linked }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else-if="loading" class="text-center py-4">
+          <LoaderIcon class="w-6 h-6 animate-spin text-green-600 mx-auto" />
+        </div>
+        <div v-else class="text-center py-4 text-gray-500">
+          No permissions data available
+        </div>
       </div>
     </div>
 
@@ -296,16 +319,33 @@ interface DocTypeField {
   options?: string;
 }
 
+interface DocTypePermissions {
+  read: number;
+  write: number;
+  create: number;
+  delete: number;
+  submit: number;
+  cancel: number;
+  amend: number;
+  report: number;
+  export: number;
+  import: number;
+  share: number;
+  print: number;
+  email: number;
+}
+
 interface DocType {
   id: string;
   name: string;
   description: string;
-  category: string;
   module: string;
   fields: DocTypeField[];
   updated_at: string;
   created_at: string;
   documents_count: number;
+  permissions: DocTypePermissions;
+  linked_doctypes: string[];
 }
 
 const router = useRouter();
@@ -320,6 +360,7 @@ const sortBy = ref('updated_at');
 const showModal = ref(false);
 const isEditing = ref(false);
 const rolePermissions = ref(null);
+const showPermissions = ref(false);
 
 // Add pagination state
 const currentPage = ref(1);
@@ -359,11 +400,10 @@ const categories = [
   'Other'
 ];
 
-const docTypeData = ref<Omit<DocType, 'updated_at' | 'created_at' | 'documents_count'>>({
+const docTypeData = ref<Omit<DocType, 'updated_at' | 'created_at' | 'documents_count' | 'permissions' | 'linked_doctypes'>>({
   id: '',
   name: '',
   description: '',
-  category: '',
   module: '',
   fields: []
 });
@@ -385,7 +425,7 @@ const filteredDocTypes = computed(() => {
   }
 
   if (selectedCategory.value) {
-    filtered = filtered.filter(doctype => doctype.category === selectedCategory.value);
+    filtered = filtered.filter(doctype => doctype.module === selectedCategory.value);
   }
 
   filtered.sort((a, b) => {
@@ -403,8 +443,6 @@ const fetchDocTypes = async (page = 1) => {
   loading.value = true;
   error.value = null;
   try {
-
-
     const response = await getDocTypes(
       page, 
       pageSize.value, 
@@ -413,7 +451,6 @@ const fetchDocTypes = async (page = 1) => {
       'modified',  // order_by field
       'desc'       // order direction
     );
-
 
     docTypes.value = response.data.map(docType => {
       // Safely parse fields
@@ -444,7 +481,9 @@ const fetchDocTypes = async (page = 1) => {
         fields: fields,
         updated_at: docType.modified,
         created_at: docType.creation,
-        documents_count: docType.documents_count || 0
+        documents_count: docType.documents_count || 0,
+        permissions: docType.permissions || {},
+        linked_doctypes: docType.linked_doctypes || []
       };
     });
     totalItems.value = response.total;
@@ -462,14 +501,12 @@ const fetchDocTypes = async (page = 1) => {
   }
 };
 
-
 const editDocType = (doctype: DocType) => {
   isEditing.value = true;
   docTypeData.value = {
     id: doctype.id,
     name: doctype.name,
     description: doctype.description || '',
-    category: doctype.category || '',
     module: doctype.module || '',
     fields: doctype.fields || []
   };
@@ -505,7 +542,7 @@ const handleSubmit = async () => {
     const data = {
       name: docTypeData.value.name,
       description: docTypeData.value.description,
-      module: docTypeData.value.category,
+      module: docTypeData.value.module,
       fields: JSON.stringify(docTypeData.value.fields.map(field => ({
         label: field.label,
         fieldname: field.label.toLowerCase().replace(/\s+/g, '_'),

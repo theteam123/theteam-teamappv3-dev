@@ -59,22 +59,38 @@ const createAxiosInstanceWithFallback = () => {
 
 // Add request interceptor to add OAuth token
 const erp = createAxiosInstance();
+
+// List of endpoints that should use API key authentication
+const apiKeyEndpoints = [
+  '/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions',
+  '/api/method/frappe.client.get_list',
+  '/api/resource/'
+];
+
 erp.interceptors.request.use(async (config) => {
   const authStore = useAuthStore();
   console.log('Request interceptor - Is System Manager:', authStore.isSystemManager);
 
-  if (authStore.isSystemManager) {
-    // Use OAuth token for System Managers
-    const token = await getCurrentToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  } else {
-    // Use API key authentication for non-System Managers
+  // Check if the current endpoint should use API key auth
+  const shouldUseApiKey = apiKeyEndpoints.some(endpoint => config.url?.includes(endpoint));
+
+  if (shouldUseApiKey && !authStore.isSystemManager) {
+    // Use API key authentication for specified endpoints
     try {
       config.headers.Authorization = getApiKeyAuthHeader();
     } catch (error) {
       console.error('Failed to get API key authentication:', error);
+      throw error;
+    }
+  } else {
+    // Use OAuth token for all other endpoints
+    try {
+      const token = await getCurrentToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Failed to get OAuth token:', error);
       throw error;
     }
   }
@@ -259,133 +275,90 @@ export const getFormList = async (doctype, options = {}) => {
 
 export const getDocTypes = async (page = 1, pageSize = 20, search = '', category = '', order_by = 'modified', order = 'desc') => {
   try {
-    // Create a cache key based on the request parameters
-    const cacheKey = `doctypes-${page}-${pageSize}-${search}-${category}-${order_by}-${order}`;
-    const cachedData = getCachedMetadata(cacheKey);
-    
-    if (cachedData) {
-      console.log('Using cached DocTypes data for:', cacheKey);
-      return cachedData;
-    }
-
-    console.log('Fetching fresh DocTypes data for:', cacheKey);
     const authStore = useAuthStore();
     const username = authStore.user?.name;
     console.log('Current user from auth store:', username);
+    console.log('Current user from auth store:', authStore.user);
     
-    // Calculate start and end for pagination
-    const limit_start = (page - 1) * pageSize;
-    const limit_page_length = pageSize;
+    // Get user's role permissions
+    const response = await erp.post('/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions', {
+      doctype: '',
+      role: authStore.user.roles[0]
+    });
 
-    // Build filters array
-    const filters = [
-      ['DocType', 'istable', '=', 0]
-    ];
-    
-    // Add search filter if search term exists
+    // Filter permissions to get only readable doctypes
+    const permissions = response.data.message || [];
+    const readableDoctypes = permissions.filter(perm => perm.read === 1)
+                                      .map(perm => ({
+                                        name: perm.parent,
+                                        doctype: perm.parent,
+                                        permissions: {
+                                          read: perm.read,
+                                          write: perm.write,
+                                          create: perm.create,
+                                          delete: perm.delete,
+                                          submit: perm.submit,
+                                          cancel: perm.cancel,
+                                          amend: perm.amend,
+                                          report: perm.report,
+                                          export: perm.export,
+                                          import: perm.import,
+                                          share: perm.share,
+                                          print: perm.print,
+                                          email: perm.email
+                                        },
+                                        linked_doctypes: perm.linked_doctypes || [],
+                                        modified: perm.modified,
+                                        creation: perm.creation
+                                      }));
+
+    // Apply search filter if provided
+    let filteredDoctypes = readableDoctypes;
     if (search) {
-      filters.push(['DocType', 'name', 'like', `%${search}%`]);
+      const searchLower = search.toLowerCase();
+      filteredDoctypes = filteredDoctypes.filter(dt => 
+        dt.name.toLowerCase().includes(searchLower)
+      );
     }
-    
-    // Add category filter if category is selected
+
+    // Apply category filter if provided
     if (category) {
-      filters.push(['DocType', 'module', '=', category]);
+      filteredDoctypes = filteredDoctypes.filter(dt => dt.module === category);
     }
 
-    console.log('Using filters:', filters);
-
-    // Determine which authentication to use
-    let authHeader;
-    try {
-      console.log('Authentication store:', authStore);
-      console.log('Is System Manager:', authStore.isSystemManager);
-      if (authStore.isSystemManager) {
-        console.log('Using OAuth token authentication');
-        const token = await getCurrentToken();
-        if (!token) {
-          throw new Error('No OAuth token available');
-        }
-        authHeader = `Bearer ${token}`;
-      } else {
-        // Use API key authentication
-        console.log('Using API key authentication');
-        authHeader = getApiKeyAuthHeader();
-        console.log('Auth header:', authHeader);
+    // Sort the results
+    filteredDoctypes.sort((a, b) => {
+      if (order === 'desc') {
+        return new Date(b[order_by]) - new Date(a[order_by]);
       }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      throw new Error('Failed to get authentication credentials');
-    }
-
-    // First, get total count
-    const countResponse = await erp.get('/api/method/frappe.client.get_count', {
-      params: {
-        doctype: 'DocType',
-        filters: JSON.stringify(filters)
-      },
-      headers: {
-        'Authorization': authHeader
-      }
+      return new Date(a[order_by]) - new Date(b[order_by]);
     });
 
-    const total = countResponse.data.message || 0;
-    console.log('Total count:', total);
+    // Calculate pagination
+    const total = filteredDoctypes.length;
+    const totalPages = Math.ceil(total / pageSize);
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const paginatedDoctypes = filteredDoctypes.slice(start, end);
 
-    // Then fetch the data with order parameters
-    const response = await erp.get('/api/method/frappe.client.get_list', {
-      params: {
-        doctype: 'DocType',
-        fields: '["name", "module", "modified", "creation", "description", "fields"]',
-        filters: JSON.stringify(filters),
-        limit_start,
-        limit_page_length,
-        order_by: `${order_by} ${order}`,
-        as_list: 1
-      },
-      headers: {
-        'Authorization': authHeader
-      }
-    });
-
-    // Handle different response formats
-    let data = [];
-
-    if (Array.isArray(response.data.message)) {
-      data = response.data.message;
-    } else if (response.data.data) {
-      data = response.data.data;
-    } else {
-      console.warn('Unexpected response format:', response.data);
-    }
-
-    // Process each DocType to get document counts
-    const docTypesWithCounts = await Promise.all(
-      data.map(async (docType) => {
+    // Get additional details for each doctype
+    const doctypesWithDetails = await Promise.all(
+      paginatedDoctypes.map(async (dt) => {
         try {
-          let fields = [];
-          try {
-            if (docType.fields) {
-              if (typeof docType.fields === 'string') {
-                fields = JSON.parse(docType.fields);
-              } else if (Array.isArray(docType.fields)) {
-                fields = docType.fields;
-              }
+          // Get doctype metadata
+          const metaResponse = await erp.get('/api/method/frappe.desk.form.load.getdoctype', {
+            params: {
+              doctype: dt.name
             }
-          } catch (err) {
-            console.warn(`Error parsing fields for ${docType.name}:`, err);
-            fields = [];
-          }
+          });
 
           // Get document count for this DocType
           let count = 0;
           try {
             const countResponse = await erp.get('/api/method/frappe.client.get_count', {
               params: {
-                doctype: docType.name,
+                doctype: dt.name,
                 filters: '[]'
-              },
-              headers: {
-                'Authorization': authHeader
               }
             });
             
@@ -395,61 +368,53 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
           } catch (err) {
             // Handle 500 errors gracefully
             if (err.response?.status === 500) {
-              console.warn(`Server error getting count for ${docType.name}, defaulting to 0`);
+              console.warn(`Server error getting count for ${dt.name}, defaulting to 0`);
               count = 0;
             } else {
-              console.error(`Error getting count for ${docType.name}:`, err);
+              console.error(`Error getting count for ${dt.name}:`, err);
               count = 0;
             }
           }
 
-          // Map the DocType data with the count
+          const metadata = metaResponse.data;
           return {
-            id: docType.name,
-            name: docType.name,
-            description: docType.description || '',
-            module: docType.module || 'Other',
-            fields: fields,
-            updated_at: docType.modified || docType.modified_on || docType.updated_at || null,
-            created_at: docType.creation || docType.created_on || docType.created_at || null,
-            documents_count: count,
-            modified: docType.modified,
-            modified_on: docType.modified_on,
-            creation: docType.creation,
-            created_on: docType.created_on
+            id: dt.name,
+            name: dt.name,
+            description: metadata?.docs?.[0]?.description || '',
+            module: metadata?.docs?.[0]?.module || 'Other',
+            fields: metadata?.docs?.[0]?.fields || [],
+            permissions: dt.permissions,
+            linked_doctypes: dt.linked_doctypes,
+            modified: dt.modified,
+            creation: dt.creation,
+            documents_count: count
           };
-        } catch (err) {
-          console.error(`Error processing DocType ${docType.name}:`, err);
+        } catch (error) {
+          console.error(`Error fetching details for doctype ${dt.name}:`, error);
           return {
-            id: docType.name,
-            name: docType.name,
-            description: docType.description || '',
-            module: docType.module || 'Other',
+            id: dt.name,
+            name: dt.name,
+            description: '',
+            module: 'Other',
             fields: [],
-            updated_at: docType.modified || docType.modified_on || docType.updated_at || null,
-            created_at: docType.creation || docType.created_on || docType.created_at || null,
-            documents_count: 0,
-            modified: docType.modified,
-            modified_on: docType.modified_on,
-            creation: docType.creation,
-            created_on: docType.created_on
+            permissions: dt.permissions,
+            linked_doctypes: dt.linked_doctypes,
+            modified: dt.modified,
+            creation: dt.creation,
+            documents_count: 0
           };
         }
       })
     );
 
-    const result = {
-      data: docTypesWithCounts,
+    return {
+      data: doctypesWithDetails,
       total,
       page,
       pageSize,
-      totalPages: Math.ceil(total / pageSize)
+      totalPages
     };
 
-    // Cache the result
-    setCachedMetadata(cacheKey, result);
-    
-    return result;
   } catch (error) {
     console.error('Error fetching document types:', {
       status: error.response?.status,
@@ -941,11 +906,9 @@ export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
  */
 export const getRolePermissions = async (roleName) => {
   try {
-    // Get permissions using the desk.form.load endpoint
-    const response = await erp.get('/api/method/frappe.desk.form.load.get_perm_info', {
-      params: {
-        doctype: roleName
-      }
+    const response = await erp.post('/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions', {
+      doctype: '',
+      role: roleName
     });
 
     console.log('Role permissions response:', {
