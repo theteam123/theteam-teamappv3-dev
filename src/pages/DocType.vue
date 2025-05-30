@@ -5,7 +5,39 @@
       <h1 class="text-2xl font-bold text-gray-900">{{ pageTitle }}</h1>
       <p v-if="isTaktecPortal" class="text-sm text-gray-500 mt-1">Viewing Taktec ERPNext Document Types</p>
     </div>
-
+    
+    <!-- Role Permissions Display -->
+    <div class="mb-6 bg-white rounded-lg shadow p-4">
+      <h2 class="text-lg font-semibold mb-2">ROLE Permissions of "Taktec User" role:</h2>
+      <div v-if="rolePermissions" class="overflow-auto max-h-60">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">DocType</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Permissions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="(perms, doctype) in rolePermissions" :key="doctype">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ doctype }}</td>
+              <td class="px-6 py-4 text-sm text-gray-500">
+                <span v-for="(value, perm) in perms" :key="perm" 
+                      :class="value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                      class="px-2 py-1 rounded-full text-xs font-medium mr-2">
+                  {{ perm }}: {{ value ? '✓' : '✗' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else-if="loading" class="text-center py-4">
+        <LoaderIcon class="w-6 h-6 animate-spin text-green-600 mx-auto" />
+      </div>
+      <div v-else class="text-center py-4 text-gray-500">
+        No permissions data available
+      </div>
+    </div>
 
     <!-- Search and Filter -->
     <div class="mb-6 flex flex-col sm:flex-row gap-4">
@@ -245,7 +277,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { getDocTypes, createDocType, updateDocType, deleteDocType as deleteDocTypeAPI } from '../services/erpnext';
+import { getDocTypes, createDocType, updateDocType, getRolePermissions } from '../services/erpnext';
 import {
   FileIcon,
   FilePlusIcon,
@@ -287,6 +319,7 @@ const selectedCategory = ref('');
 const sortBy = ref('updated_at');
 const showModal = ref(false);
 const isEditing = ref(false);
+const rolePermissions = ref(null);
 
 // Add pagination state
 const currentPage = ref(1);
@@ -370,6 +403,8 @@ const fetchDocTypes = async (page = 1) => {
   loading.value = true;
   error.value = null;
   try {
+
+
     const response = await getDocTypes(
       page, 
       pageSize.value, 
@@ -378,6 +413,8 @@ const fetchDocTypes = async (page = 1) => {
       'modified',  // order_by field
       'desc'       // order direction
     );
+
+
     docTypes.value = response.data.map(docType => {
       // Safely parse fields
       let fields = [];
@@ -493,22 +530,6 @@ const handleSubmit = async () => {
   }
 };
 
-const deleteDocType = async (doctype: DocType) => {
-  if (!confirm('Are you sure you want to delete this document type? This action cannot be undone.')) return;
-
-  loading.value = true;
-  error.value = null;
-
-  try {
-    await deleteDocTypeAPI(doctype.id);
-    await fetchDocTypes();
-  } catch (err: any) {
-    error.value = err.message;
-  } finally {
-    loading.value = false;
-  }
-};
-
 const formatDate = (date: string) => {
   if (!date) return 'N/A';
   try {
@@ -564,12 +585,23 @@ const goToPage = (page: number) => {
 // Change default to list view
 const viewMode = ref('list');
 
-onMounted(() => {
-  // Check authentication before fetching data
+// Add function to fetch role permissions
+const fetchRolePermissions = async () => {
+  try {
+    const permissions = await getRolePermissions('Taktec User');
+    rolePermissions.value = permissions;
+    console.log('Taktec User permissions:', permissions);
+  } catch (err) {
+    console.error('Error fetching role permissions:', err);
+  }
+};
+
+onMounted(async () => {
   if (!authStore.isAuthenticated) {
     // router.push('/auth');
     return;
   }
-  fetchDocTypes();
+  await fetchDocTypes();
+  await fetchRolePermissions();
 });
 </script> 

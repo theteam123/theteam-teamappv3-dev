@@ -24,6 +24,7 @@ import DocTypeForm from './pages/DocTypeForm.vue'
 import DocTypeDocumentEdit from './pages/DocTypeDocumentEdit.vue'
 import DocTypeImages from './pages/DocTypeImages.vue'
 import VoiceAssistant from './views/VoiceAssistant.vue'
+import ApiTester from './pages/ApiTester.vue'
 import { useAuthStore } from './stores/auth'
 import { useErrorStore } from './stores/error'
 
@@ -229,6 +230,15 @@ const routes = [
     name: 'feedback-records',
     component: EmployeeFeedbackRecords,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/api-tester',
+    name: 'api-tester',
+    component: ApiTester,
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Admin', 'Developer','System Manager', 'Taktec User', 'Taktec Admin']
+    }
   },
   {
     path: '/:pathMatch(.*)*',

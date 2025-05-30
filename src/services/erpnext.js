@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 import { getCurrentToken } from './oauth';
-import { getErpNextApiUrl } from '../utils/api';
+import { getErpNextApiUrl, getApiKeyAuthHeader } from '../utils/api';
 import { getDomainConfig } from '../config/domains';
 
 // Get the current domain and environment
@@ -60,9 +60,23 @@ const createAxiosInstanceWithFallback = () => {
 // Add request interceptor to add OAuth token
 const erp = createAxiosInstance();
 erp.interceptors.request.use(async (config) => {
-  const token = await getCurrentToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const authStore = useAuthStore();
+  console.log('Request interceptor - Is System Manager:', authStore.isSystemManager);
+
+  if (authStore.isSystemManager) {
+    // Use OAuth token for System Managers
+    const token = await getCurrentToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } else {
+    // Use API key authentication for non-System Managers
+    try {
+      config.headers.Authorization = getApiKeyAuthHeader();
+    } catch (error) {
+      console.error('Failed to get API key authentication:', error);
+      throw error;
+    }
   }
   return config;
 });
@@ -280,9 +294,28 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
 
     console.log('Using filters:', filters);
 
-    // Get the current token
-    const token = await getCurrentToken();
-    console.log('API Request - Token:', token ? 'Present' : 'Missing');
+    // Determine which authentication to use
+    let authHeader;
+    try {
+      console.log('Authentication store:', authStore);
+      console.log('Is System Manager:', authStore.isSystemManager);
+      if (authStore.isSystemManager) {
+        console.log('Using OAuth token authentication');
+        const token = await getCurrentToken();
+        if (!token) {
+          throw new Error('No OAuth token available');
+        }
+        authHeader = `Bearer ${token}`;
+      } else {
+        // Use API key authentication
+        console.log('Using API key authentication');
+        authHeader = getApiKeyAuthHeader();
+        console.log('Auth header:', authHeader);
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      throw new Error('Failed to get authentication credentials');
+    }
 
     // First, get total count
     const countResponse = await erp.get('/api/method/frappe.client.get_count', {
@@ -291,7 +324,7 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
         filters: JSON.stringify(filters)
       },
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': authHeader
       }
     });
 
@@ -310,7 +343,7 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
         as_list: 1
       },
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': authHeader
       }
     });
 
@@ -352,7 +385,7 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
                 filters: '[]'
               },
               headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': authHeader
               }
             });
             
@@ -897,6 +930,32 @@ export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
     return await response.json();
   } catch (error) {
     console.error('Error uploading file:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all permissions for a specific role from Role Permission Manager
+ * @param {string} roleName - The name of the role to check permissions for
+ * @returns {Promise<Object>} Object containing all permissions for the role
+ */
+export const getRolePermissions = async (roleName) => {
+  try {
+    // Get permissions using the desk.form.load endpoint
+    const response = await erp.get('/api/method/frappe.desk.form.load.get_perm_info', {
+      params: {
+        doctype: roleName
+      }
+    });
+
+    console.log('Role permissions response:', {
+      role: roleName,
+      permissions: response.data
+    });
+
+    return response.data.message || {};
+  } catch (error) {
+    console.error('Error fetching role permissions:', error);
     throw error;
   }
 };
