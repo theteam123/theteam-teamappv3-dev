@@ -7,7 +7,7 @@
     </div>
     
     <!-- Role Permissions Display -->
-    <div class="mb-6 bg-white rounded-lg shadow p-4">
+    <div class="mb-6 bg-white rounded-lg shadow p-4" style="display: none;">
       <button 
         @click="showPermissions = !showPermissions"
         class="flex items-center justify-between w-full"
