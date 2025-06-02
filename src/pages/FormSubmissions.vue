@@ -120,7 +120,7 @@
                   <button
                     v-if="canEditSubmission(submission)"
                     @click.stop="router.push(`/forms/${form.id}/submissions/${submission.data.name}/edit`)"
-                    class="text-white hover:text-green-600 border border-green-600 hover:bg-white bg-green-600 p-1 rounded"
+                    class="text-white hover:text-green-600 border border-green-600 hover:bg-white btn-primary p-1 rounded"
                     title="Edit Submission"
                   >
                     <PencilIcon class="w-5 h-5" />
@@ -131,7 +131,7 @@
                       :href="submission.data[field.fieldname]"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="text-gray-600 hover:text-green-600 hover:bg-white border border-green-600 bg-green-600 p-1 rounded text-white"
+                      class="text-gray-600 hover:text-green-600 hover:bg-white border border-green-600 btn-primary p-1 rounded text-white"
                       :title="field.label.replace('[action]', '').trim()"
                     >
                       <component 

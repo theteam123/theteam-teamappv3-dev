@@ -279,7 +279,7 @@
               <span>{{ uploadProgress }}%</span>
             </div>
             <div class="mt-1 w-full bg-gray-200 rounded-full h-2">
-              <div class="bg-green-600 h-2 rounded-full" :style="{ width: `${uploadProgress}%` }"></div>
+              <div class="btn-primary h-2 rounded-full" :style="{ width: `${uploadProgress}%` }"></div>
             </div>
           </div>
         </div>
@@ -367,7 +367,7 @@
               <span>{{ uploadProgress }}%</span>
             </div>
             <div class="mt-1 w-full bg-gray-200 rounded-full h-2">
-              <div class="bg-green-600 h-2 rounded-full" :style="{ width: `${uploadProgress}%` }"></div>
+              <div class="btn-primary h-2 rounded-full" :style="{ width: `${uploadProgress}%` }"></div>
             </div>
           </div>
         </div>
@@ -576,7 +576,7 @@
               <span>{{ uploadProgress }}%</span>
             </div>
             <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
-              <div class="bg-green-600 h-2 rounded-full" :style="{ width: `${uploadProgress}%` }"></div>
+              <div class="btn-primary h-2 rounded-full" :style="{ width: `${uploadProgress}%` }"></div>
             </div>
           </div>
         </div>

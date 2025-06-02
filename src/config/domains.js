@@ -20,9 +20,9 @@ export const DOMAINS = {
     key: 'TAKTEC',
     apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
     fallbackUrl: 'http://desk.taktec.theteam.net.au',
-    logo: '/TeamLogo.png',
+    logo: '/taktec-logo.png',
     theme: {
-      primary: '#15803d', // green-700
+      primary: '#fcb040', // green-700
       secondary: '#4ade80', // green-400
       accent: '#22c55e' // green-500
     },
@@ -87,10 +87,11 @@ export const DOMAINS = {
  * @returns {Object} Domain configuration object
  */
 export const getDomainConfig = () => {
-  const currentDomain = window.location.hostname;
+  // const currentDomain = window.location.hostname;
   
   // For testing purposes, set the current domain to 'teamsite-sgcloud'
   // const currentDomain = 'teamsite-sgcloud';
+  const currentDomain = 'taktec';
   
   // Find the matching domain configuration
   const domainKey = Object.keys(DOMAINS).find(key => 

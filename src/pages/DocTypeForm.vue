@@ -71,7 +71,7 @@
           <button
             type="submit"
             :disabled="submitting"
-            class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50"
+            class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md  disabled:opacity-50"
           >
             {{ submitting ? 'Submitting...' : 'Submit' }}
           </button>

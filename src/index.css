@@ -45,6 +45,10 @@
     @apply focus:ring-[color:var(--color-primary)];
   }
 
+  .border-primary {
+    border-color: var(--color-primary);
+  }
+
   .input {
     @apply block w-full rounded-md border-gray-300 shadow-sm sm:text-sm;
     @apply focus:border-[color:var(--color-primary)] focus:ring-[color:var(--color-primary)];

@@ -85,7 +85,7 @@
               <div class="mt-6 flex justify-end px-6 pb-6">
                 <button
                   type="button"
-                  class="inline-flex justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                  class="inline-flex justify-center rounded-md border border-transparent btn-primary px-4 py-2 text-sm font-medium text-white  focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
                   @click="closeModal"
                 >
                   Close
