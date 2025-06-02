@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-primary: #15803d;
+    --color-secondary: #4ade80;
+    --color-accent: #22c55e;
+  }
+
   body {
     @apply antialiased text-gray-900 bg-gray-50;
   }
@@ -26,15 +32,22 @@
   }
 
   .btn-primary {
-    @apply btn bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+    @apply btn text-white focus:ring-green-500;
+    background-color: var(--color-primary);
+  }
+
+  .btn-primary:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 85%, black);
   }
 
   .btn-secondary {
-    @apply btn bg-white text-gray-700 border-gray-300 hover:bg-gray-50 focus:ring-green-500;
+    @apply btn bg-white text-gray-700 border-gray-300 hover:bg-gray-50;
+    @apply focus:ring-[color:var(--color-primary)];
   }
 
   .input {
-    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm;
+    @apply block w-full rounded-md border-gray-300 shadow-sm sm:text-sm;
+    @apply focus:border-[color:var(--color-primary)] focus:ring-[color:var(--color-primary)];
   }
 
   .label {
@@ -58,6 +71,7 @@
   }
 
   .nav-link-active {
-    @apply bg-green-50 text-green-700;
+    color: var(--color-primary);
+    background-color: color-mix(in srgb, var(--color-primary) 10%, white);
   }
 }

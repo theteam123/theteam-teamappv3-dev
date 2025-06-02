@@ -5,6 +5,11 @@ export const DOMAINS = {
     apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
     fallbackUrl: 'http://desk.taktec.theteam.net.au',
     logo: '/TeamLogo.png',
+    theme: {
+      primary: '#15803d', // green-700
+      secondary: '#4ade80', // green-400
+      accent: '#22c55e' // green-500
+    },
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_ID,
       clientSecret: import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_SECRET,
@@ -16,6 +21,11 @@ export const DOMAINS = {
     apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
     fallbackUrl: 'http://desk.taktec.theteam.net.au',
     logo: '/TeamLogo.png',
+    theme: {
+      primary: '#15803d', // green-700
+      secondary: '#4ade80', // green-400
+      accent: '#22c55e' // green-500
+    },
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_ID,
       clientSecret: import.meta.env.VITE_OAUTH_TAKTEC_CLIENT_SECRET,
@@ -27,18 +37,27 @@ export const DOMAINS = {
     apiUrl: import.meta.env.VITE_ERPNEXT_SGCLOUD_API_URL,
     fallbackUrl: 'https://ops.sgcloud.com.au',
     logo: '/SGCAustralia-Logo.svg',
+    theme: {
+      primary: '#3fd921', // green-700
+      secondary: '#4ade80', // green-400
+      accent: '#22c55e' // green-500
+    },
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_SGCLOUD_CLIENT_ID,
       clientSecret: import.meta.env.VITE_OAUTH_SGCLOUD_CLIENT_SECRET,
       redirectUri: import.meta.env.VITE_OAUTH_SGCLOUD_REDIRECT_URI
     }
-  }
-  ,
+  },
   'theteamapp': {
     key: 'THETEAMAPP',
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/TeamLogo.png',
+    theme: {
+      primary: '#15803d', // green-700
+      secondary: '#4ade80', // green-400
+      accent: '#22c55e' // green-500
+    },
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
       clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET,
@@ -50,6 +69,11 @@ export const DOMAINS = {
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/TeamLogo.png',
+    theme: {
+      primary: '#15803d', // green-700
+      secondary: '#4ade80', // green-400
+      accent: '#22c55e' // green-500
+    },
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
       clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET,
@@ -64,6 +88,9 @@ export const DOMAINS = {
  */
 export const getDomainConfig = () => {
   const currentDomain = window.location.hostname;
+  
+  // For testing purposes, set the current domain to 'teamsite-sgcloud'
+  // const currentDomain = 'teamsite-sgcloud';
   
   // Find the matching domain configuration
   const domainKey = Object.keys(DOMAINS).find(key => 
@@ -100,4 +127,13 @@ export const getOAuthConfig = () => {
 export const getLogo = () => {
   const config = getDomainConfig();
   return config.logo;
+};
+
+/**
+ * Get theme configuration for the current domain
+ * @returns {Object} Theme configuration object
+ */
+export const getTheme = () => {
+  const config = getDomainConfig();
+  return config.theme;
 }; 
