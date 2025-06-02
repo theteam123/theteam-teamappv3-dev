@@ -99,6 +99,8 @@ import { useFormSections } from '../composables/useFormSections';
 import ErrorMessage from '../components/ErrorMessage.vue';
 import SuccessMessage from '../components/SuccessMessage.vue';
 import { addWatermark } from '../utils/imageUtils';
+import { initializeGeolocationFields, GeolocationData } from '../utils/formUtils';
+import { initializeWatermarkFields, WatermarkConfig } from '../utils/formUtils';
 
 interface DocTypeField {
   fieldname: string;
@@ -115,13 +117,6 @@ interface DocType {
   fields: DocTypeField[];
 }
 
-interface GeolocationData {
-  fieldname: string;
-  label: string;
-  value: string;
-  type: 'lat' | 'lng' | 'address';
-}
-
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
@@ -134,39 +129,18 @@ const formData = ref<Record<string, any>>({});
 const geoLocationFields = ref<GeolocationData[]>([]);
 const uploading = ref(false);
 const uploadProgress = ref(0);
+const watermarkConfigs = ref<WatermarkConfig[]>([]);
 
 const { processedSections } = useFormSections(
   computed(() => docType.value?.fields),
   computed(() => formData.value)
 );
 
-const initializeGeolocationFields = (fields: DocTypeField[]) => {
-  const geoFields: GeolocationData[] = [];
-  
-  fields.forEach(field => {
-    if (field.fieldtype === 'Data') {
-      const match = field.label.match(/\[geolocation-(.*?)\]/);
-      if (match) {
-        const type = match[1] as 'lat' | 'lng' | 'address';
-        geoFields.push({
-          fieldname: field.fieldname,
-          label: field.label.replace(/\[.*?\]/g, '').trim(),
-          value: formData.value[field.fieldname] || '',
-          type
-        });
-      }
-    }
-  });
-  
-  geoLocationFields.value = geoFields;
-};
-
 const fetchDocType = async () => {
   try {
     const response = await getDocTypeData(route.params.id as string);
-    console.log('DocType response:', response); // Debug log
+    console.log('DocType response:', response);
     
-    // Check if we have the expected data structure
     if (!response || !response.docs || !Array.isArray(response.docs) || response.docs.length === 0) {
       throw new Error('Invalid response format from DocType API');
     }
@@ -187,7 +161,12 @@ const fetchDocType = async () => {
       }, {});
       
       // Initialize geolocation fields
-      initializeGeolocationFields(docTypeData.fields);
+      console.log('docTypeData.fields:', docTypeData.fields);
+      geoLocationFields.value = initializeGeolocationFields(docTypeData.fields, formData.value);
+      
+      // Initialize watermark fields
+      watermarkConfigs.value = initializeWatermarkFields(docTypeData.fields, formData.value);
+      console.log('watermarkConfigs:', watermarkConfigs.value);
     } else {
       console.warn('No fields found in DocType response');
       formData.value = {};
@@ -228,7 +207,18 @@ const handleSubmit = async () => {
         let fileToUpload = imageData.file;
         if (imageData.needsWatermark) {
           uploadProgress.value = 30;
-          fileToUpload = await addWatermark(imageData.file, geoLocationFields.value);
+          
+          // Find watermark config for this field
+          const watermarkConfig = watermarkConfigs.value.find(config => 
+            config.imageFieldName === field.fieldname
+          );
+
+          console.log('watermarkConfig:', watermarkConfig);
+
+          fileToUpload = await addWatermark(imageData.file, {
+            geoLocationFields: geoLocationFields.value,
+            watermarkFields: watermarkConfig?.fields
+          });
         }
         
         uploadProgress.value = 50;
@@ -278,6 +268,9 @@ watch(() => formData.value, (newFormData) => {
     ...field,
     value: newFormData[field.fieldname]?.toString() || ''
   }));
+
+  // Update watermark configs when form data changes
+  watermarkConfigs.value = initializeWatermarkFields(docType.value?.fields || [], newFormData);
 }, { deep: true });
 
 onMounted(async () => {

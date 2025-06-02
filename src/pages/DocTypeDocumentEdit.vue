@@ -91,6 +91,7 @@ import {
 } from 'lucide-vue-next';
 import SuccessMessage from '../components/SuccessMessage.vue';
 import { addWatermark } from '../utils/imageUtils';
+import { initializeGeolocationFields, GeolocationData, initializeWatermarkFields, WatermarkConfig } from '../utils/formUtils';
 
 interface DocTypeField {
   fieldname: string;
@@ -101,19 +102,13 @@ interface DocTypeField {
   hidden?: number;
   depends_on?: string;
   parent?: string;
+  description?: string;
 }
 
 interface DocType {
   name: string;
   description: string;
   fields: DocTypeField[];
-}
-
-interface GeolocationData {
-  fieldname: string;
-  label: string;
-  value: string;
-  type: 'lat' | 'lng' | 'address';
 }
 
 const route = useRoute();
@@ -129,36 +124,9 @@ const error = ref('');
 const uploading = ref(false);
 const uploadProgress = ref(0);
 const geoLocationFields = ref<GeolocationData[]>([]);
+const watermarkConfigs = ref<WatermarkConfig[]>([]);
 
 const { processedSections } = useFormSections(computed(() => docType.value?.fields));
-
-const initializeGeolocationFields = (fields: DocTypeField[]) => {
-  const geoFields: GeolocationData[] = [];
-  
-  fields.forEach(field => {
-    if (field.fieldtype === 'Data') {
-      const match = field.label.match(/\[geolocation-(.*?)\]/);
-      if (match) {
-        const type = match[1] as 'lat' | 'lng' | 'address';
-        geoFields.push({
-          fieldname: field.fieldname,
-          label: field.label.replace(/\[.*?\]/g, '').trim(),
-          value: formData.value[field.fieldname] || '',
-          type
-        });
-      }
-    }
-  });
-  
-  geoLocationFields.value = geoFields;
-};
-
-watch(() => formData.value, (newFormData) => {
-  geoLocationFields.value = geoLocationFields.value.map(field => ({
-    ...field,
-    value: newFormData[field.fieldname]?.toString() || ''
-  }));
-}, { deep: true });
 
 const fetchDocTypeAndDocument = async () => {
   loading.value = true;
@@ -185,12 +153,10 @@ const fetchDocTypeAndDocument = async () => {
         options: field.options || '',
         depends_on: field.depends_on,
         hidden: field.hidden || 0,
-        parent: field.parent
+        parent: field.parent,
+        description: field.description
       }))
     };
-
-    // Initialize geolocation fields
-    initializeGeolocationFields(docType.value.fields);
 
     // Fetch document data
     const documentResponse = await getFormData(route.params.id as string, route.params.documentId as string);
@@ -198,6 +164,12 @@ const fetchDocTypeAndDocument = async () => {
     if (documentResponse.data) {
       formData.value = JSON.parse(JSON.stringify(documentResponse.data));
       originalFormData.value = JSON.parse(JSON.stringify(documentResponse.data));
+      
+      // Initialize geolocation fields with the current form data
+      geoLocationFields.value = initializeGeolocationFields(docType.value.fields, formData.value);
+      
+      // Initialize watermark fields
+      watermarkConfigs.value = initializeWatermarkFields(docType.value.fields, formData.value);
     } else {
       throw new Error('Document not found');
     }
@@ -249,7 +221,16 @@ const handleSubmit = async () => {
         let fileToUpload = imageData.file;
         if (imageData.needsWatermark) {
           uploadProgress.value = 30;
-          fileToUpload = await addWatermark(imageData.file, geoLocationFields.value);
+          
+          // Find watermark config for this field
+          const watermarkConfig = watermarkConfigs.value.find(config => 
+            config.imageFieldName === field.fieldname
+          );
+
+          fileToUpload = await addWatermark(imageData.file, {
+            geoLocationFields: geoLocationFields.value,
+            watermarkFields: watermarkConfig?.fields
+          });
         }
         
         uploadProgress.value = 50;
@@ -327,6 +308,12 @@ const canEditDocument = computed(() => {
   }
   return formData.value.owner === authStore.user?.email;
 });
+
+// Add watcher for formData to update watermark configs
+watch(() => formData.value, (newFormData) => {
+  // Update watermark configs when form data changes
+  watermarkConfigs.value = initializeWatermarkFields(docType.value?.fields || [], newFormData);
+}, { deep: true });
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) {

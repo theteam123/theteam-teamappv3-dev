@@ -1,11 +1,20 @@
+import { GeolocationData, WatermarkField } from './formUtils';
+
 interface GeolocationField {
   type: 'lat' | 'lng' | 'address';
   value: string;
 }
 
-export const addWatermark = async (imageFile: File, geoLocationFields: GeolocationField[]): Promise<File> => {
-  console.log('Adding watermark with geoLocationFields:', geoLocationFields);
-  if (geoLocationFields.length === 0) return imageFile;
+interface WatermarkOptions {
+  geoLocationFields: GeolocationData[];
+  watermarkFields?: WatermarkField[];
+}
+
+export const addWatermark = async (imageFile: File, options: WatermarkOptions): Promise<File> => {
+  console.log('Adding watermark with options:', options);
+  if (options.geoLocationFields.length === 0 && (!options.watermarkFields || options.watermarkFields.length === 0)) {
+    return imageFile;
+  }
 
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -25,35 +34,78 @@ export const addWatermark = async (imageFile: File, geoLocationFields: Geolocati
       // Draw original image
       ctx.drawImage(img, 0, 0);
 
-      // Find lat/lng values
-      const latField = geoLocationFields.find(f => f.type === 'lat');
-      const lngField = geoLocationFields.find(f => f.type === 'lng');
-      const addressField = geoLocationFields.find(f => f.type === 'address');
-
       // Configure watermark style
       ctx.font = '18px monospace';
       
-      // Draw semi-transparent black bars at top and bottom
-      const barHeight = addressField ? 70 : 45; // Increased height for two lines when address exists
+      // Calculate total height needed for all watermarks
+      const hasGeoFields = options.geoLocationFields.length > 0;
+      const hasCustomFields = options.watermarkFields && options.watermarkFields.length > 0;
+      const lineHeight = 25; // Height per line of text
       const textPadding = 15; // Padding from top/bottom of bar
+      
+      // Find geolocation fields
+      const latField = options.geoLocationFields.find(f => f.type === 'lat');
+      const lngField = options.geoLocationFields.find(f => f.type === 'lng');
+      const addressField = options.geoLocationFields.find(f => f.type === 'address');
+
+      // Calculate heights for top and bottom bars
+      let topBarHeight = 0;
+      let bottomBarHeight = 0;
+
+      // Calculate top bar height (for geolocation)
+      if (hasGeoFields && latField && lngField) {
+        topBarHeight = lineHeight * 2 + textPadding * 2; // Two lines for lat/lng
+      }
+
+      // Calculate bottom bar height
+      if (hasCustomFields) {
+        bottomBarHeight += (options.watermarkFields?.length || 0) * lineHeight;
+      }
+      if (addressField) {
+        bottomBarHeight += lineHeight;
+      }
+      bottomBarHeight += lineHeight; // For timestamp
+      bottomBarHeight += textPadding * 2; // Add padding
+
+      // Draw semi-transparent black bars
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(0, 0, canvas.width, barHeight); // Top bar
-      ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight); // Bottom bar
+      if (topBarHeight > 0) {
+        ctx.fillRect(0, 0, canvas.width, topBarHeight);
+      }
+      if (bottomBarHeight > 0) {
+        ctx.fillRect(0, canvas.height - bottomBarHeight, canvas.width, bottomBarHeight);
+      }
 
       // Draw text in white
       ctx.fillStyle = 'white';
       ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      const leftPadding = 10;
 
-      // Top bar content (GPS coordinates)
-      if (latField && lngField) {
-        ctx.textAlign = 'left';
-        const leftPadding = 10;
-        ctx.fillText(`Lat: ${latField.value}`, leftPadding, textPadding);
-        ctx.fillText(`Lng: ${lngField.value}`, leftPadding, barHeight - textPadding);
+      // Draw geolocation data in top bar
+      if (hasGeoFields && latField && lngField) {
+        ctx.fillText(`Lat: ${latField.value}`, leftPadding, textPadding + lineHeight/2);
+        ctx.fillText(`Lng: ${lngField.value}`, leftPadding, textPadding + lineHeight * 1.5);
       }
 
-      // Bottom bar content (Address and timestamp)
-      ctx.textAlign = 'left';
+      // Draw custom fields and address in bottom bar
+      let currentY = canvas.height - bottomBarHeight + textPadding + lineHeight/2;
+
+      // Draw custom watermark fields first
+      if (hasCustomFields && options.watermarkFields) {
+        options.watermarkFields.forEach(field => {
+          ctx.fillText(`${field.label}: ${field.value}`, leftPadding, currentY);
+          currentY += lineHeight;
+        });
+      }
+
+      // Draw address if available
+      if (addressField) {
+        ctx.fillText(`Address: ${addressField.value}`, leftPadding, currentY);
+        currentY += lineHeight;
+      }
+
+      // Draw timestamp last
       const now = new Date();
       const timestamp = now.toLocaleDateString('en-AU', {
         day: '2-digit',
@@ -65,16 +117,7 @@ export const addWatermark = async (imageFile: File, geoLocationFields: Geolocati
         second: '2-digit',
         hour12: false
       });
-
-      if (addressField) {
-        // Draw address on first line
-        ctx.fillText(`Address: ${addressField.value}`, 10, canvas.height - barHeight + 20);
-        // Draw timestamp on second line
-        ctx.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - barHeight + 50);
-      } else {
-        // Draw only timestamp centered vertically
-        ctx.fillText(`Timestamp: ${timestamp}`, 10, canvas.height - barHeight/2);
-      }
+      ctx.fillText(`Timestamp: ${timestamp}`, leftPadding, currentY);
 
       // Convert canvas back to file
       canvas.toBlob((blob) => {
