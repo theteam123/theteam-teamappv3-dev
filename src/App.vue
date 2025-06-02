@@ -256,7 +256,7 @@
                   <button
                     @click="handleSaveProfile"
                     :disabled="isSaving"
-                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                    class="px-4 py-2 text-sm font-medium text-white btn-primary border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                   >
                     <LoaderIcon v-if="isSaving" class="w-4 h-4 animate-spin inline-block mr-2" />
                     Save Changes

@@ -23,7 +23,7 @@
         <button
           v-if="form"
           @click="form && router.push(`/forms/${form.id}/new`)"
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <PlusIcon class="w-5 h-5 mr-2" />
           New Submission
@@ -50,7 +50,7 @@
         <button
           v-if="form"
           @click="router.push(`/forms/${(form as Form).id}`)"
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <PlusIcon class="w-5 h-5 mr-2" />
           New Submission
@@ -244,7 +244,7 @@
         <button
           v-if="form"
           @click="form && router.push(`/forms/${form.id}/new`)"
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <PlusIcon class="w-5 h-5 mr-2" />
           New Submission
