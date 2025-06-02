@@ -46,7 +46,7 @@
                 :field="field"
                 v-model="formData[field.fieldname]"
                 :disabled="!canEditDocument"
-                :geoLocationFields="[]"
+                :geoLocationFields="field.label?.includes('[camera]') ? geoLocationFields : []"
               />
             </div>
           </div>
@@ -78,10 +78,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { getFormData, updateDoctypeSubmission } from '../services/erpnext';
+import { getFormData, updateDoctypeSubmission, uploadFile } from '../services/erpnext';
 import FormField from '../components/FormField.vue';
 import { useFormSections } from '../composables/useFormSections';
 import { useSuccessStore } from '../stores/success';
@@ -91,6 +91,7 @@ import {
   LoaderIcon,
 } from 'lucide-vue-next';
 import SuccessMessage from '../components/SuccessMessage.vue';
+import { addWatermark } from '../utils/imageUtils';
 
 interface DocTypeField {
   fieldname: string;
@@ -100,12 +101,20 @@ interface DocTypeField {
   options?: string;
   hidden?: number;
   depends_on?: string;
+  parent?: string;
 }
 
 interface DocType {
   name: string;
   description: string;
   fields: DocTypeField[];
+}
+
+interface GeolocationData {
+  fieldname: string;
+  label: string;
+  value: string;
+  type: 'lat' | 'lng' | 'address';
 }
 
 const route = useRoute();
@@ -118,8 +127,39 @@ const originalFormData = ref<Record<string, any>>({});
 const loading = ref(false);
 const submitting = ref(false);
 const error = ref('');
+const uploading = ref(false);
+const uploadProgress = ref(0);
+const geoLocationFields = ref<GeolocationData[]>([]);
 
 const { processedSections } = useFormSections(computed(() => docType.value?.fields));
+
+const initializeGeolocationFields = (fields: DocTypeField[]) => {
+  const geoFields: GeolocationData[] = [];
+  
+  fields.forEach(field => {
+    if (field.fieldtype === 'Data') {
+      const match = field.label.match(/\[geolocation-(.*?)\]/);
+      if (match) {
+        const type = match[1] as 'lat' | 'lng' | 'address';
+        geoFields.push({
+          fieldname: field.fieldname,
+          label: field.label.replace(/\[.*?\]/g, '').trim(),
+          value: formData.value[field.fieldname] || '',
+          type
+        });
+      }
+    }
+  });
+  
+  geoLocationFields.value = geoFields;
+};
+
+watch(() => formData.value, (newFormData) => {
+  geoLocationFields.value = geoLocationFields.value.map(field => ({
+    ...field,
+    value: newFormData[field.fieldname]?.toString() || ''
+  }));
+}, { deep: true });
 
 const fetchDocTypeAndDocument = async () => {
   loading.value = true;
@@ -145,9 +185,13 @@ const fetchDocTypeAndDocument = async () => {
         reqd: field.reqd || 0,
         options: field.options || '',
         depends_on: field.depends_on,
-        hidden: field.hidden || 0
+        hidden: field.hidden || 0,
+        parent: field.parent
       }))
     };
+
+    // Initialize geolocation fields
+    initializeGeolocationFields(docType.value.fields);
 
     // Fetch document data
     const documentResponse = await getFormData(route.params.id as string, route.params.documentId as string);
@@ -181,11 +225,64 @@ const handleSubmit = async () => {
   error.value = '';
 
   try {
+    const formDataToSubmit = { ...formData.value };
+
+    // Find all image fields that need to be uploaded
+    const imageFields = docType.value?.fields.filter(
+      field => (field.fieldtype === 'Attach Image' || field.fieldtype === 'Attach') && 
+      formDataToSubmit[field.fieldname] && 
+      typeof formDataToSubmit[field.fieldname] === 'object'
+    ) || [];
+
+    // Upload all images first
+    for (const field of imageFields) {
+      const imageData = formDataToSubmit[field.fieldname];
+      if (!imageData.file) continue;
+
+      try {
+        uploading.value = true;
+        uploadProgress.value = 0;
+        
+        // Set progress to indicate upload is starting
+        uploadProgress.value = 10;
+
+        // Add watermark if needed
+        let fileToUpload = imageData.file;
+        console.log('imageData:', imageData);
+        console.log('imageData.needsWatermark:', imageData.needsWatermark);
+        if (imageData.needsWatermark) {
+          uploadProgress.value = 30;
+          fileToUpload = await addWatermark(imageData.file, imageData.geoLocationFields || []);
+        }
+        
+        uploadProgress.value = 50;
+        
+        const response = await uploadFile(
+          fileToUpload,
+          field.parent || '', // doctype
+          route.params.id as string, // docname
+          false // isPrivate
+        );
+        
+        uploadProgress.value = 90;
+        
+        // Update the form data with the file URL
+        formDataToSubmit[field.fieldname] = response.message.file_url;
+        
+        uploadProgress.value = 100;
+      } catch (err) {
+        console.error('Error uploading image:', err);
+        error.value = `Failed to upload image for ${field.label}: ${err.message}`;
+        submitting.value = false;
+        return;
+      }
+    }
+
     console.log('Calling updateDoctypeSubmission');
     await updateDoctypeSubmission(
       route.params.id as string,
       route.params.documentId as string,
-      formData.value
+      formDataToSubmit
     );
 
     console.log('Update successful');
@@ -222,6 +319,8 @@ const handleSubmit = async () => {
     }
   } finally {
     submitting.value = false;
+    uploading.value = false;
+    uploadProgress.value = 0;
   }
 };
 

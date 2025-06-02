@@ -87,7 +87,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useSuccessStore } from '../stores/success';
-import { getFormData, createDoctypeSubmission, getDocTypeData } from '../services/erpnext';
+import { getFormData, createDoctypeSubmission, getDocTypeData, uploadFile } from '../services/erpnext';
 import { getErpNextApiUrl } from '../utils/api';
 import { getCurrentToken } from '../services/oauth';
 import {
@@ -99,6 +99,7 @@ import FormField from '../components/FormField.vue';
 import { useFormSections } from '../composables/useFormSections';
 import ErrorMessage from '../components/ErrorMessage.vue';
 import SuccessMessage from '../components/SuccessMessage.vue';
+import { addWatermark } from '../utils/imageUtils';
 
 interface DocTypeField {
   fieldname: string;
@@ -106,6 +107,7 @@ interface DocTypeField {
   fieldtype: string;
   reqd: number;
   options?: string;
+  parent?: string;
 }
 
 interface DocType {
@@ -131,6 +133,8 @@ const error = ref<string | null>(null);
 const docType = ref<DocType | null>(null);
 const formData = ref<Record<string, any>>({});
 const geoLocationFields = ref<GeolocationData[]>([]);
+const uploading = ref(false);
+const uploadProgress = ref(0);
 
 const { processedSections } = useFormSections(
   computed(() => docType.value?.fields),
@@ -202,9 +206,54 @@ const handleSubmit = async () => {
   try {
     const formDataToSubmit = { ...formData.value };
     
-    const multipleUploadFields = docType.value?.fields.filter(
-      field => field.fieldtype === 'Table' && field.label.toLowerCase().includes('[multiple-upload]')
+    // Find all image fields that need to be uploaded
+    const imageFields = docType.value?.fields.filter(
+      field => (field.fieldtype === 'Attach Image' || field.fieldtype === 'Attach') && 
+      formDataToSubmit[field.fieldname] && 
+      typeof formDataToSubmit[field.fieldname] === 'object'
     ) || [];
+
+    // Upload all images first
+    for (const field of imageFields) {
+      const imageData = formDataToSubmit[field.fieldname];
+      if (!imageData.file) continue;
+
+      try {
+        uploading.value = true;
+        uploadProgress.value = 0;
+        
+        // Set progress to indicate upload is starting
+        uploadProgress.value = 10;
+
+        // Add watermark if needed
+        let fileToUpload = imageData.file;
+        if (imageData.needsWatermark) {
+          uploadProgress.value = 30;
+          fileToUpload = await addWatermark(imageData.file, imageData.geoLocationFields || []);
+        }
+        
+        uploadProgress.value = 50;
+        
+        const response = await uploadFile(
+          fileToUpload,
+          field.parent || '', // doctype
+          route.params.id as string, // docname
+          false // isPrivate
+        );
+        
+        uploadProgress.value = 90;
+        
+        // Update the form data with the file URL
+        formDataToSubmit[field.fieldname] = response.message.file_url;
+        
+        uploadProgress.value = 100;
+      } catch (err) {
+        console.error('Error uploading image:', err);
+        error.value = `Failed to upload image for ${field.label}: ${err.message}`;
+        submitting.value = false;
+        return;
+      }
+    }
 
     const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
     
@@ -219,6 +268,8 @@ const handleSubmit = async () => {
     error.value = err.message;
   } finally {
     submitting.value = false;
+    uploading.value = false;
+    uploadProgress.value = 0;
   }
 };
 
