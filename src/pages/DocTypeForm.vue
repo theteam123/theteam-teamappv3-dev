@@ -55,7 +55,6 @@
                 v-model="formData[field.fieldname]"
                 :formData="formData"
                 :parentDocName="route.params.id as string"
-                :geoLocationFields="field.label?.includes('[camera]') ? geoLocationFields : []"
               />
             </div>
           </div>
@@ -229,7 +228,7 @@ const handleSubmit = async () => {
         let fileToUpload = imageData.file;
         if (imageData.needsWatermark) {
           uploadProgress.value = 30;
-          fileToUpload = await addWatermark(imageData.file, imageData.geoLocationFields || []);
+          fileToUpload = await addWatermark(imageData.file, geoLocationFields.value);
         }
         
         uploadProgress.value = 50;

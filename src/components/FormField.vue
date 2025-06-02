@@ -690,7 +690,6 @@ const props = defineProps<{
   modelValue: any;
   formData?: Record<string, any>;
   parentDocName?: string;
-  geoLocationFields: GeolocationData[];
 }>();
 
 const emit = defineEmits<{
@@ -938,15 +937,13 @@ const handleImageUpload = async (event: Event) => {
     
     // Optimize the image first
     const optimizedFile = await optimizeImage(file);
-    console.log('Field Label:', props.field.label);
     
-    // Instead of uploading or adding watermark, just emit the optimized file
+    // Emit the optimized file with metadata
     emit('update:modelValue', {
       file: optimizedFile,
       preview: imagePreview.value,
       fieldname: props.field.fieldname,
-      needsWatermark: props.field.label?.includes('[camera]'),
-      geoLocationFields: props.geoLocationFields
+      needsWatermark: props.field.label?.includes('[camera]')
     });
   }
 };

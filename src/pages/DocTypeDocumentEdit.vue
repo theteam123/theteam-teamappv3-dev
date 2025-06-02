@@ -46,7 +46,6 @@
                 :field="field"
                 v-model="formData[field.fieldname]"
                 :disabled="!canEditDocument"
-                :geoLocationFields="field.label?.includes('[camera]') ? geoLocationFields : []"
               />
             </div>
           </div>
@@ -248,11 +247,9 @@ const handleSubmit = async () => {
 
         // Add watermark if needed
         let fileToUpload = imageData.file;
-        console.log('imageData:', imageData);
-        console.log('imageData.needsWatermark:', imageData.needsWatermark);
         if (imageData.needsWatermark) {
           uploadProgress.value = 30;
-          fileToUpload = await addWatermark(imageData.file, imageData.geoLocationFields || []);
+          fileToUpload = await addWatermark(imageData.file, geoLocationFields.value);
         }
         
         uploadProgress.value = 50;
