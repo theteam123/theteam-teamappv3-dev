@@ -12,32 +12,6 @@
         </h2>
       </div>
 
-      <!-- Debug Info -->
-      <div v-if="showDebug" class="bg-gray-100 p-4 rounded-lg text-xs font-mono">
-        <div class="font-semibold mb-2">Debug Info:</div>
-        <div>Form State:</div>
-        <pre>{{ {
-          loading: authStore.loading,
-          validationErrors: {
-            email: emailError,
-            password: passwordError,
-            fullName: fullNameError
-          }
-        } }}</pre>
-        <div class="mt-2">Auth Store State:</div>
-        <pre>{{ {
-          isAuthenticated: authStore.isAuthenticated,
-          error: authStore.error,
-          loading: authStore.loading
-        } }}</pre>
-        <button 
-          @click="showDebug = false"
-          class="mt-2 text-xs text-gray-500 hover:text-gray-700"
-        >
-          Hide Debug Info
-        </button>
-      </div>
-
       <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
         <div v-if="authStore.error" class="rounded-md bg-red-50 p-4">
           <div class="flex">
@@ -55,25 +29,16 @@
           <button
             type="submit"
             :disabled="authStore.loading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black-500 disabled:opacity-50"
           >
             <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <LockIcon v-if="!authStore.loading" class="h-5 w-5 text-green-500 group-hover:text-green-400" />
-              <LoaderIcon v-else class="h-5 w-5 text-green-500 group-hover:text-green-400 animate-spin" />
+              <LockIcon v-if="!authStore.loading" class="h-5 w-5 " />
+              <LoaderIcon v-else class="h-5 w-5  animate-spin" />
             </span>
             Login with ERPNext
           </button>
         </div>
 
-        <div class="flex justify-end text-sm">
-          <button
-            type="button"
-            @click="showDebug = true"
-            class="font-medium text-gray-500 hover:text-gray-700"
-          >
-            Show Debug Info
-          </button>
-        </div>
       </form>
     </div>
   </div>

@@ -81,7 +81,7 @@
           @click="viewMode = 'grid'"
           :class="[
             'p-2 rounded-lg',
-            viewMode === 'grid' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+            viewMode === 'grid' ? 'btn-primary text-black' : 'text-gray-600 hover:bg-gray-100'
           ]"
           title="Grid View"
         >
@@ -91,7 +91,7 @@
           @click="viewMode = 'list'"
           :class="[
             'p-2 rounded-lg',
-            viewMode === 'list' ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-100'
+            viewMode === 'list' ? 'btn-primary text-white' : 'text-gray-600 hover:bg-gray-100'
           ]"
           title="List View"
         >

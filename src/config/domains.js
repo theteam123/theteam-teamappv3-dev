@@ -133,7 +133,7 @@ export const getDomainConfig = () => {
   // const currentDomain = window.location.hostname;
   
   // For testing purposes, set the current domain to 'teamsite-sgcloud'
-  const currentDomain = 'teamsite-sgcloud';
+  // const currentDomain = 'teamsite-sgcloud';
   // const currentDomain = 'taktec';
   
   // Find the matching domain configuration
