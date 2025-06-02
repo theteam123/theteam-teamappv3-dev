@@ -37,11 +37,38 @@ export const addWatermark = async (imageFile: File, options: WatermarkOptions): 
       // Configure watermark style
       ctx.font = '18px monospace';
       
+      // Helper function to wrap text
+      const wrapText = (text: string, maxWidth: number): string[] => {
+        const words = text.split(' ');
+        const lines: string[] = [];
+        let currentLine = '';
+
+        words.forEach(word => {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const metrics = ctx.measureText(testLine);
+          
+          if (metrics.width > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        });
+        
+        if (currentLine) {
+          lines.push(currentLine);
+        }
+        
+        return lines;
+      };
+
       // Calculate total height needed for all watermarks
       const hasGeoFields = options.geoLocationFields.length > 0;
       const hasCustomFields = options.watermarkFields && options.watermarkFields.length > 0;
       const lineHeight = 25; // Height per line of text
       const textPadding = 15; // Padding from top/bottom of bar
+      const leftPadding = 10;
+      const maxTextWidth = canvas.width - (leftPadding * 2); // Maximum width for text
       
       // Find geolocation fields
       const latField = options.geoLocationFields.find(f => f.type === 'lat');
@@ -62,7 +89,9 @@ export const addWatermark = async (imageFile: File, options: WatermarkOptions): 
         bottomBarHeight += (options.watermarkFields?.length || 0) * lineHeight;
       }
       if (addressField) {
-        bottomBarHeight += lineHeight;
+        // Calculate how many lines the address will take
+        const addressLines = wrapText(`Address: ${addressField.value}`, maxTextWidth);
+        bottomBarHeight += lineHeight * addressLines.length;
       }
       bottomBarHeight += lineHeight; // For timestamp
       bottomBarHeight += textPadding * 2; // Add padding
@@ -80,7 +109,6 @@ export const addWatermark = async (imageFile: File, options: WatermarkOptions): 
       ctx.fillStyle = 'white';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
-      const leftPadding = 10;
 
       // Draw geolocation data in top bar
       if (hasGeoFields && latField && lngField) {
@@ -94,15 +122,21 @@ export const addWatermark = async (imageFile: File, options: WatermarkOptions): 
       // Draw custom watermark fields first
       if (hasCustomFields && options.watermarkFields) {
         options.watermarkFields.forEach(field => {
-          ctx.fillText(`${field.label}: ${field.value}`, leftPadding, currentY);
-          currentY += lineHeight;
+          const lines = wrapText(`${field.label}: ${field.value}`, maxTextWidth);
+          lines.forEach(line => {
+            ctx.fillText(line, leftPadding, currentY);
+            currentY += lineHeight;
+          });
         });
       }
 
       // Draw address if available
       if (addressField) {
-        ctx.fillText(`Address: ${addressField.value}`, leftPadding, currentY);
-        currentY += lineHeight;
+        const addressLines = wrapText(`Address: ${addressField.value}`, maxTextWidth);
+        addressLines.forEach(line => {
+          ctx.fillText(line, leftPadding, currentY);
+          currentY += lineHeight;
+        });
       }
 
       // Draw timestamp last
