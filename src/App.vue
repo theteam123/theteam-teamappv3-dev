@@ -333,7 +333,7 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { getErpNextApiUrl } from './utils/api';
-import { getLogo } from './config/domains';
+import { getLogo, getDocumentItems } from './config/domains';
 import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
 import ErrorMessage from './components/ErrorMessage.vue';
@@ -361,7 +361,9 @@ import {
   HelpCircleIcon,
   XIcon,
   LoaderIcon,
-  MicIcon
+  MicIcon,
+  UserIcon,
+  Building2Icon as BuildingOfficeIcon // Alias for BuildingOfficeIcon
 } from 'lucide-vue-next';
 
 interface SearchResult {
@@ -387,26 +389,38 @@ const isSaving = ref(false);
 const userData = ref(null);
 const sidebarRef = ref<HTMLElement | null>(null);
 
-const documentItems = [
-  { 
-    name: 'DocType',
-    path: '/doctypes',
-    icon: FileTextIcon,
-    description: 'Manage and organize your company documents',
-    requiredRoles: ['Taktec User', 'Taktec Admin','System Manager'] 
-  },
-  // { name: 'Forms', path: '/forms', icon: ClipboardIcon, description: 'Create and manage company forms', requiredRoles: ['Taktec User', 'Taktec Admin','System Manager'] },
-  { 
-    name: 'Voice Assistant', 
-    path: '/voice-assistant', 
-    icon: MicIcon, 
-    description: 'AI Voice Assistant', 
-    requiredRoles: ['Dizza'] 
-  },
-];
+const documentItems = computed(() => {
+  const items = getDocumentItems();
+  // Map string icon names to actual icon components
+  return items.map(item => ({
+    ...item,
+    icon: iconMap[item.icon] || FileTextIcon // Default to FileTextIcon if icon not found
+  }));
+});
+
+// Add icon mapping object with all required icons
+const iconMap = {
+  'FileTextIcon': FileTextIcon,
+  'MicIcon': MicIcon,
+  'ClipboardIcon': ClipboardIcon,
+  'BuildingOfficeIcon': BuildingOfficeIcon,
+  'UserIcon': UserIcon,
+  'HomeIcon': HomeIcon,
+  'BookIcon': BookIcon,
+  'FileIcon': FileIcon,
+  'FileBoxIcon': FileBoxIcon,
+  'VideoIcon': VideoIcon,
+  'SettingsIcon': SettingsIcon,
+  'UsersIcon': UsersIcon,
+  'BuildingIcon': BuildingIcon,
+  'ShieldIcon': ShieldIcon,
+  'FileEditIcon': FileEditIcon,
+  'TagIcon': TagIcon,
+  'FolderIcon': FolderIcon
+};
 
 const filteredDocumentItems = computed(() => {
-  return documentItems.filter(item => {
+  return documentItems.value.filter(item => {
     // If no requiredRoles is specified, show the item
     if (!item.requiredRoles) return true;
     
@@ -419,14 +433,14 @@ const allMenuItems = computed(() => [...filteredDocumentItems.value]);
 
 const currentPageTitle = computed(() => {
   if (route.path === '/') return 'Welcome';
-  const allItems = [...documentItems];
+  const allItems = [...documentItems.value];
   const currentItem = allItems.find(item => item.path === route.path);
   return currentItem?.name || 'TheTeam';
 });
 
 const currentPageDescription = computed(() => {
   if (route.path === '/') return 'Your one-stop location for managing forms, records, users, and companies';
-  const allItems = [...documentItems];
+  const allItems = [...documentItems.value];
   const currentItem = allItems.find(item => item.path === route.path);
   return currentItem?.description || '';
 });
