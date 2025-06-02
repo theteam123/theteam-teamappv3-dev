@@ -62,9 +62,16 @@ export const addWatermark = async (imageFile: File, options: WatermarkOptions): 
         return lines;
       };
 
-      // Calculate total height needed for all watermarks
-      const hasGeoFields = options.geoLocationFields.length > 0;
-      const hasCustomFields = options.watermarkFields && options.watermarkFields.length > 0;
+      // Helper function to draw wrapped text and return the next Y position
+      const drawWrappedText = (text: string, x: number, y: number, maxWidth: number, lineHeight: number): number => {
+        const lines = wrapText(text, maxWidth);
+        lines.forEach((line, index) => {
+          ctx.fillText(line, x, y + (index * lineHeight));
+        });
+        return y + (lines.length * lineHeight);
+      };
+
+      // Calculate dimensions and spacing
       const lineHeight = 25; // Height per line of text
       const textPadding = 15; // Padding from top/bottom of bar
       const leftPadding = 10;
@@ -76,32 +83,48 @@ export const addWatermark = async (imageFile: File, options: WatermarkOptions): 
       const addressField = options.geoLocationFields.find(f => f.type === 'address');
 
       // Calculate heights for top and bottom bars
-      let topBarHeight = 0;
-      let bottomBarHeight = 0;
+      let topBarHeight = textPadding * 2; // Start with padding
+      let bottomBarHeight = textPadding * 2; // Start with padding
 
-      // Calculate top bar height (for geolocation)
-      if (hasGeoFields && latField && lngField) {
-        topBarHeight = lineHeight * 2 + textPadding * 2; // Two lines for lat/lng
+      // Calculate space needed for each text element
+      if (latField && lngField) {
+        const latLines = wrapText(`Lat: ${latField.value}`, maxTextWidth).length;
+        const lngLines = wrapText(`Lng: ${lngField.value}`, maxTextWidth).length;
+        topBarHeight += (latLines + lngLines) * lineHeight;
       }
 
-      // Calculate bottom bar height
-      if (hasCustomFields) {
-        bottomBarHeight += (options.watermarkFields?.length || 0) * lineHeight;
+      if (options.watermarkFields?.length) {
+        options.watermarkFields.forEach(field => {
+          const lines = wrapText(`${field.label}: ${field.value}`, maxTextWidth).length;
+          bottomBarHeight += lines * lineHeight;
+        });
       }
+
       if (addressField) {
-        // Calculate how many lines the address will take
-        const addressLines = wrapText(`Address: ${addressField.value}`, maxTextWidth);
-        bottomBarHeight += lineHeight * addressLines.length;
+        const addressLines = wrapText(`Address: ${addressField.value}`, maxTextWidth).length;
+        bottomBarHeight += addressLines * lineHeight;
       }
-      bottomBarHeight += lineHeight; // For timestamp
-      bottomBarHeight += textPadding * 2; // Add padding
+
+      // Add space for timestamp
+      const timestamp = new Date().toLocaleDateString('en-AU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }) + ' ' + new Date().toLocaleTimeString('en-AU', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      const timestampLines = wrapText(`Timestamp: ${timestamp}`, maxTextWidth).length;
+      bottomBarHeight += timestampLines * lineHeight;
 
       // Draw semi-transparent black bars
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      if (topBarHeight > 0) {
+      if (topBarHeight > textPadding * 2) {
         ctx.fillRect(0, 0, canvas.width, topBarHeight);
       }
-      if (bottomBarHeight > 0) {
+      if (bottomBarHeight > textPadding * 2) {
         ctx.fillRect(0, canvas.height - bottomBarHeight, canvas.width, bottomBarHeight);
       }
 
@@ -111,47 +134,29 @@ export const addWatermark = async (imageFile: File, options: WatermarkOptions): 
       ctx.textAlign = 'left';
 
       // Draw geolocation data in top bar
-      if (hasGeoFields && latField && lngField) {
-        ctx.fillText(`Lat: ${latField.value}`, leftPadding, textPadding + lineHeight/2);
-        ctx.fillText(`Lng: ${lngField.value}`, leftPadding, textPadding + lineHeight * 1.5);
+      let currentY = textPadding + lineHeight/2;
+      if (latField && lngField) {
+        currentY = drawWrappedText(`Lat: ${latField.value}`, leftPadding, currentY, maxTextWidth, lineHeight);
+        currentY = drawWrappedText(`Lng: ${lngField.value}`, leftPadding, currentY, maxTextWidth, lineHeight);
       }
 
-      // Draw custom fields and address in bottom bar
-      let currentY = canvas.height - bottomBarHeight + textPadding + lineHeight/2;
+      // Start drawing bottom content
+      currentY = canvas.height - bottomBarHeight + textPadding + lineHeight/2;
 
-      // Draw custom watermark fields first
-      if (hasCustomFields && options.watermarkFields) {
+      // Draw custom watermark fields
+      if (options.watermarkFields?.length) {
         options.watermarkFields.forEach(field => {
-          const lines = wrapText(`${field.label}: ${field.value}`, maxTextWidth);
-          lines.forEach(line => {
-            ctx.fillText(line, leftPadding, currentY);
-            currentY += lineHeight;
-          });
+          currentY = drawWrappedText(`${field.label}: ${field.value}`, leftPadding, currentY, maxTextWidth, lineHeight);
         });
       }
 
       // Draw address if available
       if (addressField) {
-        const addressLines = wrapText(`Address: ${addressField.value}`, maxTextWidth);
-        addressLines.forEach(line => {
-          ctx.fillText(line, leftPadding, currentY);
-          currentY += lineHeight;
-        });
+        currentY = drawWrappedText(`Address: ${addressField.value}`, leftPadding, currentY, maxTextWidth, lineHeight);
       }
 
-      // Draw timestamp last
-      const now = new Date();
-      const timestamp = now.toLocaleDateString('en-AU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }) + ' ' + now.toLocaleTimeString('en-AU', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      });
-      ctx.fillText(`Timestamp: ${timestamp}`, leftPadding, currentY);
+      // Draw timestamp
+      drawWrappedText(`Timestamp: ${timestamp}`, leftPadding, currentY, maxTextWidth, lineHeight);
 
       // Convert canvas back to file
       canvas.toBlob((blob) => {
