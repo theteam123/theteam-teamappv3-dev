@@ -238,11 +238,7 @@
                       <p v-else class="mt-1 text-sm text-gray-900">{{ authStore.user?.profile?.time_zone || 'Not specified' }}</p>
                     </div>
                   </div>
-                  <!-- Additional User Data -->
-                  <div v-if="userData" class="mt-6">
-                    <h5 class="text-sm font-medium text-gray-500 mb-2">Additional Information</h5>
-                    <pre class="bg-gray-50 p-4 rounded-lg text-xs overflow-auto max-h-48">{{ JSON.stringify(userData, null, 2) }}</pre>
-                  </div>
+                  
                 </div>
 
                 <!-- Save Button -->
