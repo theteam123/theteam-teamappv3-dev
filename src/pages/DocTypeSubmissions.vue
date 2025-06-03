@@ -232,9 +232,6 @@
                           />
                         </div>
                       </div>
-                      <div class="text-xs text-gray-400">
-                        {{ field.fieldtype }}
-                      </div>
                     </th>
                   </tr>
                 </thead>

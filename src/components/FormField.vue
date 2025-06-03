@@ -23,13 +23,13 @@
           @input="!isGeolocationField && $emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           type="text"
           :required="field.reqd === 1"
-          :disabled="isGettingLocation || isGeolocationField"
-          :readonly="isGeolocationField"
+          :disabled="isGettingLocation || isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
+          :readonly="isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
           :class="{ 
             'pr-10': isGeolocationField,
-            'bg-gray-50': isGeolocationField,
-            'cursor-not-allowed': isGeolocationField
+            'bg-gray-50': isGeolocationField || field.read_only === 1 || shouldAutoFillUserData,
+            'cursor-not-allowed': isGeolocationField || field.read_only === 1 || shouldAutoFillUserData
           }"
           :placeholder="isGeolocationField ? 'Click the location icon to get current location' : ''"
         />
@@ -52,6 +52,9 @@
            geolocationFieldType === 'lng' ? 'Longitude' : 
            'Address' }} will be automatically populated. Click the location icon to update the current location.
       </p>
+      <p v-else-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
+        This field will be automatically populated with your {{ field.label?.includes('[login-user]') ? 'full name' : 'email' }}.
+      </p>
     </template>
 
     <!-- Number Input -->
@@ -66,7 +69,13 @@
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         type="number"
         :required="field.reqd === 1"
+        :disabled="field.read_only === 1"
+        :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
       />
     </template>
 
@@ -82,7 +91,13 @@
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         type="date"
         :required="field.reqd === 1"
+        :disabled="field.read_only === 1"
+        :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
       />
     </template>
 
@@ -98,7 +113,13 @@
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         type="datetime-local"
         :required="field.reqd === 1"
+        :disabled="field.read_only === 1"
+        :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
       />
     </template>
 
@@ -114,7 +135,13 @@
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         type="time"
         :required="field.reqd === 1"
+        :disabled="field.read_only === 1"
+        :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
       />
     </template>
 
@@ -128,15 +155,21 @@
         <input
           :id="field.fieldname"
           :value="durationString"
-          @focus="showDurationPopup = true; parseDurationString()"
+          @focus="handleDurationFocus"
           @input="onDurationInput($event)"
           type="text"
           :required="field.reqd === 1"
+          :disabled="field.read_only === 1"
+          :readonly="field.read_only === 1"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1,
+            'cursor-not-allowed': field.read_only === 1
+          }"
           autocomplete="off"
         />
         <div
-          v-if="showDurationPopup"
+          v-if="showDurationPopup && !field.read_only"
           class="absolute z-10 mt-2 w-max bg-white border border-gray-200 rounded-md shadow-lg p-4 flex space-x-4"
         >
           <div class="flex flex-col items-center">
@@ -170,7 +203,12 @@
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
         :required="field.reqd === 1"
+        :disabled="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
       >
         <option value="">Select an option</option>
         <option v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" :value="option">
@@ -190,7 +228,12 @@
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
         :required="field.reqd === 1"
+        :disabled="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
       >
         <option value="">Select {{ formattedLabel }}</option>
         <option v-for="option in linkOptions" :key="option.name" :value="option.name">
@@ -208,7 +251,11 @@
           @change="$emit('update:modelValue', ($event.target as HTMLInputElement).checked)"
           type="checkbox"
           :required="field.reqd === 1"
+          :disabled="field.read_only === 1"
           class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+          :class="{
+            'cursor-not-allowed': field.read_only === 1
+          }"
         />
         <label :for="field.fieldname" class="ml-2 block text-sm text-gray-900">
           {{ formattedLabel }}
@@ -228,7 +275,13 @@
         @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
         rows="3"
         :required="field.reqd === 1"
+        :disabled="field.read_only === 1"
+        :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
       ></textarea>
     </template>
 
@@ -246,7 +299,13 @@
             @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
             rows="6"
             :required="field.reqd === 1"
+            :disabled="field.read_only === 1"
+            :readonly="field.read_only === 1"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            :class="{
+              'bg-gray-50': field.read_only === 1,
+              'cursor-not-allowed': field.read_only === 1
+            }"
           ></textarea>
         </div>
       </div>
@@ -265,12 +324,16 @@
             type="file"
             @change="handleFileUpload"
             :required="field.reqd === 1 && !hasExistingFile"
+            :disabled="field.read_only === 1"
             class="block w-full text-sm text-gray-500
               file:mr-4 file:py-2 file:px-4
               file:rounded-md file:border-0
               file:text-sm file:font-semibold
               file:bg-green-50 file:text-green-700
               hover:file:bg-green-100"
+            :class="{
+              'cursor-not-allowed opacity-60': field.read_only === 1
+            }"
           />
           <!-- Upload Progress -->
           <div v-if="uploading" class="mt-2">
@@ -302,6 +365,7 @@
             </span>
           </div>
           <button
+            v-if="(filePreview || hasExistingFile) && !field.read_only"
             @click.stop="clearFile"
             type="button"
             class="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
@@ -327,7 +391,11 @@
             <button
               type="button"
               @click="openCamera"
+              :disabled="field.read_only === 1"
               class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              :class="{
+                'opacity-60 cursor-not-allowed': field.read_only === 1
+              }"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
@@ -342,6 +410,7 @@
               class="hidden"
               @change="handleImageUpload"
               :required="field.reqd === 1 && !hasExistingFile"
+              :disabled="field.read_only === 1"
             />
           </template>
           <!-- Show regular file input when not using camera -->
@@ -352,12 +421,16 @@
               accept="image/*"
               @change="handleImageUpload"
               :required="field.reqd === 1 && !hasExistingFile"
+              :disabled="field.read_only === 1"
               class="block w-full text-sm text-gray-500
                 file:mr-4 file:py-2 file:px-4
                 file:rounded-md file:border-0
                 file:text-sm file:font-semibold
                 file:bg-green-50 file:text-green-700
                 hover:file:bg-green-100"
+              :class="{
+                'cursor-not-allowed opacity-60': field.read_only === 1
+              }"
             />
           </template>
           <!-- Upload Progress -->
@@ -378,6 +451,7 @@
             class="h-full w-full rounded-md object-cover" 
           />
           <button
+            v-if="(imagePreview || hasExistingFile) && !field.read_only"
             @click.stop="clearImage"
             type="button"
             class="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
@@ -403,14 +477,24 @@
           @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           type="color"
           :required="field.reqd === 1"
+          :disabled="field.read_only === 1"
           class="h-8 w-8 rounded-md border-gray-300 p-1"
+          :class="{
+            'cursor-not-allowed opacity-60': field.read_only === 1
+          }"
         />
         <input
           :value="modelValue"
           @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           type="text"
           :required="field.reqd === 1"
+          :disabled="field.read_only === 1"
+          :readonly="field.read_only === 1"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1,
+            'cursor-not-allowed': field.read_only === 1
+          }"
         />
       </div>
     </template>
@@ -432,7 +516,13 @@
           type="number"
           step="0.01"
           :required="field.reqd === 1"
+          :disabled="field.read_only === 1"
+          :readonly="field.read_only === 1"
           class="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1,
+            'cursor-not-allowed': field.read_only === 1
+          }"
         />
       </div>
     </template>
@@ -447,8 +537,12 @@
         v-model="phoneValue"
         :id="field.fieldname"
         :required="field.reqd === 1"
+        :disabled="field.read_only === 1"
         @input="onPhoneInput"
         class="mt-1"
+        :class="{
+          'opacity-60': field.read_only === 1
+        }"
         :placeholder="'Enter phone number'"
         :mode="'international'"
         :dropdownOptions="{
@@ -458,7 +552,8 @@
         }"
         :inputOptions="{
           showDialCode: true,
-          showFlags: true
+          showFlags: true,
+          disabled: field.read_only === 1
         }"
         :showCountryFlag="true"
         :useEmoji="false"
@@ -479,7 +574,13 @@
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         type="password"
         :required="field.reqd === 1"
+        :disabled="field.read_only === 1"
+        :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
       />
     </template>
 
@@ -493,9 +594,14 @@
         <button
           v-for="rating in 5"
           :key="rating"
-          @click="$emit('update:modelValue', rating)"
+          @click="!field.read_only && $emit('update:modelValue', rating)"
+          :disabled="field.read_only === 1"
           class="text-gray-300 hover:text-yellow-400 focus:outline-none"
-          :class="{ 'text-yellow-400': modelValue >= rating }"
+          :class="{ 
+            'text-yellow-400': modelValue >= rating,
+            'cursor-not-allowed': field.read_only === 1,
+            'hover:text-gray-300': field.read_only === 1
+          }"
         >
           <svg class="h-8 w-8" fill="currentColor" viewBox="0 0 20 20">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -516,9 +622,12 @@
           <div class="relative bg-white" ref="signaturePadContainer">
             <!-- Canvas for drawing -->
             <canvas 
-              v-show="!modelValue"
+              v-show="!modelValue && !field.read_only"
               ref="signatureCanvas"
               class="border border-gray-200 rounded touch-none"
+              :class="{
+                'cursor-not-allowed': field.read_only === 1
+              }"
               :style="{ width: '100%', height: '200px' }"
             ></canvas>
             
@@ -532,7 +641,7 @@
             </div>
 
             <!-- Controls -->
-            <div class="mt-2 flex justify-between items-center">
+            <div v-if="!field.read_only" class="mt-2 flex justify-between items-center">
               <button
                 type="button"
                 @click="clearSignature"
@@ -686,6 +795,7 @@ import { MapPinIcon, LoaderIcon } from 'lucide-vue-next';
 import { getErpNextApiUrl } from '../utils/api';
 import { optimizeImage } from '../utils/imageUtils';
 import SignaturePad from 'signature_pad';
+import { useAuthStore } from '../stores/auth';
 
 interface FormField {
   fieldname: string;
@@ -699,6 +809,7 @@ interface FormField {
   max_value?: number;
   precision?: string;
   parent?: string;
+  read_only?: number;
 }
 
 interface UploadedFile {
@@ -739,6 +850,7 @@ const uploadProgress = ref(0);
 const uploadedFiles = ref<UploadedFile[]>([]);
 
 const errorStore = useErrorStore();
+const authStore = useAuthStore();
 
 const mediaQueryMatches = ref(false);
 
@@ -759,6 +871,11 @@ const isMobile = computed(() => {
 
 const shouldUseCameraInput = computed(() => {
   return isMobile.value && props.field.label?.includes('[camera]');
+});
+
+const shouldAutoFillUserData = computed(() => {
+  if (props.field.fieldtype !== 'Data') return false;
+  return props.field.label?.includes('[login-user]') || props.field.label?.includes('[login-email]');
 });
 
 watch(() => props.modelValue, (val) => {
@@ -1365,6 +1482,25 @@ onUnmounted(() => {
   // ... existing onUnmounted code ...
   window.removeEventListener('resize', handleResize);
 });
+
+// Add this to the script section with other functions
+function handleDurationFocus() {
+  if (!props.field.read_only) {
+    showDurationPopup.value = true;
+  }
+  parseDurationString();
+}
+
+watch(() => authStore.user, (user) => {
+  if (shouldAutoFillUserData.value && !props.modelValue) {
+    console.log('shouldAutoFillUserData', user);
+    if (props.field.label?.includes('[login-user]') && user?.profile.full_name) {
+      emit('update:modelValue', user.profile.full_name);
+    } else if (props.field.label?.includes('[login-email]') && user?.email) {
+      emit('update:modelValue', user.email);
+    }
+  }
+}, { immediate: true });
 
 defineExpose({ VueTelInput });
 </script>
