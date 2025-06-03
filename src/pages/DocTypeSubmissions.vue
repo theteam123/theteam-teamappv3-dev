@@ -173,6 +173,17 @@
                         <span>View Image</span>
                       </button>
                     </template>
+                    <template v-else-if="field.fieldtype === 'Signature'">
+                      <img 
+                        v-if="doc[field.fieldname]"
+                        :src="doc[field.fieldname]"
+                        alt="Signature"
+                        class="max-h-12 max-w-[200px] object-contain"
+                        @click="handleSignatureClick(doc[field.fieldname])"
+                        style="cursor: pointer;"
+                      />
+                      <span v-else class="text-gray-400 text-sm">No signature added</span>
+                    </template>
                     <template v-else>
                       {{ doc[field.fieldname] }}
                     </template>
@@ -308,6 +319,17 @@
                           <ImageIcon class="w-5 h-5" />
                         </button>
                         <span v-else class="text-gray-400 text-sm">No image added</span>
+                      </template>
+                      <template v-else-if="field.fieldtype === 'Signature'">
+                        <img 
+                          v-if="doc[field.fieldname]"
+                          :src="doc[field.fieldname]"
+                          alt="Signature"
+                          class="max-h-12 max-w-[200px] object-contain"
+                          @click="handleSignatureClick(doc[field.fieldname])"
+                          style="cursor: pointer;"
+                        />
+                        <span v-else class="text-gray-400 text-sm">No signature added</span>
                       </template>
                       <template v-else>
                         {{ doc[field.fieldname] }}
@@ -525,7 +547,8 @@ const fetchDocType = async () => {
         field.fieldtype === 'Table' || 
         field.in_list_view === 1 || 
         field.fieldtype === 'Attach Image' ||
-        field.fieldtype === 'Attach'
+        field.fieldtype === 'Attach' ||
+        field.fieldtype === 'Signature'
       )
     };
   } catch (err: any) {
@@ -699,6 +722,39 @@ const handleFileClick = (fileUrl: string) => {
     ? `${getErpNextApiUrl()}${fileUrl}`
     : fileUrl;
   window.open(fullUrl, '_blank');
+};
+
+const handleSignatureClick = (signatureData: string) => {
+  // Open signature in a new tab for better viewing
+  const newTab = window.open();
+  if (newTab) {
+    newTab.document.write(`
+      <html>
+        <head>
+          <title>Signature View</title>
+          <style>
+            body {
+              margin: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              background: #f3f4f6;
+            }
+            img {
+              max-width: 100%;
+              background: white;
+              padding: 20px;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${signatureData}" alt="Signature" />
+        </body>
+      </html>
+    `);
+  }
 };
 
 const formatDate = (date: string) => {
