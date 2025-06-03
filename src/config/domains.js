@@ -5,7 +5,7 @@ export const SHARED_NAVIGATION = [
     path: '/doctypes',
     icon: 'FileTextIcon',
     description: 'Manage and organize your company documents',
-    requiredRoles: ['System Manager'] 
+    requiredRoles: ['System Manager', 'Taktec User'] 
   },
   { 
     name: 'Voice Assistant', 

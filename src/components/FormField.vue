@@ -511,14 +511,44 @@
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
       <div class="mt-1">
-        <div class="border-2 border-dashed border-gray-300 rounded-md p-4">
-          <div class="text-center">
-            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-              <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <p class="mt-1 text-sm text-gray-600">
-              Click to draw your signature
-            </p>
+        <div class="border-2 border-gray-300 rounded-md p-4">
+          <!-- Signature Area -->
+          <div class="relative bg-white" ref="signaturePadContainer">
+            <!-- Canvas for drawing -->
+            <canvas 
+              v-show="!modelValue"
+              ref="signatureCanvas"
+              class="border border-gray-200 rounded touch-none"
+              :style="{ width: '100%', height: '200px' }"
+            ></canvas>
+            
+            <!-- Signature Preview -->
+            <div v-if="modelValue" class="border border-gray-200 rounded mb-2" style="height: 200px;">
+              <img 
+                :src="modelValue"
+                alt="Signature"
+                class="w-full h-full object-contain"
+              />
+            </div>
+
+            <!-- Controls -->
+            <div class="mt-2 flex justify-between items-center">
+              <button
+                type="button"
+                @click="clearSignature"
+                class="px-3 py-1 text-sm text-red-600 hover:text-red-700 border border-red-600 rounded hover:bg-red-50"
+              >
+                Clear Signature
+              </button>
+              <button
+                v-if="!modelValue"
+                type="button"
+                @click="saveSignature"
+                class="px-3 py-1 text-sm text-green-600 hover:text-green-700 border border-green-600 rounded hover:bg-green-50"
+              >
+                Save Signature
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -655,6 +685,7 @@ import { useErrorStore } from '../stores/error';
 import { MapPinIcon, LoaderIcon } from 'lucide-vue-next';
 import { getErpNextApiUrl } from '../utils/api';
 import { optimizeImage } from '../utils/imageUtils';
+import SignaturePad from 'signature_pad';
 
 interface FormField {
   fieldname: string;
@@ -1259,6 +1290,80 @@ onMounted(() => {
       }
     }
   }
+});
+
+// Add these refs after the existing refs
+const signatureCanvas = ref<HTMLCanvasElement | null>(null);
+const signaturePad = ref<SignaturePad | null>(null);
+const signaturePadContainer = ref<HTMLElement | null>(null);
+
+// Add these methods after the existing methods
+const initSignaturePad = () => {
+  if (!signatureCanvas.value) return;
+
+  // Set canvas dimensions
+  const container = signaturePadContainer.value;
+  if (!container) return;
+
+  const canvas = signatureCanvas.value;
+  const rect = container.getBoundingClientRect();
+  
+  // Set the canvas dimensions to match the container size
+  canvas.width = rect.width;
+  canvas.height = 200; // Fixed height
+
+  // Initialize SignaturePad
+  signaturePad.value = new SignaturePad(canvas, {
+    backgroundColor: 'rgb(255, 255, 255)',
+    penColor: 'rgb(0, 0, 0)'
+  });
+};
+
+const clearSignature = () => {
+  console.log('clearing signature');
+  if (signaturePad.value) {
+    signaturePad.value.clear();
+  }
+  emit('update:modelValue', '');
+};
+
+const saveSignature = () => {
+  if (!signaturePad.value || signaturePad.value.isEmpty()) {
+    alert('Please provide a signature first.');
+    return;
+  }
+
+  const dataURL = signaturePad.value.toDataURL();
+  emit('update:modelValue', dataURL);
+};
+
+// Add this to the onMounted section
+onMounted(() => {
+  if (props.field.fieldtype === 'Signature') {
+    nextTick(() => {
+      initSignaturePad();
+    });
+  }
+  // ... existing onMounted code ...
+});
+
+// Add window resize handler
+const handleResize = () => {
+  if (props.field.fieldtype === 'Signature') {
+    initSignaturePad();
+  }
+};
+
+// Add to onMounted
+onMounted(() => {
+  // ... existing onMounted code ...
+  window.addEventListener('resize', handleResize);
+});
+
+// Add to onUnmounted
+onUnmounted(() => {
+  // ... existing onUnmounted code ...
+  window.removeEventListener('resize', handleResize);
 });
 
 defineExpose({ VueTelInput });

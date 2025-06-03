@@ -545,10 +545,7 @@ const fetchDocType = async () => {
       ...response.data,
       fields: response.data.fields.filter((field: DocTypeField) => 
         field.fieldtype === 'Table' || 
-        field.in_list_view === 1 || 
-        field.fieldtype === 'Attach Image' ||
-        field.fieldtype === 'Attach' ||
-        field.fieldtype === 'Signature'
+        field.in_list_view === 1
       )
     };
   } catch (err: any) {
