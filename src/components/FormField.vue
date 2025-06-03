@@ -204,7 +204,7 @@
       <div class="flex items-center">
         <input
           :id="field.fieldname"
-          :checked="modelValue"
+          :checked="modelValue == 1"
           @change="$emit('update:modelValue', ($event.target as HTMLInputElement).checked)"
           type="checkbox"
           :required="field.reqd === 1"
@@ -620,7 +620,6 @@
         
         <!-- Modal -->
         <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4 relative z-10">
-          <pre>{{ isModalOpen }}</pre>
           <h3 class="text-lg font-medium text-gray-900 mb-4">Delete Confirmation</h3>
           <p class="text-sm text-gray-500 mb-6">Are you sure you want to delete the attachment?</p>
           

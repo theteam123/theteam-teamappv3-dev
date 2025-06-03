@@ -43,16 +43,25 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
     
     // Process each part of the condition
     const processedParts = parts.map(part => {
-      if (!part.includes('==')) {
+      // Check for both == and != operators
+      if (!part.includes('==') && !part.includes('!=')) {
+        console.log('Part does not include == or !=, returning:', part);
         return part;
       }
       
-      const [fieldName, value] = part.split('==').map(s => s.trim().replace(/['"]/g, ''));
-      const fieldValue = formData?.[fieldName];
+      // Split on either == or != operator
+      const operator = part.includes('==') ? '==' : '!=';
+      const [fieldName, value] = part.split(operator).map(s => s.trim().replace(/['"]/g, ''));
+      const rawFieldValue = formData?.[fieldName];
+      console.log('Raw field value:', rawFieldValue);
+      // Treat 'false' string as empty string
+      const fieldValue = rawFieldValue === false ? '' : rawFieldValue;
       
       console.log('Processing comparison:', {
         fieldName,
+        rawFieldValue,
         fieldValue,
+        operator,
         compareValue: value
       });
       
@@ -60,7 +69,7 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
         return 'false';
       }
       
-      return `'${fieldValue}' == '${value}'`;
+      return `'${fieldValue}' ${operator} '${value}'`;
     });
     
     // Rejoin the parts with &&
@@ -89,12 +98,13 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
       }
 
       // Handle single comparison
-      if (condition.includes('==')) {
-        const [left, right] = condition.split('==').map(s => 
+      if (condition.includes('==') || condition.includes('!=')) {
+        const operator = condition.includes('==') ? '==' : '!=';
+        const [left, right] = condition.split(operator).map(s => 
           s.trim().replace(/['"]/g, '').replace(/;/g, '')
         );
-        console.log('Comparing values:', { left, right });
-        return left === right;
+        console.log('Comparing values:', { left, right, operator });
+        return operator === '==' ? left === right : left !== right;
       }
 
       return true;
