@@ -542,6 +542,7 @@ const fetchDocType = async () => {
       ...response.data,
       fields: response.data.fields.filter((field: DocTypeField) => 
         field.fieldtype === 'Table' || 
+        (field.fieldtype === 'Attach Image' && field.label.includes('[camera]')) ||
         field.in_list_view === 1
       )
     };
