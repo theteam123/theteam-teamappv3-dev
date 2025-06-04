@@ -856,6 +856,7 @@ const mediaQueryMatches = ref(false);
 
 const shouldShowField = computed(() => {
   console.log('shouldShowField', props.field);
+  console.log('formData', props.formData);
   return evaluateFieldDependency(props.field, props.formData);
 });
 

@@ -45,6 +45,8 @@
                 :key="field.fieldname"
                 :field="field"
                 v-model="formData[field.fieldname]"
+                :formData="formData"
+                :parentDocName="route.params.id as string"
                 :disabled="!canEditDocument"
               />
             </div>
@@ -128,11 +130,9 @@ const watermarkConfigs = ref<WatermarkConfig[]>([]);
 
 const { processedSections } = useFormSections(
   computed(() => {
-    console.log('docType fields computed triggered:', docType.value?.fields?.length);
     return docType.value?.fields;
   }),
   computed(() => {
-    console.log('formData computed triggered:', Object.keys(formData.value).length);
     return formData.value;
   })
 );

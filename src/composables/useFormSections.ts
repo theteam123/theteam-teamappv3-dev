@@ -31,8 +31,8 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
       hidden: false
     };
 
-    console.log('Starting to process fields:', fields.value);
-    console.log('Form data:', formData?.value);
+    // console.log('Starting to process fields:', fields.value);
+    // console.log('Form data:', formData?.value);
 
     fields.value.forEach((field, index) => {
       console.log(`\nProcessing field ${index}:`, {
@@ -52,11 +52,11 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
 
         // Check if section should be hidden based on depends_on
         const shouldShowSection = !field.depends_on || evaluateFieldDependency(field, formData?.value);
-        console.log('Section visibility check:', {
-          depends_on: field.depends_on,
-          shouldShowSection,
-          formData: formData?.value
-        });
+        // console.log('Section visibility check:', {
+        //   depends_on: field.depends_on,
+        //   shouldShowSection,
+        //   formData: formData?.value
+        // });
 
         currentSection = {
           title: field.label || '',
@@ -69,27 +69,27 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
         console.log('Found Column Break');
         if (!currentSection.hidden) {
           currentSection.columnCount++;
-          console.log('Incremented column count:', currentSection.columnCount);
+          // console.log('Incremented column count:', currentSection.columnCount);
         }
       } else if (!field.hidden && !currentSection.hidden) {
-        console.log('Adding field to current section:', field.fieldname);
+        // console.log('Adding field to current section:', field.fieldname);
         currentSection.fields.push({
           ...field,
           columnIndex: currentSection.columnCount
         });
-        console.log('Current section after adding field:', currentSection);
+        // console.log('Current section after adding field:', currentSection);
       }
     });
 
     // Add the last section if it has fields
     if (currentSection.fields.length > 0 && !currentSection.hidden) {
-      console.log('\nAdding final section:', currentSection);
+      // console.log('\nAdding final section:', currentSection);
       sections.push(currentSection);
     }
 
     // If no sections were created but we have fields, create a default section
     if (sections.length === 0 && fields.value.length > 0) {
-      console.log('\nNo sections created, creating default section');
+      // console.log('\nNo sections created, creating default section');
       const visibleFields = fields.value.filter(f => 
         !f.hidden && 
         !['Section Break', 'Column Break'].includes(f.fieldtype)
@@ -102,7 +102,7 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
           fields: visibleFields,
           hidden: false
         });
-        console.log('Created default section with fields:', visibleFields.map(f => f.fieldname));
+        // console.log('Created default section with fields:', visibleFields.map(f => f.fieldname));
       }
     }
 
