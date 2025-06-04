@@ -24,6 +24,7 @@ export const DOMAINS = {
     apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
     fallbackUrl: 'http://desk.taktec.theteam.net.au',
     logo: '/taktec-logo.png',
+    ico: '/ico-taktec.png',
     theme: {
       primary: '#fcb040', // green-700
       secondary: '#4ade80', // green-400
@@ -41,6 +42,7 @@ export const DOMAINS = {
     apiUrl: import.meta.env.VITE_ERPNEXT_SGCLOUD_API_URL,
     fallbackUrl: 'https://ops.sgcloud.com.au',
     logo: '/SGCAustralia-Logo.svg',
+    ico: '/ico-sgc.png',
     theme: {
       primary: '#3fd921', // green-700
       secondary: '#4ade80', // green-400
@@ -94,6 +96,7 @@ export const DOMAINS = {
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/TeamLogo.png',
+    ico: '/ico.png',
     theme: {
       primary: '#15803d', // green-700
       secondary: '#4ade80', // green-400
@@ -111,6 +114,7 @@ export const DOMAINS = {
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/TeamLogo.png',
+    ico: '/ico.png',
     theme: {
       primary: '#15803d', // green-700
       secondary: '#4ade80', // green-400
