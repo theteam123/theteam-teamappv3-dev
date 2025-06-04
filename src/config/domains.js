@@ -110,7 +110,7 @@ export const DOMAINS = {
     documentItems: []
   },
   'default': {
-    key: 'DEFAULT',
+    key: 'TheTeam',
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/TeamLogo.png',
