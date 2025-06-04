@@ -13,7 +13,7 @@
       </div>
     </div>
     <!-- New Document Button -->
-    <div class="flex justify-end mb-6">
+    <div class="flex justify-end mb-6" v-if="docTypePermissions?.create === 1">
       <button
         @click="router.push(`/doctypes/${route.params.id}/new`)"
         class="btn-primary text-white px-4 py-2 rounded-lg  flex items-center gap-2"
@@ -59,7 +59,6 @@
         </button>
       </div>
     </div>
-
 
 
     <!-- DocType Count -->
@@ -451,6 +450,17 @@ interface Document {
   [key: string]: any;
 }
 
+interface DocTypePermission {
+  create: number;
+  read: number;
+  write: number;
+  delete: number;
+  submit: number;
+  cancel: number;
+  amend: number;
+  if_owner: number;
+}
+
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
@@ -462,6 +472,7 @@ const searchQuery = ref('');
 const sortBy = ref('modified');
 const sortDirection = ref<'asc' | 'desc'>('desc');
 const ifOwnerPermission = ref(false);
+const docTypePermissions = ref<DocTypePermission | null>(null);
 
 // Pagination state
 const currentPage = ref(1);
@@ -539,17 +550,25 @@ const fetchDocType = async () => {
     console.log('DocType Fields:', response.data.fields);
 
     const permissions = await getDoctypePermissions(route.params.id, authStore.user?.roles?.[0]);
-    ifOwnerPermission.value = permissions[0].if_owner === 1;
+    docTypePermissions.value = permissions[0];
+    console.log('DocType Permissions:', docTypePermissions.value);
+    ifOwnerPermission.value = permissions[0].if_owner;
     
-    // Filter fields to only show those marked for list view
-    docType.value = {
-      ...response.data,
-      fields: response.data.fields.filter((field: DocTypeField) => 
-        field.fieldtype === 'Table' || 
-        (field.fieldtype === 'Attach Image' && field.label.includes('[camera]')) ||
-        field.in_list_view === 1
-      )
-    };
+    // Only proceed if user has read permission
+    if (docTypePermissions.value?.read === 1) {
+      // Filter fields to only show those marked for list view
+      docType.value = {
+        ...response.data,
+        fields: response.data.fields.filter((field: DocTypeField) => 
+          field.fieldtype === 'Table' || 
+          (field.fieldtype === 'Attach Image' && field.label.includes('[camera]')) ||
+          field.in_list_view === 1
+        )
+      };
+    } else {
+      error.value = "You don't have permission to read this document type";
+      docType.value = null;
+    }
   } catch (err: any) {
     console.error('Error fetching DocType:', err);
     error.value = err.message;
