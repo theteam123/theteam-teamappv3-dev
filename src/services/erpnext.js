@@ -636,7 +636,39 @@ export const createDoctypeSubmission = async (doctypeName, data) => {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to submit form');
+      console.log('Error submitting doctype form:', error);
+      
+      let error_message = 'Failed to submit form';
+      
+      // Parse server messages if they exist
+      if (error._server_messages) {
+        try {
+          const serverMessages = JSON.parse(error._server_messages);
+          if (Array.isArray(serverMessages)) {
+            // Join multiple messages if they exist and strip HTML tags
+            error_message = serverMessages.map(msg => {
+              try {
+                const parsedMsg = JSON.parse(msg).message;
+                // Remove HTML tags from the message
+                return parsedMsg.replace(/<[^>]*>/g, '');
+              } catch {
+                // Remove HTML tags from the raw message
+                return msg.replace(/<[^>]*>/g, '');
+              }
+            }).join('. ');
+          }
+        } catch {
+          // Remove HTML tags from the raw server messages
+          error_message = error._server_messages.replace(/<[^>]*>/g, '');
+        }
+      }
+      
+      // Add exception type if it exists
+      if (error.exc_type) {
+        error_message = `${error.exc_type}: ${error_message}`;
+      }
+      
+      throw new Error(error_message);
     }
 
     return await response.json();
