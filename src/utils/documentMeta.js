@@ -10,5 +10,5 @@ export function updateDocumentMeta() {
   }
   
   // Update title
-  document.title = `${config.key} - TheTeam`;
+  document.title = `${config.key} - TheTeam App`;
 } 
