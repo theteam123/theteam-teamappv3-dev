@@ -258,11 +258,29 @@ export const getFormList = async (doctype, options = {}) => {
       fields = ['name', 'owner', 'creation', 'modified']  // Default fields
     } = options;
 
+    const authStore = useAuthStore();
+    const permissions = await getDoctypePermissions(doctype, authStore.user?.roles?.[0]);
+    const ifOwner = permissions[0]?.if_owner === 1;
+
+    // Build filters array
+    let filters = [];
+    
+    // Add owner filter if if_owner permission is true
+    if (ifOwner) {
+      filters.push(['owner', '=', authStore.user?.email]);
+    }
+
+    // Add any additional filters from options
+    if (options.filters) {
+      filters = [...filters, ...options.filters];
+    }
+
     const params = new URLSearchParams({
       limit_page_length: limit.toString(),
       limit_start: offset.toString(),
       order_by,
-      fields: JSON.stringify(fields)
+      fields: JSON.stringify(fields),
+      filters: JSON.stringify(filters)
     });
 
     const response = await erp.get(`/api/resource/${doctype}?${params}`);

@@ -7,7 +7,7 @@
     </div>
     
     <!-- Role Permissions Display -->
-    <div class="mb-6 bg-white rounded-lg shadow p-4" style="display: none;">
+    <div class="mb-6 bg-white rounded-lg shadow p-4" >
       <button 
         @click="showPermissions = !showPermissions"
         class="flex items-center justify-between w-full"
@@ -207,6 +207,7 @@
                 <div class="flex justify-end gap-2">
                   <button
                     @click="router.push(`/doctypes/${doctype.id}/new`)"
+                    v-if="doctype.permissions.create === 1"
                     class="text-white hover:text-black border border-primary hover:bg-white btn-primary p-1 rounded"
                     title="New Document"
                   >

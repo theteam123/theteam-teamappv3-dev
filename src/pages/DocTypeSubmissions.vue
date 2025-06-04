@@ -569,6 +569,7 @@ const fetchDocType = async () => {
       error.value = "You don't have permission to read this document type";
       docType.value = null;
     }
+    console.log('DOctype Value:', docType.value);
   } catch (err: any) {
     console.error('Error fetching DocType:', err);
     error.value = err.message;
@@ -611,7 +612,12 @@ const fetchDocuments = async (page = 1) => {
       })
     );
     
-    documents.value = fullDocuments;
+    // Filter documents based on owner permission
+    const filteredDocuments = ifOwnerPermission.value ?
+      fullDocuments.filter(doc => doc.owner === authStore.user?.email) :
+      fullDocuments;
+    
+    documents.value = filteredDocuments;
     currentPage.value = page;
   } catch (err: any) {
     error.value = err.message;
