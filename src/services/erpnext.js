@@ -922,3 +922,28 @@ export const getRolePermissions = async (roleName) => {
     throw error;
   }
 };
+
+/**
+ * Get all permissions for a specific role from Role Permission Manager
+ * @param {string} roleName - The name of the role to check permissions for
+ * @returns {Promise<Object>} Object containing all permissions for the role
+ */
+export const getDoctypePermissions = async (doctype, roleName) => {
+  try {
+    const response = await erp.post('/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions', {
+      doctype: doctype,
+      role: roleName
+    });
+
+    console.log('Role and Doctype permissions response:', {
+      role: roleName,
+      doctype: doctype,
+      permissions: response.data
+    });
+
+    return response.data.message || {};
+  } catch (error) {
+    console.error('Error fetching role permissions:', error);
+    throw error;
+  }
+};

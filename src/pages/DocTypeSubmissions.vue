@@ -404,7 +404,7 @@
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { getFormList, getFormData } from '../services/erpnext';
+import { getFormList, getFormData, getDoctypePermissions } from '../services/erpnext';
 import { getErpNextApiUrl } from '../utils/api';
 import {
   FileIcon,
@@ -461,6 +461,7 @@ const docType = ref<DocType | null>(null);
 const searchQuery = ref('');
 const sortBy = ref('modified');
 const sortDirection = ref<'asc' | 'desc'>('desc');
+const ifOwnerPermission = ref(false);
 
 // Pagination state
 const currentPage = ref(1);
@@ -531,11 +532,14 @@ const viewMode = ref('list');
 // Methods
 const fetchDocType = async () => {
   try {
-    console.log('Fetching DocType:', route.params.id);
+    console.log('Fetching DocType SDSSSS:', route.params.id);
     const response = await getFormData('DocType', route.params.id as string);
     console.log('DocType Response:', response);
     console.log('DocType Data:', response.data);
     console.log('DocType Fields:', response.data.fields);
+
+    const permissions = await getDoctypePermissions(route.params.id, authStore.user?.roles?.[0]);
+    ifOwnerPermission.value = permissions[0].if_owner === 1;
     
     // Filter fields to only show those marked for list view
     docType.value = {
@@ -636,7 +640,10 @@ const canEditDocument = (doc: Document) => {
   if (authStore.user?.roles?.includes('System Manager')) {
     return true;
   }
-  return doc.owner === authStore.user?.email;
+  if (ifOwnerPermission.value) {
+    return doc.owner === authStore.user?.email;
+  }
+  return true;
 };
 
 const handleImageClick = (doc: Document, fieldname: string) => {
