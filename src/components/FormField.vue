@@ -877,7 +877,7 @@ const shouldUseCameraInput = computed(() => {
 
 const shouldAutoFillUserData = computed(() => {
   if (props.field.fieldtype !== 'Data') return false;
-  return props.field.label?.includes('[login-user]') || props.field.label?.includes('[login-email]');
+  return props.field.label?.includes('[login-user]') || props.field.label?.includes('[login-email]') || props.field.label?.includes('[login-role]');
 });
 
 watch(() => props.modelValue, (val) => {
@@ -1494,12 +1494,15 @@ function handleDurationFocus() {
 }
 
 watch(() => authStore.user, (user) => {
+  console.log('user ====', user.roles[0]);
   if (shouldAutoFillUserData.value && !props.modelValue) {
     console.log('shouldAutoFillUserData', user);
     if (props.field.label?.includes('[login-user]') && user?.profile.full_name) {
       emit('update:modelValue', user.profile.full_name);
     } else if (props.field.label?.includes('[login-email]') && user?.email) {
       emit('update:modelValue', user.email);
+    } else if (props.field.label?.includes('[login-role]') && user?.roles[0]) {
+      emit('update:modelValue', user.roles[0]);
     }
   }
 }, { immediate: true });
