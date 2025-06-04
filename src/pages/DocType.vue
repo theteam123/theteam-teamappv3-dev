@@ -81,7 +81,7 @@
           @click="viewMode = 'grid'"
           :class="[
             'p-2 rounded-lg',
-            viewMode === 'grid' ? 'btn-primary text-black' : 'text-gray-600 hover:bg-gray-100'
+            viewMode === 'grid' ? 'btn-primary text-white' : 'text-gray-600 hover:bg-gray-100'
           ]"
           title="Grid View"
         >
@@ -139,14 +139,15 @@
               <div class="flex gap-1">
                 <button
                   @click="router.push(`/documents/${doctype.id}/new`)"
-                  class="text-gray-700 hover:text-gray-600"
+                  v-if="doctype.permissions.create === 1"
+                  class="text-white hover:text-black border border-primary hover:bg-white btn-primary p-1 rounded"
                   :title="`New ${doctype.name}`"
                 >
                   <FilePlusIcon class="w-6 h-6" />
                 </button>
                 <button
                   @click="viewDocuments(doctype)"
-                  class="text-gray-700 hover:text-gray-600"
+                  class="text-white hover:text-black border  hover:bg-white btn-primary p-1 rounded"
                   :title="`View ${doctype.name} submissions`"
                 >
                   <FileTextIcon class="w-6 h-6" />
