@@ -48,7 +48,7 @@
       v-if="showDropdown && searchQuery && !searchResults.length && !loading" 
       class="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg p-4 text-center text-gray-500"
     >
-      No document types found
+      No document found
     </div>
 
     <!-- Loading State -->
@@ -78,7 +78,7 @@ interface DocTypeResult {
 const props = defineProps({
   placeholder: {
     type: String,
-    default: 'Search doctypes...'
+    default: 'Search documents...'
   },
   inputClass: {
     type: String,
@@ -140,7 +140,7 @@ const handleBlur = () => {
 
 const handleResultClick = (result: DocTypeResult) => {
   emit('resultClick', result);
-  router.push(`/doctypes/${result.id}`);
+  router.push(`/documents/${result.id}`);
   searchQuery.value = '';
   showDropdown.value = false;
 };

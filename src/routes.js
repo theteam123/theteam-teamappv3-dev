@@ -5,9 +5,6 @@ import Users from './pages/Users.vue'
 import Companies from './pages/Companies.vue'
 import Roles from './pages/Roles.vue'
 import Forms from './pages/Forms.vue'
-import FormSubmissions from './pages/FormSubmissions.vue'
-import FormSubmit from './pages/FormSubmit.vue'
-import FormNew from './pages/FormNew.vue'
 import PublicFormSubmit from './pages/PublicFormSubmit.vue'
 import Tags from './pages/Tags.vue'
 import Categories from './pages/Categories.vue'
@@ -114,8 +111,8 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/doctypes',
-    name: 'doctypes',
+    path: '/documents',
+    name: 'documents',
     component: DocType,
     meta: { 
       requiresAuth: true,
@@ -123,8 +120,8 @@ const routes = [
     }
   },
   {
-    path: '/doctypes/taktec-portal',
-    name: 'taktec-doctypes',
+    path: '/documents/taktec-portal',
+    name: 'taktec-documents',
     component: DocType,
     meta: { 
       requiresAuth: true,
@@ -133,8 +130,8 @@ const routes = [
     }
   },
   {
-    path: '/doctypes/:id',
-    name: 'doctype-submissions',
+    path: '/documents/:id',
+    name: 'document-submissions',
     component: DocTypeSubmissions,
     meta: { 
       requiresAuth: true,
@@ -142,8 +139,8 @@ const routes = [
     }
   },
   {
-    path: '/doctypes/:id/new',
-    name: 'doctype-form',
+    path: '/documents/:id/new',
+    name: 'document-form',
     component: DocTypeForm,
     meta: { 
       requiresAuth: true,
@@ -151,8 +148,8 @@ const routes = [
     }
   },
   {
-    path: '/doctypes/:id/:documentId/edit',
-    name: 'doctype-document-edit',
+    path: '/documents/:id/:documentId/edit',
+    name: 'document-document-edit',
     component: DocTypeDocumentEdit,
     meta: { 
       requiresAuth: true,
@@ -160,8 +157,8 @@ const routes = [
     }
   },
   {
-    path: '/doctypes/:id/:documentId/images',
-    name: 'doctype-images',
+    path: '/documents/:id/:documentId/images',
+    name: 'document-images',
     component: DocTypeImages,
     meta: { 
       requiresAuth: true,
@@ -169,8 +166,8 @@ const routes = [
     }
   },
   {
-    path: '/doctypes/:id/:documentId/image/:fieldname',
-    name: 'doctype-single-image',
+    path: '/documents/:id/:documentId/image/:fieldname',
+    name: 'document-single-image',
     component: () => import('./pages/DocTypeSingleImage.vue'),
     meta: { 
       requiresAuth: true,

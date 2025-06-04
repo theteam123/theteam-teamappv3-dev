@@ -251,7 +251,7 @@ const handleSubmit = async () => {
     
     // Wait a brief moment for the success message to be visible
     setTimeout(() => {
-      router.push(`/doctypes/${route.params.id}`);
+      router.push(`/documents/${route.params.id}`);
     }, 1000);
   } catch (err: any) {
     error.value = err.message;

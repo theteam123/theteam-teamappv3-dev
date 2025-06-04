@@ -463,7 +463,7 @@ const handleMenuItemClick = (item) => {
 };
 
 const handleSearchResultClick = (result) => {
-  router.push(`/doctypes/${result.id}`);
+  router.push(`/documents/${result.id}`);
 };
 
 const getContentIcon = (type: string) => {

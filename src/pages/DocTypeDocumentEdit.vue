@@ -143,7 +143,7 @@ const fetchDocTypeAndDocument = async () => {
     const fields = docTypeResponse.data.fields || [];
     
     docType.value = {
-      name: docTypeResponse.data.name || 'Untitled Document Type',
+      name: docTypeResponse.data.name || 'Untitled Document',
       description: docTypeResponse.data.description || '',
       fields: fields.map(field => ({
         fieldname: field.fieldname,
@@ -269,7 +269,7 @@ const handleSubmit = async () => {
 
     // Wait for 1.5 seconds before redirecting
     setTimeout(() => {
-      router.push(`/doctypes/${route.params.id}`);
+      router.push(`/documents/${route.params.id}`);
     }, 1500);
   } catch (err: any) {
     console.error('Update error:', err);

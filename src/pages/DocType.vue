@@ -3,11 +3,11 @@
     <!-- Portal Title -->
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-900">{{ pageTitle }}</h1>
-      <p v-if="isTaktecPortal" class="text-sm text-gray-500 mt-1">Viewing Taktec ERPNext Document Types</p>
+      <p v-if="isTaktecPortal" class="text-sm text-gray-500 mt-1">Viewing Taktec ERPNext Documents</p>
     </div>
     
     <!-- Role Permissions Display -->
-    <div class="mb-6 bg-white rounded-lg shadow p-4" >
+    <div class="mb-6 bg-white rounded-lg shadow p-4" style="display: none;">
       <button 
         @click="showPermissions = !showPermissions"
         class="flex items-center justify-between w-full"
@@ -71,7 +71,7 @@
             type="text"
             id="doctype-search"
             v-model="searchQuery"
-            placeholder="Search document types..."
+            placeholder="Search ..."
             class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
           />
         </div>
@@ -103,7 +103,7 @@
 
     <!-- DocType Count -->
     <div class="mb-4 text-sm text-gray-600">
-      Showing {{ docTypes.length }} of {{ totalItems }} document types
+      Showing {{ docTypes.length }} of {{ totalItems }} documents
     </div>
 
     <!-- Loading State -->
@@ -138,7 +138,7 @@
               </div>
               <div class="flex gap-1">
                 <button
-                  @click="router.push(`/doctypes/${doctype.id}/new`)"
+                  @click="router.push(`/documents/${doctype.id}/new`)"
                   class="text-gray-700 hover:text-gray-600"
                   :title="`New ${doctype.name}`"
                 >
@@ -185,7 +185,7 @@
                 Actions
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Document Type
+                Document
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Description
@@ -206,7 +206,7 @@
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex justify-end gap-2">
                   <button
-                    @click="router.push(`/doctypes/${doctype.id}/new`)"
+                    @click="router.push(`/documents/${doctype.id}/new`)"
                     v-if="doctype.permissions.create === 1"
                     class="text-white hover:text-black border border-primary hover:bg-white btn-primary p-1 rounded"
                     title="New Document"
@@ -253,8 +253,8 @@
       <!-- Empty State -->
       <div v-else class="text-center py-12">
         <FileIcon class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No document types</h3>
-        <p class="mt-1 text-sm text-gray-500">Get started by creating a new document type.</p>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No documents</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by creating a new document.</p>
       </div>
 
       <!-- Pagination Controls -->
@@ -412,7 +412,7 @@ const docTypeData = ref<Omit<DocType, 'updated_at' | 'created_at' | 'documents_c
 const isTaktecPortal = computed(() => route.meta.portal === 'taktec');
 
 // Update the page title based on portal
-const pageTitle = computed(() => isTaktecPortal.value ? 'Taktec Document Types' : 'Document Types');
+const pageTitle = computed(() => isTaktecPortal.value ? 'Documents' : 'Documents');
 
 const filteredDocTypes = computed(() => {
   let filtered = [...docTypes.value];
@@ -491,8 +491,8 @@ const fetchDocTypes = async (page = 1) => {
     totalPages.value = response.totalPages;
     currentPage.value = response.page;
   } catch (err) {
-    console.error('Error fetching document types:', err);
-    error.value = err.response?.data?.message || err.message || 'Failed to fetch document types';
+    console.error('Error fetching document:', err);
+    error.value = err.response?.data?.message || err.message || 'Failed to fetch documents';
     
     if (err.response?.status === 403 || err.response?.data?.exc_type === 'PermissionError') {
       // router.push('/auth');
@@ -515,11 +515,11 @@ const editDocType = (doctype: DocType) => {
 };
 
 const viewDocuments = (doctype: DocType) => {
-  router.push(`/doctypes/${doctype.id}`);
+  router.push(`/documents/${doctype.id}`);
 };
 
 const viewAnalytics = (doctype: DocType) => {
-  router.push(`/doctypes/${doctype.id}/analytics`);
+  router.push(`/documents/${doctype.id}/analytics`);
 };
 
 const addField = () => {

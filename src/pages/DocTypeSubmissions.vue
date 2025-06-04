@@ -15,7 +15,7 @@
     <!-- New Document Button -->
     <div class="flex justify-end mb-6" v-if="docTypePermissions?.create === 1">
       <button
-        @click="router.push(`/doctypes/${route.params.id}/new`)"
+        @click="router.push(`/documents/${route.params.id}/new`)"
         class="btn-primary text-white px-4 py-2 rounded-lg  flex items-center gap-2"
       >
         <FilePlusIcon class="w-5 h-5" />
@@ -108,7 +108,7 @@
               <div class="flex gap-2">
                 <button
                   v-if="canEditDocument(doc)"
-                  @click="router.push(`/doctypes/${route.params.id}/${doc.name}/edit`)"
+                  @click="router.push(`/documents/${route.params.id}/${doc.name}/edit`)"
                   class="text-white hover:text-green-600 border border-green-600 hover:bg-white btn-primary p-1 rounded"
                   title="Edit Document"
                 >
@@ -247,7 +247,7 @@
                       <div class="flex gap-2">
                         <button
                           v-if="canEditDocument(doc)"
-                          @click="router.push(`/doctypes/${route.params.id}/${doc.name}/edit`)"
+                          @click="router.push(`/documents/${route.params.id}/${doc.name}/edit`)"
                           class="text-white hover:text-green-600 border border-green-600 hover:bg-white btn-primary p-1 rounded"
                           title="Edit Document"
                         >
@@ -344,7 +344,7 @@
       <div v-else class="text-center py-12">
         <FileIcon class="mx-auto h-12 w-12 text-gray-400" />
         <h3 class="mt-2 text-sm font-medium text-gray-900">No submissions found</h3>
-        <p class="mt-1 text-sm text-gray-500">No submissions available for this document type.</p>
+        <p class="mt-1 text-sm text-gray-500">No submissions available for this document.</p>
       </div>
 
       <!-- Pagination -->
@@ -566,7 +566,7 @@ const fetchDocType = async () => {
         )
       };
     } else {
-      error.value = "You don't have permission to read this document type";
+      error.value = "You don't have permission to read this document";
       docType.value = null;
     }
     console.log('DOctype Value:', docType.value);
@@ -673,7 +673,7 @@ const canEditDocument = (doc: Document) => {
 
 const handleImageClick = (doc: Document, fieldname: string) => {
   if (isMobile.value) {
-    router.push(`/doctypes/${route.params.id}/${doc.name}/images`);
+    router.push(`/documents/${route.params.id}/${doc.name}/images`);
   } else {
     selectedDocument.value = doc;
     selectedFieldname.value = fieldname;
@@ -684,7 +684,7 @@ const handleImageClick = (doc: Document, fieldname: string) => {
 const handleSingleImageClick = (doc: Document, fieldname: string) => {
   if (isMobile.value) {
     // Route to the single image view page
-    router.push(`/doctypes/${route.params.id}/${doc.name}/image/${fieldname}`);
+    router.push(`/documents/${route.params.id}/${doc.name}/image/${fieldname}`);
   } else {
     selectedDocument.value = doc;
     selectedFieldname.value = fieldname;
