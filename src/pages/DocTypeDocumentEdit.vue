@@ -126,7 +126,16 @@ const uploadProgress = ref(0);
 const geoLocationFields = ref<GeolocationData[]>([]);
 const watermarkConfigs = ref<WatermarkConfig[]>([]);
 
-const { processedSections } = useFormSections(computed(() => docType.value?.fields));
+const { processedSections } = useFormSections(
+  computed(() => {
+    console.log('docType fields computed triggered:', docType.value?.fields?.length);
+    return docType.value?.fields;
+  }),
+  computed(() => {
+    console.log('formData computed triggered:', Object.keys(formData.value).length);
+    return formData.value;
+  })
+);
 
 const fetchDocTypeAndDocument = async () => {
   loading.value = true;
@@ -313,6 +322,14 @@ const canEditDocument = computed(() => {
 watch(() => formData.value, (newFormData) => {
   // Update watermark configs when form data changes
   watermarkConfigs.value = initializeWatermarkFields(docType.value?.fields || [], newFormData);
+}, { deep: true });
+
+// Add debug watch
+watch(formData, (newValue) => {
+  console.log('formData changed:', {
+    numberOfKeys: Object.keys(newValue).length,
+    processedSectionsLength: processedSections.value.length
+  });
 }, { deep: true });
 
 onMounted(async () => {

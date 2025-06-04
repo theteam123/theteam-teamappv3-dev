@@ -855,6 +855,7 @@ const authStore = useAuthStore();
 const mediaQueryMatches = ref(false);
 
 const shouldShowField = computed(() => {
+  console.log('shouldShowField', props.field);
   return evaluateFieldDependency(props.field, props.formData);
 });
 

@@ -52,7 +52,9 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
       // Split on either == or != operator
       const operator = part.includes('==') ? '==' : '!=';
       const [fieldName, value] = part.split(operator).map(s => s.trim().replace(/['"]/g, ''));
+      console.log('Field Data', formData);
       const rawFieldValue = formData?.[fieldName];
+      console.log('Raw field name:', fieldName);
       console.log('Raw field value:', rawFieldValue);
       // Treat 'false' string as empty string
       const fieldValue = rawFieldValue === false ? '' : rawFieldValue;

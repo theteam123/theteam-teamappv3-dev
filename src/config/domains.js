@@ -20,7 +20,7 @@ export const SHARED_NAVIGATION = [
 // Domain configuration for different environments
 export const DOMAINS = {
   'taktec': {
-    key: 'Taktec',
+    key: 'TAKTEC',
     apiUrl: import.meta.env.VITE_ERPNEXT_TAKTEC_API_URL,
     fallbackUrl: 'http://desk.taktec.theteam.net.au',
     logo: '/taktec-logo.png',
@@ -38,7 +38,7 @@ export const DOMAINS = {
     documentItems: []
   },
   'teamsite-sgcloud': {
-    key: 'SGCloud',
+    key: 'SGCLOUD',
     apiUrl: import.meta.env.VITE_ERPNEXT_SGCLOUD_API_URL,
     fallbackUrl: 'https://ops.sgcloud.com.au',
     logo: '/SGCAustralia-Logo.svg',
@@ -110,7 +110,7 @@ export const DOMAINS = {
     documentItems: []
   },
   'default': {
-    key: 'TheTeam',
+    key: 'DEFAULT',
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/TeamLogo.png',
