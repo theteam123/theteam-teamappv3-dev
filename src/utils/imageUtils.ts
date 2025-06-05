@@ -252,4 +252,28 @@ export const optimizeImage = (file: File): Promise<File> => {
     reader.onerror = () => resolve(file);
     reader.readAsDataURL(file);
   });
+};
+
+interface WatermarkDownloadOptions {
+  file: File;
+  fieldname: string;
+  docTypeId: string;
+}
+
+export const downloadWatermarkedFile = (options: WatermarkDownloadOptions) => {
+  const { file, fieldname, docTypeId } = options;
+  const downloadUrl = URL.createObjectURL(file);
+  const downloadLink = document.createElement('a');
+  downloadLink.href = downloadUrl;
+  downloadLink.download = `watermarked_${fieldname}_${docTypeId}_${new Date().toISOString()}.jpg`;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+  URL.revokeObjectURL(downloadUrl);
+};
+
+export const downloadWatermarkedFiles = (files: WatermarkDownloadOptions[]) => {
+  files.forEach(fileOptions => {
+    downloadWatermarkedFile(fileOptions);
+  });
 }; 

@@ -101,6 +101,7 @@ import SuccessMessage from '../components/SuccessMessage.vue';
 import { addWatermark } from '../utils/imageUtils';
 import { initializeGeolocationFields, GeolocationData } from '../utils/formUtils';
 import { initializeWatermarkFields, WatermarkConfig } from '../utils/formUtils';
+import { downloadWatermarkedFiles } from '../utils/imageUtils';
 
 interface DocTypeField {
   fieldname: string;
@@ -193,7 +194,7 @@ const handleSubmit = async () => {
       typeof formDataToSubmit[field.fieldname] === 'object'
     ) || [];
 
-    // Upload all images first
+    // Process all images first
     for (const field of imageFields) {
       const imageData = formDataToSubmit[field.fieldname];
       if (!imageData.file) continue;
@@ -207,6 +208,7 @@ const handleSubmit = async () => {
 
         // Add watermark if needed
         let fileToUpload = imageData.file;
+        console.log('imageData:', imageData);
         if (imageData.needsWatermark) {
           uploadProgress.value = 30;
           
@@ -217,64 +219,76 @@ const handleSubmit = async () => {
 
           console.log('watermarkConfig:', watermarkConfig);
 
-          fileToUpload = await addWatermark(imageData.file, {
-            geoLocationFields: geoLocationFields.value,
-            watermarkFields: watermarkConfig?.fields
-          });
-
-          // Store file for later download if autoDownload is true
-          if (imageData.autoDownload) {
-            filesToDownload.value.push({
-              file: fileToUpload,
-              fieldname: field.fieldname
+          try {
+            fileToUpload = await addWatermark(imageData.file, {
+              geoLocationFields: geoLocationFields.value,
+              watermarkFields: watermarkConfig?.fields
             });
+
+            // Store file for later download if autoDownload is true
+            if (imageData.autoDownload) {
+              filesToDownload.value.push({
+                file: fileToUpload,
+                fieldname: field.fieldname
+              });
+            }
+          } catch (watermarkErr) {
+            console.error('Error adding watermark:', watermarkErr);
+            error.value = `Failed to add watermark for ${field.label}: ${watermarkErr.message}`;
+            continue; // Skip upload but continue with next image
           }
         }
         
         uploadProgress.value = 50;
         
-        const response = await uploadFile(
-          fileToUpload,
-          field.parent || '', // doctype
-          route.params.id as string, // docname
-          false // isPrivate
-        );
-        
-        uploadProgress.value = 90;
-        
-        // Update the form data with the file URL
-        formDataToSubmit[field.fieldname] = response.message.file_url;
-        
-        uploadProgress.value = 100;
+        try {
+          const response = await uploadFile(
+            fileToUpload,
+            field.parent || '', // doctype
+            route.params.id as string, // docname
+            false // isPrivate
+          );
+          
+          uploadProgress.value = 90;
+          
+          // Update the form data with the file URL
+          formDataToSubmit[field.fieldname] = response.message.file_url;
+          
+          uploadProgress.value = 100;
+        } catch (uploadErr) {
+          console.error('Error uploading image:', uploadErr);
+          error.value = `Failed to upload image for ${field.label}: ${uploadErr.message}`;
+          // Don't return or break here, continue processing other images
+        }
       } catch (err) {
-        console.error('Error uploading image:', err);
-        error.value = `Failed to upload image for ${field.label}: ${err.message}`;
-        submitting.value = false;
-        return;
+        console.error('Error processing image:', err);
+        error.value = `Failed to process image for ${field.label}: ${err.message}`;
+        // Don't return or break here, continue processing other images
       }
     }
 
-        // After successful submission, download any watermarked files
-      for (const fileData of filesToDownload.value) {
-      const downloadUrl = URL.createObjectURL(fileData.file);
-      const downloadLink = document.createElement('a');
-      downloadLink.href = downloadUrl;
-      downloadLink.download = `watermarked_${fileData.fieldname}_${route.params.id}_${new Date().toISOString()}.jpg`;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(downloadUrl);
+    // Always try to download watermarked files, regardless of any previous errors
+    if (filesToDownload.value.length > 0) {
+      console.log('Downloading watermarked files:', filesToDownload.value);
+      downloadWatermarkedFiles(filesToDownload.value.map(fileData => ({
+        file: fileData.file,
+        fieldname: fileData.fieldname,
+        docTypeId: route.params.id as string
+      })));
     }
 
-    const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
-    
-    // Show success message
-    successStore.showSuccess('Form submitted successfully!');
-    
-    // Wait a brief moment for the success message to be visible
-    setTimeout(() => {
-      router.push(`/documents/${route.params.id}`);
-    }, 1000);
+    // Only proceed with form submission if there were no upload errors
+    if (!error.value) {
+      const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
+      
+      // Show success message
+      successStore.showSuccess('Form submitted successfully!');
+      
+      // Wait a brief moment for the success message to be visible
+      setTimeout(() => {
+        router.push(`/documents/${route.params.id}`);
+      }, 1000);
+    }
   } catch (err: any) {
     error.value = err.message;
   } finally {

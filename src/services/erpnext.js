@@ -944,6 +944,8 @@ export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
 
     return await response.json();
   } catch (error) {
+    let error_message = 'Failed to upload file';
+    console.log('uploadFile Error uploading file:', error);
 
     // Parse server messages if they exist
     if (error._server_messages) {
