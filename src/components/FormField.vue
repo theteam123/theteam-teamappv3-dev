@@ -1092,7 +1092,7 @@ const handleImageUpload = async (event: Event) => {
       file: optimizedFile,
       preview: imagePreview.value,
       fieldname: props.field.fieldname,
-      needsWatermark: props.field.label?.includes('[camera]')
+      needsWatermark: isMobile.value && props.field.label?.includes('[camera]')
     });
   }
 };
@@ -1120,7 +1120,7 @@ onMounted(() => {
   fetchLinkOptions();
   document.addEventListener('mousedown', handleClickOutside);
 
-  const mediaQuery = window.matchMedia('(max-width: 768px)');
+  const mediaQuery = window.matchMedia('(max-width: 1024px)');
   mediaQueryMatches.value = mediaQuery.matches;
   
   const handleResize = (e: MediaQueryListEvent) => {

@@ -219,7 +219,7 @@
                       @click="sortByColumn(field.fieldname)"
                     >
                       <div class="flex items-center gap-1">
-                        {{ field.label }}
+                        {{ field.label.replace(/\[.*?\]/g, '').trim() }}
                         <div class="flex flex-col">
                           <ChevronUpIcon 
                             class="w-3 h-3" 
@@ -561,6 +561,7 @@ const fetchDocType = async () => {
         ...response.data,
         fields: response.data.fields.filter((field: DocTypeField) => 
           field.fieldtype === 'Table' || 
+          field.in_preview === 1 ||
           field.in_list_view === 1
         )
       };
