@@ -287,58 +287,62 @@ const handleSubmit = async () => {
       }
     }
 
-    // Always try to download watermarked files, regardless of any previous errors
-    if (filesToDownload.value.length > 0) {
-      console.log('Downloading watermarked files:', filesToDownload.value);
-      downloadWatermarkedFiles(filesToDownload.value.map(fileData => ({
-        file: fileData.file,
-        fieldname: fileData.fieldname,
-        docTypeId: route.params.id as string
-      })));
-    }
+    try {
+      // Only proceed with form submission if there were no upload errors
+      if (!error.value) {
+        console.log('Calling updateDoctypeSubmission');
+        await updateDoctypeSubmission(
+          route.params.id as string,
+          route.params.documentId as string,
+          formDataToSubmit
+        );
 
-    // Only proceed with form submission if there were no upload errors
-    if (!error.value) {
-      console.log('Calling updateDoctypeSubmission');
-      await updateDoctypeSubmission(
-        route.params.id as string,
-        route.params.documentId as string,
-        formDataToSubmit
-      );
+        console.log('Update successful');
+        // Show success message
+        successStore.showSuccess('Document updated successfully');
 
-      console.log('Update successful');
-      // Show success message
-      successStore.showSuccess('Document updated successfully');
+        // Wait for 1.5 seconds before redirecting
+        setTimeout(() => {
+          router.push(`/documents/${route.params.id}`);
+        }, 1500);
+      }
+    } catch (err: any) {
+      console.error('Update error:', err);
+      let errorMsg = err.message || 'Failed to update document';
 
-      // Wait for 1.5 seconds before redirecting
-      setTimeout(() => {
-        router.push(`/documents/${route.params.id}`);
-      }, 1500);
-    }
-  } catch (err: any) {
-    console.error('Update error:', err);
-    let errorMsg = err.message || 'Failed to update document';
-
-    if (err._server_messages) {
-      try {
-        const serverMessages = JSON.parse(err._server_messages);
-        if (Array.isArray(serverMessages) && serverMessages.length > 0) {
-          const msgObj = JSON.parse(serverMessages[0]);
-          if (msgObj && msgObj.message) {
-            errorMsg = msgObj.message;
+      if (err._server_messages) {
+        try {
+          const serverMessages = JSON.parse(err._server_messages);
+          if (Array.isArray(serverMessages) && serverMessages.length > 0) {
+            const msgObj = JSON.parse(serverMessages[0]);
+            if (msgObj && msgObj.message) {
+              errorMsg = msgObj.message;
+            }
           }
+        } catch (parseErr) {
+          // Ignore parse errors, fallback to default errorMsg
         }
-      } catch (parseErr) {
-        // Ignore parse errors, fallback to default errorMsg
+      }
+
+      if (errorMsg.includes('TimestampMismatchError') || errorMsg.includes('Please refresh to get the latest document')) {
+        error.value = 'This record was updated elsewhere. Please reload and try again.';
+        await fetchDocTypeAndDocument();
+      } else {
+        error.value = errorMsg;
+      }
+    } finally {
+      // Always try to download watermarked files, regardless of any previous errors
+      if (filesToDownload.value.length > 0) {
+        console.log('Downloading watermarked files:', filesToDownload.value);
+        downloadWatermarkedFiles(filesToDownload.value.map(fileData => ({
+          file: fileData.file,
+          fieldname: fileData.fieldname,
+          docTypeId: route.params.id as string
+        })));
       }
     }
-
-    if (errorMsg.includes('TimestampMismatchError') || errorMsg.includes('Please refresh to get the latest document')) {
-      error.value = 'This record was updated elsewhere. Please reload and try again.';
-      await fetchDocTypeAndDocument();
-    } else {
-      error.value = errorMsg;
-    }
+  } catch (err: any) {
+    error.value = err.message;
   } finally {
     submitting.value = false;
     uploading.value = false;

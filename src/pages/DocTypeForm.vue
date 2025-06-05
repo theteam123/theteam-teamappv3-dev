@@ -267,27 +267,30 @@ const handleSubmit = async () => {
       }
     }
 
-    // Always try to download watermarked files, regardless of any previous errors
-    if (filesToDownload.value.length > 0) {
-      console.log('Downloading watermarked files:', filesToDownload.value);
-      downloadWatermarkedFiles(filesToDownload.value.map(fileData => ({
-        file: fileData.file,
-        fieldname: fileData.fieldname,
-        docTypeId: route.params.id as string
-      })));
-    }
-
-    // Only proceed with form submission if there were no upload errors
-    if (!error.value) {
-      const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
-      
-      // Show success message
-      successStore.showSuccess('Form submitted successfully!');
-      
-      // Wait a brief moment for the success message to be visible
-      setTimeout(() => {
-        router.push(`/documents/${route.params.id}`);
-      }, 1000);
+    try {
+      // Only proceed with form submission if there were no upload errors
+      if (!error.value) {
+        const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
+        // Show success message
+        successStore.showSuccess('Form submitted successfully!');
+        
+        // Wait a brief moment for the success message to be visible
+        setTimeout(() => {
+          router.push(`/documents/${route.params.id}`);
+        }, 1000);
+      }
+    } catch (err: any) {
+      error.value = err.message;
+    } finally {
+      // Always try to download watermarked files, regardless of any previous errors
+      if (filesToDownload.value.length > 0) {
+        console.log('Downloading watermarked files:', filesToDownload.value);
+        downloadWatermarkedFiles(filesToDownload.value.map(fileData => ({
+          file: fileData.file,
+          fieldname: fileData.fieldname,
+          docTypeId: route.params.id as string
+        })));
+      }
     }
   } catch (err: any) {
     error.value = err.message;
