@@ -127,6 +127,7 @@ const uploading = ref(false);
 const uploadProgress = ref(0);
 const geoLocationFields = ref<GeolocationData[]>([]);
 const watermarkConfigs = ref<WatermarkConfig[]>([]);
+const filesToDownload = ref<Array<{ file: File; fieldname: string }>>([]);
 
 const { processedSections } = useFormSections(
   computed(() => {
@@ -203,6 +204,8 @@ const handleSubmit = async () => {
 
   submitting.value = true;
   error.value = '';
+  // Clear previous files to download
+  filesToDownload.value = [];
 
   try {
     const formDataToSubmit = { ...formData.value };
@@ -241,17 +244,12 @@ const handleSubmit = async () => {
             watermarkFields: watermarkConfig?.fields
           });
 
-          // Only download if autoDownload is true
+          // Store file for later download if autoDownload is true
           if (imageData.autoDownload) {
-            // Automatically download the watermarked file
-            const downloadUrl = URL.createObjectURL(fileToUpload);
-            const downloadLink = document.createElement('a');
-            downloadLink.href = downloadUrl;
-            downloadLink.download = `watermarked_${field.fieldname}.jpg`;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            URL.revokeObjectURL(downloadUrl);
+            filesToDownload.value.push({
+              file: fileToUpload,
+              fieldname: field.fieldname
+            });
           }
         }
         
@@ -284,6 +282,18 @@ const handleSubmit = async () => {
       route.params.documentId as string,
       formDataToSubmit
     );
+
+    // After successful submission, download any watermarked files
+    for (const fileData of filesToDownload.value) {
+      const downloadUrl = URL.createObjectURL(fileData.file);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = downloadUrl;
+      downloadLink.download = `watermarked_${fileData.fieldname}.jpg`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(downloadUrl);
+    }
 
     console.log('Update successful');
     // Show success message
@@ -321,6 +331,8 @@ const handleSubmit = async () => {
     submitting.value = false;
     uploading.value = false;
     uploadProgress.value = 0;
+    // Clear the files to download array
+    filesToDownload.value = [];
   }
 };
 

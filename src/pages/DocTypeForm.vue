@@ -130,6 +130,7 @@ const geoLocationFields = ref<GeolocationData[]>([]);
 const uploading = ref(false);
 const uploadProgress = ref(0);
 const watermarkConfigs = ref<WatermarkConfig[]>([]);
+const filesToDownload = ref<Array<{ file: File; fieldname: string }>>([]);
 
 const { processedSections } = useFormSections(
   computed(() => docType.value?.fields),
@@ -180,6 +181,7 @@ const fetchDocType = async () => {
 const handleSubmit = async () => {
   submitting.value = true;
   error.value = null;
+  filesToDownload.value = [];
 
   try {
     const formDataToSubmit = { ...formData.value };
@@ -220,7 +222,13 @@ const handleSubmit = async () => {
             watermarkFields: watermarkConfig?.fields
           });
 
-          
+          // Store file for later download if autoDownload is true
+          if (imageData.autoDownload) {
+            filesToDownload.value.push({
+              file: fileToUpload,
+              fieldname: field.fieldname
+            });
+          }
         }
         
         uploadProgress.value = 50;
@@ -236,21 +244,6 @@ const handleSubmit = async () => {
         
         // Update the form data with the file URL
         formDataToSubmit[field.fieldname] = response.message.file_url;
-
-        if (imageData.needsWatermark) {
-          // Only download if autoDownload is true
-          if (imageData.autoDownload) {
-              // Automatically download the watermarked file
-              // const downloadUrl = URL.createObjectURL(fileToUpload);
-              // const downloadLink = document.createElement('a');
-              // downloadLink.href = downloadUrl;
-              // downloadLink.download = `watermarked_${field.fieldname}.jpg`;
-              // document.body.appendChild(downloadLink);
-              // downloadLink.click();
-              // document.body.removeChild(downloadLink);
-              // URL.revokeObjectURL(downloadUrl);
-            }          
-        }
         
         uploadProgress.value = 100;
       } catch (err) {
@@ -262,6 +255,18 @@ const handleSubmit = async () => {
     }
 
     const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
+    
+    // After successful submission, download any watermarked files
+    for (const fileData of filesToDownload.value) {
+      const downloadUrl = URL.createObjectURL(fileData.file);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = downloadUrl;
+      downloadLink.download = `watermarked_${fileData.fieldname}.jpg`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(downloadUrl);
+    }
     
     // Show success message
     successStore.showSuccess('Form submitted successfully!');
@@ -276,6 +281,7 @@ const handleSubmit = async () => {
     submitting.value = false;
     uploading.value = false;
     uploadProgress.value = 0;
+    filesToDownload.value = [];
   }
 };
 
