@@ -463,7 +463,7 @@
         </div>
       </div>
       <!-- Watermark Download Checkbox -->
-      <div v-if="shouldUseCameraInput" class="mt-2">
+      <div v-if="true" class="mt-2">
         <label class="inline-flex items-center">
           <input
             type="checkbox"
@@ -1012,6 +1012,7 @@ const clearImage = () => {
 };
 
 const handleFileUpload = async (event: Event) => {
+  console.log('handleFileUpload ==== ');
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
     const file = input.files[0];
@@ -1080,6 +1081,7 @@ onUnmounted(() => {
 });
 
 const handleImageUpload = async (event: Event) => {
+  console.log('handleImageUpload ==== ');
   const input = event.target as HTMLInputElement;
   if (input.files && input.files[0]) {
     const file = input.files[0];

@@ -13,7 +13,7 @@
       </div>
     </div>
     <!-- New Document Button -->
-    <div class="flex justify-end mb-6" v-if="docTypePermissions?.create === 1">
+    <div class="flex justify-start  mb-6" v-if="docTypePermissions?.create === 1">
       <button
         @click="router.push(`/documents/${route.params.id}/new`)"
         class="btn-primary text-white px-4 py-2 rounded-lg  flex items-center gap-2"
