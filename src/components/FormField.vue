@@ -463,11 +463,13 @@
         </div>
       </div>
       <!-- Watermark Download Checkbox -->
-      <div v-if="true" class="mt-2">
+      <div v-if="shouldUseCameraInput" class="mt-2">
         <label class="inline-flex items-center">
           <input
             type="checkbox"
+            :key="checkboxKey"
             v-model="shouldAutoDownload"
+            @change="() => console.log('Checkbox changed:', shouldAutoDownload)"
             class="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-300 focus:ring focus:ring-green-200 focus:ring-opacity-50"
           >
           <span class="ml-2 text-sm text-gray-600">Download a copy of watermarked image</span>
@@ -1008,6 +1010,7 @@ const clearFile = () => {
 
 const clearImage = () => {
   console.log('clearImage');
+  shouldAutoDownload.value = true; // Reset to default state
   showDeleteConfirmation('image');
 };
 
@@ -1100,13 +1103,17 @@ const handleImageUpload = async (event: Event) => {
     // Optimize the image first
     const optimizedFile = await optimizeImage(file);
     
+    // Log the current state before emitting
+    console.log('Current shouldAutoDownload state:', shouldAutoDownload.value);
+    console.log('Is mobile:', isMobile.value);
+    console.log('Has camera tag:', props.field.label?.includes('[camera]'));
+    
     // Emit the optimized file with metadata
     emit('update:modelValue', {
       file: optimizedFile,
       preview: imagePreview.value,
       fieldname: props.field.fieldname,
-      // needsWatermark: isMobile.value && props.field.label?.includes('[camera]')
-      needsWatermark: props.field.label?.includes('[camera]'),
+      needsWatermark: isMobile.value && props.field.label?.includes('[camera]'),
       autoDownload: shouldAutoDownload.value
     });
   }
@@ -1523,6 +1530,22 @@ watch(() => authStore.user, (user) => {
 
 // Add this with other refs
 const shouldAutoDownload = ref(true);
+
+// Add computed property for custom key
+const checkboxKey = computed(() => `watermark-checkbox-${props.field.fieldtype}-${props.field.label}`);
+
+// Add watcher for modelValue to reset shouldAutoDownload when form is cleared
+watch(() => props.modelValue, (newValue) => {
+  // If the form field is cleared (value becomes empty/null)
+  if (!newValue) {
+    shouldAutoDownload.value = true; // Reset to default state
+  }
+}, { deep: true });
+
+// Add watcher for shouldAutoDownload to log its changes
+watch(() => shouldAutoDownload.value, (newValue) => {
+  console.log('shouldAutoDownload changed:', newValue);
+});
 
 defineExpose({ VueTelInput });
 </script>

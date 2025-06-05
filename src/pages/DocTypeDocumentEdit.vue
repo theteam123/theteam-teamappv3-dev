@@ -288,7 +288,7 @@ const handleSubmit = async () => {
       const downloadUrl = URL.createObjectURL(fileData.file);
       const downloadLink = document.createElement('a');
       downloadLink.href = downloadUrl;
-      downloadLink.download = `watermarked_${fileData.fieldname}.jpg`;
+      downloadLink.download = `watermarked_${fileData.fieldname}_${route.params.id}_${new Date().toISOString()}.jpg`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
