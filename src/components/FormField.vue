@@ -463,7 +463,7 @@
         </div>
       </div>
       <!-- Watermark Download Checkbox -->
-      <div v-if="true" class="mt-2">
+      <div v-if="shouldUseCameraInput" class="mt-2">
         <label class="inline-flex items-center">
           <input
             type="checkbox"
