@@ -254,10 +254,8 @@ const handleSubmit = async () => {
       }
     }
 
-    const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
-    
-    // After successful submission, download any watermarked files
-    for (const fileData of filesToDownload.value) {
+        // After successful submission, download any watermarked files
+      for (const fileData of filesToDownload.value) {
       const downloadUrl = URL.createObjectURL(fileData.file);
       const downloadLink = document.createElement('a');
       downloadLink.href = downloadUrl;
@@ -267,6 +265,8 @@ const handleSubmit = async () => {
       document.body.removeChild(downloadLink);
       URL.revokeObjectURL(downloadUrl);
     }
+
+    const response = await createDoctypeSubmission(route.params.id as string, formDataToSubmit);
     
     // Show success message
     successStore.showSuccess('Form submitted successfully!');
