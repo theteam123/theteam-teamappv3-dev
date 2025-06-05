@@ -944,8 +944,36 @@ export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
 
     return await response.json();
   } catch (error) {
-    console.error('Error uploading file:', error);
-    throw error;
+
+    // Parse server messages if they exist
+    if (error._server_messages) {
+      try {
+        const serverMessages = JSON.parse(error._server_messages);
+        if (Array.isArray(serverMessages)) {
+          // Join multiple messages if they exist and strip HTML tags
+          error_message = serverMessages.map(msg => {
+            try {
+              const parsedMsg = JSON.parse(msg).message;
+              // Remove HTML tags from the message
+              return parsedMsg.replace(/<[^>]*>/g, '');
+            } catch {
+              // Remove HTML tags from the raw message
+              return msg.replace(/<[^>]*>/g, '');
+            }
+          }).join('. ');
+        }
+      } catch {
+        // Remove HTML tags from the raw server messages
+        error_message = error._server_messages.replace(/<[^>]*>/g, '');
+      }
+    }
+    
+    // Add exception type if it exists
+    if (error.exc_type) {
+      error_message = `${error.exc_type}: ${error_message}`;
+    }    
+    console.error('Error uploading file:', error_message);
+    throw error_message;
   }
 };
 

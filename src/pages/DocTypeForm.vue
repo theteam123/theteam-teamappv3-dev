@@ -220,18 +220,7 @@ const handleSubmit = async () => {
             watermarkFields: watermarkConfig?.fields
           });
 
-          // Only download if autoDownload is true
-          if (imageData.autoDownload) {
-            // Automatically download the watermarked file
-            const downloadUrl = URL.createObjectURL(fileToUpload);
-            const downloadLink = document.createElement('a');
-            downloadLink.href = downloadUrl;
-            downloadLink.download = `watermarked_${field.fieldname}.jpg`;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            URL.revokeObjectURL(downloadUrl);
-          }
+          
         }
         
         uploadProgress.value = 50;
@@ -247,6 +236,21 @@ const handleSubmit = async () => {
         
         // Update the form data with the file URL
         formDataToSubmit[field.fieldname] = response.message.file_url;
+
+        if (imageData.needsWatermark) {
+          // Only download if autoDownload is true
+          if (imageData.autoDownload) {
+              // Automatically download the watermarked file
+              const downloadUrl = URL.createObjectURL(fileToUpload);
+              const downloadLink = document.createElement('a');
+              downloadLink.href = downloadUrl;
+              downloadLink.download = `watermarked_${field.fieldname}.jpg`;
+              document.body.appendChild(downloadLink);
+              downloadLink.click();
+              document.body.removeChild(downloadLink);
+              URL.revokeObjectURL(downloadUrl);
+            }          
+        }
         
         uploadProgress.value = 100;
       } catch (err) {
