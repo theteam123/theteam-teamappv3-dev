@@ -462,6 +462,17 @@
           </button>
         </div>
       </div>
+      <!-- Watermark Download Checkbox -->
+      <div v-if="shouldUseCameraInput" class="mt-2">
+        <label class="inline-flex items-center">
+          <input
+            type="checkbox"
+            v-model="shouldAutoDownload"
+            class="rounded border-gray-300 text-green-600 shadow-sm focus:border-green-300 focus:ring focus:ring-green-200 focus:ring-opacity-50"
+          >
+          <span class="ml-2 text-sm text-gray-600">Download a copy of watermarked image</span>
+        </label>
+      </div>
     </template>
 
     <!-- Color Input -->
@@ -1092,7 +1103,9 @@ const handleImageUpload = async (event: Event) => {
       file: optimizedFile,
       preview: imagePreview.value,
       fieldname: props.field.fieldname,
-      needsWatermark: isMobile.value && props.field.label?.includes('[camera]')
+      // needsWatermark: isMobile.value && props.field.label?.includes('[camera]')
+      needsWatermark: props.field.label?.includes('[camera]'),
+      autoDownload: shouldAutoDownload.value
     });
   }
 };
@@ -1505,6 +1518,9 @@ watch(() => authStore.user, (user) => {
     }
   }
 }, { immediate: true });
+
+// Add this with other refs
+const shouldAutoDownload = ref(true);
 
 defineExpose({ VueTelInput });
 </script>

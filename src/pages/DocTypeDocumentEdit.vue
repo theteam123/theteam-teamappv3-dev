@@ -240,6 +240,19 @@ const handleSubmit = async () => {
             geoLocationFields: geoLocationFields.value,
             watermarkFields: watermarkConfig?.fields
           });
+
+          // Only download if autoDownload is true
+          if (imageData.autoDownload) {
+            // Automatically download the watermarked file
+            const downloadUrl = URL.createObjectURL(fileToUpload);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = downloadUrl;
+            downloadLink.download = `watermarked_${field.fieldname}.jpg`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(downloadUrl);
+          }
         }
         
         uploadProgress.value = 50;
