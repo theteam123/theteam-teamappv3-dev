@@ -69,7 +69,9 @@ export const getAccessToken = async (code) => {
     if (response.data.access_token) {
       // Store the token and its expiry
       localStorage.setItem('oauth_token', response.data.access_token);
-      localStorage.setItem('oauth_token_expiry', Date.now() + (response.data.expires_in * 1000));
+      console.log('oauth_token', response.data.access_token);
+      console.log('oauth_token_expiry', Date.now() + (30 * 24 * 60 * 60 * 1000)); // 30 days expiry
+      localStorage.setItem('oauth_token_expiry', Date.now() + (30 * 24 * 60 * 60 * 1000));
       return response.data.access_token;
     }
     throw new Error('No access token received');
@@ -91,7 +93,7 @@ export const refreshAccessToken = async (refreshToken) => {
 
     if (response.data.access_token) {
       localStorage.setItem('oauth_token', response.data.access_token);
-      localStorage.setItem('oauth_token_expiry', Date.now() + (response.data.expires_in * 1000));
+      localStorage.setItem('oauth_token_expiry', Date.now() + (30 * 24 * 60 * 60 * 1000)); // 30 days expiry
       return response.data.access_token;
     }
     throw new Error('No access token received');

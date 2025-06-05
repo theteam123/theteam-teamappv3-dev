@@ -1494,7 +1494,6 @@ function handleDurationFocus() {
 }
 
 watch(() => authStore.user, (user) => {
-  console.log('user ====', user.roles[0]);
   if (shouldAutoFillUserData.value && !props.modelValue) {
     console.log('shouldAutoFillUserData', user);
     if (props.field.label?.includes('[login-user]') && user?.profile.full_name) {

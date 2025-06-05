@@ -35,12 +35,12 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
     // console.log('Form data:', formData?.value);
 
     fields.value.forEach((field, index) => {
-      console.log(`\nProcessing field ${index}:`, {
-        fieldname: field.fieldname,
-        fieldtype: field.fieldtype,
-        label: field.label,
-        depends_on: field.depends_on
-      });
+      // console.log(`\nProcessing field ${index}:`, {
+      //   fieldname: field.fieldname,
+      //   fieldtype: field.fieldtype,
+      //   label: field.label,
+      //   depends_on: field.depends_on
+      // });
 
       if (field.fieldtype === 'Section Break') {
         console.log('Found Section Break:', field.label);

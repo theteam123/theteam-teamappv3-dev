@@ -106,7 +106,20 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
           s.trim().replace(/['"]/g, '').replace(/;/g, '')
         );
         console.log('Comparing values:', { left, right, operator });
-        return operator === '==' ? left === right : left !== right;
+        
+        // Helper function to normalize boolean-like values
+        const normalizeValue = (val: string): string => {
+          if (val === 'true' || val === '1') return 'true';
+          if (val === 'false' || val === '0') return 'false';
+          return val;
+        };
+        
+        const normalizedLeft = normalizeValue(left);
+        const normalizedRight = normalizeValue(right);
+        
+        return operator === '==' 
+          ? normalizedLeft === normalizedRight 
+          : normalizedLeft !== normalizedRight;
       }
 
       return true;
