@@ -26,7 +26,7 @@ export const getDoc = async (params = {}) => {
 
 
 /**
- * Get list of modules details 
+ * Get list of module def of logged in user details 
  */
 export const getModules = async (params = {}) => {
     try {
@@ -73,3 +73,47 @@ export const getModules = async (params = {}) => {
       throw error;
     }
   }; 
+
+/**
+ * Get list of doctypes for a specific module
+ * @param {string} module - The module name to fetch doctypes for
+ * @returns {Promise<Object>} Object containing the doctypes list
+ */
+export const getDoctypeModule = async (module) => {
+  try {
+    const fields = [
+      "`tabDocType`.`name`",
+      "`tabDocType`.`owner`",
+      "`tabDocType`.`creation`",
+      "`tabDocType`.`modified`",
+      "`tabDocType`.`modified_by`",
+      "`tabDocType`.`_user_tags`",
+      "`tabDocType`.`_comments`",
+      "`tabDocType`.`_assign`",
+      "`tabDocType`.`_liked_by`",
+      "`tabDocType`.`docstatus`",
+      "`tabDocType`.`idx`",
+      "`tabDocType`.`module`",
+      "`tabDocType`.`color`"
+    ];
+
+    const filters = [["DocType", "module", "=", module]];
+
+    const data = {
+      doctype: 'DocType',
+      fields: JSON.stringify(fields),
+      filters: JSON.stringify(filters),
+      order_by: '`tabDocType`.`creation` desc',
+      start: 0,
+      page_length: 100,
+      view: 'List',
+      with_comment_count: 1
+    };
+
+    const response = await erp.post('/api/method/frappe.desk.reportview.get', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching doctypes for module:', error);
+    throw error;
+  }
+}; 

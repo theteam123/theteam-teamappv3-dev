@@ -188,9 +188,9 @@
                 Document
               </th>
 
-              <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
-              </th> -->
+              </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Updated
               </th>
@@ -228,11 +228,11 @@
                 </div>
               </td>
 
-              <!-- <td class="px-6 py-4 whitespace-nowrap">
+              <td class="px-6 py-4 whitespace-nowrap">
                 <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                  {{ doctype.module }}
+                  {{ typeof route.query.module === 'string' ? route.query.module.charAt(0).toUpperCase() + route.query.module.slice(1) : '' }}
                 </span>
-              </td> -->
+              </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ formatDate(doctype.updated_at) }}
               </td>
@@ -376,6 +376,15 @@ watch(searchQuery, (newValue) => {
   }, 300);
 });
 
+// Add route watcher to handle module changes
+watch(
+  () => route.query.module,
+  () => {
+    currentPage.value = 1; // Reset to first page when module changes
+    fetchDocTypes();
+  }
+);
+
 // Watch for category changes
 watch(selectedCategory, () => {
   currentPage.value = 1; // Reset to first page on category change
@@ -435,11 +444,13 @@ const fetchDocTypes = async (page = 1) => {
   loading.value = true;
   error.value = null;
   try {
+    console.log('Route query:', route.query);
+    console.log('Route query module:', route.query.module);
     const response = await getDocTypes(
       page, 
       pageSize.value, 
       debouncedSearch.value, 
-      selectedCategory.value,
+      route.query.module as string,
       'modified',  // order_by field
       'desc'       // order direction
     );

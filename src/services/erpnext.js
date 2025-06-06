@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/auth';
 import { getCurrentToken } from './oauth';
 import { getErpNextApiUrl, getApiKeyAuthHeader } from '../utils/api';
 import { getDomainConfig } from '../config/domains';
+import { getDoctypeModule } from './deskApi';
 
 // Get the current domain and environment
 const isProduction = import.meta.env.PROD;
@@ -64,6 +65,7 @@ export const erp = createAxiosInstance();
 const apiKeyEndpoints = [
   '/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions',
   '/api/method/frappe.client.get_list',
+  '/api/method/frappe.desk.reportview.get',
   '/api/resource/',
   '/api/method/frappe.desk.form.load.getdoc'
 ];
@@ -265,7 +267,14 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
     const username = authStore.user?.name;
     console.log('Current user from auth store:', username);
     console.log('Current user from auth store:', authStore.user);
-    
+
+    let doctypeModuleResponse;
+    console.log('Category:', category);
+    if (category) {
+      doctypeModuleResponse = await getDoctypeModule(category);
+    }
+    console.log('DocType Module Response:', doctypeModuleResponse);
+
     // Get user's role permissions
     const response = await erp.post('/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions', {
       doctype: '',
@@ -309,7 +318,11 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
 
     // Apply category filter if provided
     if (category) {
-      filteredDoctypes = filteredDoctypes.filter(dt => dt.module === category);
+      // Get the list of allowed document names from doctypeModuleResponse
+      const allowedDoctypes = doctypeModuleResponse?.message.values?.map(row => row[0]) || [];
+      
+      // Filter doctypes based on whether their name is in the allowed list
+      filteredDoctypes = filteredDoctypes.filter(dt => allowedDoctypes.includes(dt.name));
     }
 
     // Sort the results
