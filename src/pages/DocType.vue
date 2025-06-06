@@ -210,14 +210,14 @@
                     @click="router.push(`/documents/${doctype.id}/new`)"
                     v-if="doctype.permissions.create === 1"
                     class="text-white hover:text-black border border-primary hover:bg-white btn-primary p-1 rounded"
-                    title="New Document"
+                    title="New Submission"
                   >
                     <FilePlusIcon class="w-5 h-5" />
                   </button>
                   <button
                     @click="viewDocuments(doctype)"
                     class="text-white hover:text-black border  hover:bg-white btn-primary p-1 rounded"
-                    title="View Documents"
+                    title="View Records"
                   >
                     <FileTextIcon class="w-5 h-5" />
                   </button>

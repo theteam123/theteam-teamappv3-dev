@@ -58,7 +58,7 @@ const createAxiosInstanceWithFallback = () => {
 };
 
 // Add request interceptor to add OAuth token
-const erp = createAxiosInstance();
+export const erp = createAxiosInstance();
 
 // List of endpoints that should use API key authentication
 const apiKeyEndpoints = [

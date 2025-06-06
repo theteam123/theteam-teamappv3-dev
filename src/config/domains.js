@@ -1,12 +1,12 @@
 // Shared navigation items available across all domains
 export const SHARED_NAVIGATION = [
-  { 
-    name: 'Documents',
-    path: '/documents',
-    icon: 'FileTextIcon',
-    description: 'Manage and organize your company documents',
-    requiredRoles: ['System Manager', 'Taktec User', 'Technician'] 
-  },
+  // { 
+  //   name: 'Documents',
+  //   path: '/documents',
+  //   icon: 'FileTextIcon',
+  //   description: 'Manage and organize your company documents',
+  //   requiredRoles: ['System Manager', 'Taktec User', 'Technician'] 
+  // },
   { 
     name: 'Voice Assistant', 
     path: '/voice-assistant', 

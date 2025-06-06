@@ -49,6 +49,34 @@
 
           <!-- Document Management Section -->
           <div class="pt-4">
+            <!-- System Modules -->
+            <div v-if="modules.length > 0" class="space-y-1">
+              <div class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                System Modules
+              </div>
+              <router-link 
+                v-for="module in modules" 
+                :key="module.value"
+                :to="`/documents/?module=${module.value}`"
+                class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+                :class="{ 
+                  'bg-green-50 text-green-700': $route.path === `/documents/${module.value}`,
+                  'justify-center px-2': isSidebarCollapsed,
+                  'justify-start px-4': !isSidebarCollapsed
+                }"
+              >
+                <FolderIcon 
+                  class="w-5 h-5 transition-colors duration-200" 
+                  :class="[
+                    isSidebarCollapsed ? 'text-gray-600' : 'mr-3 text-gray-500',
+                    $route.path === `/documents/${module.value}` ? 'text-green-600' : ''
+                  ]"
+                />
+                <span v-if="!isSidebarCollapsed">{{ module.value }}</span>
+              </router-link>
+            </div>
+
+            <!-- Other Document Items -->
             <router-link 
               v-for="item in filteredDocumentItems" 
               :key="item.path"
@@ -331,6 +359,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { getErpNextApiUrl } from './utils/api';
 import { getLogo, getDocumentItems } from './config/domains';
+import { getModules } from './services/deskApi';
 import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
 import ErrorMessage from './components/ErrorMessage.vue';
@@ -369,10 +398,16 @@ interface SearchResult {
   name: string;
 }
 
+interface Module {
+  value: string;
+  description: string;
+}
+
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const logo = computed(() => getLogo());
+const modules = ref<Module[]>([]);
 
 const isSidebarCollapsed = ref(true);
 const loading = ref(false);
@@ -555,8 +590,30 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 // Add and remove event listeners
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
+  
+  // Only fetch modules if user is authenticated
+  if (authStore.isAuthenticated) {
+    try {
+      const modulesResponse = await getModules();
+      modules.value = modulesResponse.message || [];
+    } catch (error) {
+      console.error('❌ Error fetching modules:', error);
+    }
+  }
+});
+
+// Watch for authentication changes
+watch(() => authStore.isAuthenticated, async (isAuthenticated) => {
+  if (isAuthenticated) {
+    try {
+      const modulesResponse = await getModules();
+      modules.value = modulesResponse.message || [];
+    } catch (error) {
+      console.error('❌ Error fetching modules:', error);
+    }
+  }
 });
 
 onUnmounted(() => {
