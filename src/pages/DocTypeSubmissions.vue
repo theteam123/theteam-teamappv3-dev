@@ -122,9 +122,12 @@
                     rel="noopener noreferrer"
                     class="text-gray-600 hover:text-green-600 hover:bg-white border border-green-600 btn-primary p-1 rounded text-white"
                     :title="field.label.replace('[action]', '').trim()"
+                    @mouseenter="hoveredPdfIcon = doc.name + field.fieldname"
+                    @mouseleave="hoveredPdfIcon = null"
                   >
                     <component 
-                      :is="field.label.toLowerCase().includes('pdf') ? FileTextIcon : 
+                      :is="field.label.toLowerCase().includes('pdf') ? 
+                           (hoveredPdfIcon === (doc.name + field.fieldname) ? PdfIconBlack : PdfIcon) : 
                            field.label.toLowerCase().includes('folder') ? FolderIcon : 
                            LinkIcon" 
                       class="w-5 h-5"
@@ -261,9 +264,12 @@
                             rel="noopener noreferrer"
                             class="text-gray-600 hover:text-green-600 hover:bg-white border border-green-600 btn-primary p-1 rounded text-white"
                             :title="field.label.replace('[action]', '').trim()"
+                            @mouseenter="hoveredPdfIcon = doc.name + field.fieldname"
+                            @mouseleave="hoveredPdfIcon = null"
                           >
                             <component 
-                              :is="field.label.toLowerCase().includes('pdf') ? FileTextIcon : 
+                              :is="field.label.toLowerCase().includes('pdf') ? 
+                                   (hoveredPdfIcon === (doc.name + field.fieldname) ? PdfIconBlack : PdfIcon) : 
                                    field.label.toLowerCase().includes('folder') ? FolderIcon : 
                                    LinkIcon" 
                               class="w-5 h-5"
@@ -429,6 +435,8 @@ import {
   ListIcon
 } from 'lucide-vue-next';
 import ImageModal from '../components/ImageModal.vue';
+import PdfIcon from '../components/icons/PdfIcon.vue';
+import PdfIconBlack from '../components/icons/PdfIconBlack.vue';
 
 interface DocTypeField {
   fieldname: string;
@@ -473,6 +481,7 @@ const sortBy = ref('modified');
 const sortDirection = ref<'asc' | 'desc'>('desc');
 const ifOwnerPermission = ref(false);
 const docTypePermissions = ref<DocTypePermission | null>(null);
+const hoveredPdfIcon = ref<string | null>(null);
 
 // Pagination state
 const currentPage = ref(1);
@@ -705,7 +714,7 @@ const getFileIcon = (filename: string) => {
     case 'webp':
       return FileImageIcon;
     case 'pdf':
-      return FileTextIcon;
+      return PdfIcon;
     case 'xlsx':
     case 'xls':
     case 'csv':

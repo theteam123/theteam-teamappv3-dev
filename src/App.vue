@@ -51,9 +51,7 @@
           <div class="pt-4">
             <!-- System Modules -->
             <div v-if="modules.length > 0" class="space-y-1">
-              <div class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                System Modules
-              </div>
+              
               <router-link 
                 v-for="module in modules" 
                 :key="module.value"
