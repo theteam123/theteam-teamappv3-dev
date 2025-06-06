@@ -8,6 +8,7 @@ interface DocTypeField {
   depends_on?: string;
   parent?: string;
   description?: string;
+  tab_id?: string;
 }
 
 export interface GeolocationData {

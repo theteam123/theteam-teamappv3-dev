@@ -1,5 +1,5 @@
 <template>
-  <div class="p-8">
+  <div class="container mx-auto px-4 py-8">
     <ErrorMessage />
     <SuccessMessage />
     <!-- Page Title -->
@@ -16,48 +16,120 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center items-center py-8">
-      <LoaderIcon class="w-8 h-8 animate-spin text-green-600" />
+    <div v-if="loading" class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
-      {{ error }}
+    <div v-else-if="error" class="bg-red-50 border-l-4 border-red-400 p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-red-700">{{ error }}</p>
+        </div>
+      </div>
     </div>
 
     <!-- Form -->
     <form v-else @submit.prevent="handleSubmit" class="space-y-6 bg-white rounded-lg sm:p-6">
       <div class="bg-white shadow rounded-lg p-6">
         <div class="space-y-8">
-          <div 
-            v-for="(section, sectionIndex) in processedSections" 
-            :key="sectionIndex" 
-            :class="[
-              'transition-all duration-200 ease-in-out',
-              { 'opacity-0 h-0 overflow-hidden': section.hidden }
-            ]"
-          >
-            <!-- Section Title -->
-            <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
-              <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
-            </div>
-            
-            <!-- Fields Grid -->
-            <div :class="{
-              'grid gap-6': true,
-              'grid-cols-2': section.columnCount === 2,
-              'grid-cols-1': section.columnCount <= 1
-            }">
-              <FormField
-                v-for="field in section.fields"
-                :key="field.fieldname"
-                :field="field"
-                v-model="formData[field.fieldname]"
-                :formData="formData"
-                :parentDocName="route.params.id as string"
-              />
-            </div>
+          <!-- Tabs -->
+          <div v-if="processedSections.hasTabs" class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+              <button
+                v-for="tab in processedSections.tabs"
+                :key="tab.id"
+                type="button"
+                @click="currentTab = tab.id"
+                :class="[
+                  currentTab === tab.id
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                  'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                ]"
+              >
+                {{ tab.label }}
+              </button>
+            </nav>
           </div>
+
+          <!-- Tab Content -->
+          <template v-if="processedSections.hasTabs">
+            <div
+              v-for="tab in processedSections.tabs"
+              :key="tab.id"
+              v-show="currentTab === tab.id"
+              class="space-y-8"
+            >
+              <div 
+                v-for="(section, sectionIndex) in tab.sections" 
+                :key="sectionIndex"
+                :class="[
+                  'transition-all duration-200 ease-in-out',
+                  { 'opacity-0 h-0 overflow-hidden': section.hidden }
+                ]"
+              >
+                <!-- Section Title -->
+                <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
+                  <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                </div>
+                
+                <!-- Fields Grid -->
+                <div :class="{
+                  'grid gap-6': true,
+                  'grid-cols-2': section.columnCount === 2,
+                  'grid-cols-1': section.columnCount <= 1
+                }">
+                  <FormField
+                    v-for="field in section.fields"
+                    :key="field.fieldname"
+                    :field="field"
+                    v-model="formData[field.fieldname]"
+                    :formData="formData"
+                    :parentDocName="route.params.id as string"
+                  />
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Non-tabbed content -->
+          <template v-else>
+            <div 
+              v-for="(section, sectionIndex) in processedSections.sections" 
+              :key="sectionIndex"
+              :class="[
+                'transition-all duration-200 ease-in-out',
+                { 'opacity-0 h-0 overflow-hidden': section.hidden }
+              ]"
+            >
+              <!-- Section Title -->
+              <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
+                <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+              </div>
+              
+              <!-- Fields Grid -->
+              <div :class="{
+                'grid gap-6': true,
+                'grid-cols-2': section.columnCount === 2,
+                'grid-cols-1': section.columnCount <= 1
+              }">
+                <FormField
+                  v-for="field in section.fields"
+                  :key="field.fieldname"
+                  :field="field"
+                  v-model="formData[field.fieldname]"
+                  :formData="formData"
+                  :parentDocName="route.params.id as string"
+                />
+              </div>
+            </div>
+          </template>
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
@@ -71,7 +143,7 @@
           <button
             type="submit"
             :disabled="submitting"
-            class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md  disabled:opacity-50"
+            class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md disabled:opacity-50"
           >
             {{ submitting ? 'Submitting...' : 'Submit' }}
           </button>
@@ -132,6 +204,7 @@ const uploading = ref(false);
 const uploadProgress = ref(0);
 const watermarkConfigs = ref<WatermarkConfig[]>([]);
 const filesToDownload = ref<Array<{ file: File; fieldname: string }>>([]);
+const currentTab = ref<string>('');
 
 const { processedSections } = useFormSections(
   computed(() => docType.value?.fields),
@@ -163,18 +236,18 @@ const fetchDocType = async () => {
       }, {});
       
       // Initialize geolocation fields
-      console.log('docTypeData.fields:', docTypeData.fields);
+      // console.log('docTypeData.fields:', docTypeData.fields);
       geoLocationFields.value = initializeGeolocationFields(docTypeData.fields, formData.value);
       
       // Initialize watermark fields
       watermarkConfigs.value = initializeWatermarkFields(docTypeData.fields, formData.value);
-      console.log('watermarkConfigs:', watermarkConfigs.value);
+      // console.log('watermarkConfigs:', watermarkConfigs.value);
     } else {
-      console.warn('No fields found in DocType response');
+      // console.warn('No fields found in DocType response');
       formData.value = {};
     }
   } catch (err: any) {
-    console.error('Error fetching DocType:', err);
+    // console.error('Error fetching DocType:', err);
     error.value = err.message;
   }
 };
@@ -312,6 +385,13 @@ watch(() => formData.value, (newFormData) => {
   // Update watermark configs when form data changes
   watermarkConfigs.value = initializeWatermarkFields(docType.value?.fields || [], newFormData);
 }, { deep: true });
+
+// Set initial tab when form loads
+watch(() => processedSections.value, (newValue) => {
+  if (newValue.hasTabs && newValue.tabs.length > 0 && !currentTab.value) {
+    currentTab.value = newValue.tabs[0].id;
+  }
+}, { immediate: true });
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) {

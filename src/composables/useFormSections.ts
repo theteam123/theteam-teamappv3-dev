@@ -10,6 +10,7 @@ interface FormField {
   hidden?: number;
   depends_on?: string;
   columnIndex?: number;
+  tab_id?: string;
 }
 
 interface FormSection {
@@ -17,12 +18,32 @@ interface FormSection {
   columnCount: number;
   fields: FormField[];
   hidden: boolean;
+  tab_id?: string;
+}
+
+interface FormTab {
+  id: string;
+  label: string;
+  sections: FormSection[];
+  hidden: boolean;
+}
+
+interface ProcessedSections {
+  tabs: FormTab[];
+  hasTabs: boolean;
+  sections: FormSection[];
 }
 
 export function useFormSections(fields: Ref<FormField[] | undefined>, formData?: Ref<Record<string, any> | undefined>) {
-  const processedSections = computed(() => {
-    if (!fields.value) return [];
+  const processedSections = computed<ProcessedSections>(() => {
+    if (!fields.value) return {
+      tabs: [],
+      hasTabs: false,
+      sections: []
+    };
 
+    let tabs: FormTab[] = [];
+    let currentTab: FormTab | null = null;
     let sections: FormSection[] = [];
     let currentSection: FormSection = {
       title: '',
@@ -31,85 +52,93 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
       hidden: false
     };
 
-    // console.log('Starting to process fields:', fields.value);
-    // console.log('Form data:', formData?.value);
-
     fields.value.forEach((field, index) => {
-      // console.log(`\nProcessing field ${index}:`, {
-      //   fieldname: field.fieldname,
-      //   fieldtype: field.fieldtype,
-      //   label: field.label,
-      //   depends_on: field.depends_on
-      // });
-
-      if (field.fieldtype === 'Section Break') {
-        console.log('Found Section Break:', field.label);
-        
+      if (field.fieldtype === 'Tab Break') {
         if (currentSection.fields.length > 0) {
-          console.log('Adding current section to sections:', currentSection);
-          sections.push(currentSection);
+          if (currentTab) {
+            currentTab.sections.push({ ...currentSection });
+          } else {
+            sections.push({ ...currentSection });
+          }
         }
 
-        // Check if section should be hidden based on depends_on
-        const shouldShowSection = !field.depends_on || evaluateFieldDependency(field, formData?.value);
-        // console.log('Section visibility check:', {
-        //   depends_on: field.depends_on,
-        //   shouldShowSection,
-        //   formData: formData?.value
-        // });
+        const shouldShowTab = !field.depends_on || evaluateFieldDependency(field, formData?.value);
+        currentTab = {
+          id: field.fieldname,
+          label: field.label || '',
+          sections: [],
+          hidden: field.hidden === 1 || !shouldShowTab
+        };
+        tabs.push(currentTab);
 
+        currentSection = {
+          title: '',
+          columnCount: 0,
+          fields: [],
+          hidden: false,
+          tab_id: currentTab.id
+        };
+      } else if (field.fieldtype === 'Section Break') {
+        if (currentSection.fields.length > 0) {
+          if (currentTab) {
+            currentTab.sections.push({ ...currentSection });
+          } else {
+            sections.push({ ...currentSection });
+          }
+        }
+
+        const shouldShowSection = !field.depends_on || evaluateFieldDependency(field, formData?.value);
         currentSection = {
           title: field.label || '',
           columnCount: 0,
           fields: [],
-          hidden: field.hidden === 1 || !shouldShowSection
+          hidden: field.hidden === 1 || !shouldShowSection,
+          tab_id: currentTab?.id
         };
-        console.log('Created new section:', currentSection);
       } else if (field.fieldtype === 'Column Break') {
-        console.log('Found Column Break');
         if (!currentSection.hidden) {
           currentSection.columnCount++;
-          // console.log('Incremented column count:', currentSection.columnCount);
         }
       } else if (!field.hidden && !currentSection.hidden) {
-        // console.log('Adding field to current section:', field.fieldname);
         currentSection.fields.push({
           ...field,
-          columnIndex: currentSection.columnCount
+          columnIndex: currentSection.columnCount,
+          tab_id: currentTab?.id
         });
-        // console.log('Current section after adding field:', currentSection);
       }
     });
 
-    // Add the last section if it has fields
-    if (currentSection.fields.length > 0 && !currentSection.hidden) {
-      // console.log('\nAdding final section:', currentSection);
-      sections.push(currentSection);
-    }
-
-    // If no sections were created but we have fields, create a default section
-    if (sections.length === 0 && fields.value.length > 0) {
-      // console.log('\nNo sections created, creating default section');
-      const visibleFields = fields.value.filter(f => 
-        !f.hidden && 
-        !['Section Break', 'Column Break'].includes(f.fieldtype)
-      );
-      
-      if (visibleFields.length > 0) {
-        sections.push({
-          title: '',
-          columnCount: 0,
-          fields: visibleFields,
-          hidden: false
-        });
-        // console.log('Created default section with fields:', visibleFields.map(f => f.fieldname));
+    if (currentSection.fields.length > 0) {
+      if (currentTab) {
+        currentTab.sections.push({ ...currentSection });
+      } else {
+        sections.push({ ...currentSection });
       }
     }
 
-    // Filter out sections that have no visible fields
-    const finalSections = sections.filter(section => section.fields.length > 0);
-    console.log('\nFinal sections:', finalSections);
-    return finalSections;
+    if (tabs.length === 0 && sections.length > 0) {
+      const defaultTab: FormTab = {
+        id: 'default',
+        label: 'Main',
+        sections: [...sections],
+        hidden: false
+      };
+      tabs.push(defaultTab);
+      sections = [];
+    }
+
+    const finalTabs = tabs.filter(tab => 
+      !tab.hidden && 
+      tab.sections.some(section => 
+        !section.hidden && section.fields.length > 0
+      )
+    );
+
+    return {
+      tabs: finalTabs,
+      hasTabs: finalTabs.length > 0,
+      sections
+    };
   });
 
   return {

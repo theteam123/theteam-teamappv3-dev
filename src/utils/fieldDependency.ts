@@ -10,11 +10,11 @@ interface FormField {
 }
 
 export function evaluateFieldDependency(field: FormField, formData: Record<string, any> | undefined): boolean {
-  console.log('\nEvaluating dependency for field:', {
+  /* console.log('\nEvaluating dependency for field:', {
     fieldname: field.fieldname,
     label: field.label,
     depends_on: field.depends_on
-  });
+  }); */
 
   if (!field.depends_on) {
     console.log('No dependency condition, showing field');
@@ -29,7 +29,7 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
 
   try {
     const condition = dependsOn.replace('eval:doc.', '');
-    console.log('Processing condition:', condition);
+    // console.log('Processing condition:', condition);
     
     // Replace field references with their values
     let evalCondition = condition;
@@ -39,33 +39,33 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
     
     // Split the condition on && to handle each part separately
     const parts = evalCondition.split('&&').map(part => part.trim());
-    console.log('Condition parts:', parts);
+    // console.log('Condition parts:', parts);
     
     // Process each part of the condition
     const processedParts = parts.map(part => {
       // Check for both == and != operators
       if (!part.includes('==') && !part.includes('!=')) {
-        console.log('Part does not include == or !=, returning:', part);
+        // console.log('Part does not include == or !=, returning:', part);
         return part;
       }
       
       // Split on either == or != operator
       const operator = part.includes('==') ? '==' : '!=';
       const [fieldName, value] = part.split(operator).map(s => s.trim().replace(/['"]/g, ''));
-      console.log('Field Data', formData);
+      // console.log('Field Data', formData);
       const rawFieldValue = formData?.[fieldName];
-      console.log('Raw field name:', fieldName);
-      console.log('Raw field value:', rawFieldValue);
+      // console.log('Raw field name:', fieldName);
+      // console.log('Raw field value:', rawFieldValue);
       // Treat 'false' string as empty string
       const fieldValue = rawFieldValue === false ? '' : rawFieldValue;
       
-      console.log('Processing comparison:', {
-        fieldName,
-        rawFieldValue,
-        fieldValue,
-        operator,
-        compareValue: value
-      });
+      // console.log('Processing comparison:', {
+      //   fieldName,
+      //   rawFieldValue,
+      //   fieldValue,
+      //   operator,
+      //   compareValue: value
+      // });
       
       if (fieldValue === undefined || fieldValue === null) {
         return 'false';
@@ -76,17 +76,17 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
     
     // Rejoin the parts with &&
     evalCondition = processedParts.join(' && ');
-    console.log('Final condition to evaluate:', evalCondition);
+    // console.log('Final condition to evaluate:', evalCondition);
 
     // Check if there are any remaining doc. references that weren't replaced
     if (evalCondition.includes('doc.')) {
-      console.warn('Unhandled field references in condition:', evalCondition);
+      // console.warn('Unhandled field references in condition:', evalCondition);
       return true;
     }
 
     // Safely evaluate the condition
     const evaluateCondition = (condition: string): boolean => {
-      console.log('Evaluating condition:', condition);
+      // console.log('Evaluating condition:', condition);
 
       // Handle simple boolean values
       if (condition === 'true') return true;
