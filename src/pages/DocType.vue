@@ -170,7 +170,6 @@
               </div>
               <div class="flex items-center gap-2 mt-1">
                 <FileTextIcon class="w-4 h-4" />
-                <span>{{ doctype.documents_count || 0 }} Submissions</span>
               </div>
             </div>
           </div>
@@ -188,18 +187,14 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Document
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Description
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+
+              <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
-              </th>
+              </th> -->
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Updated
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Submissions
-              </th>
+              
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -232,20 +227,16 @@
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4">
-                <div class="text-sm text-gray-900">{{ doctype.description }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
+
+              <!-- <td class="px-6 py-4 whitespace-nowrap">
                 <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                   {{ doctype.module }}
                 </span>
-              </td>
+              </td> -->
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ formatDate(doctype.updated_at) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ doctype.documents_count || 0 }}
-              </td>
+              
             </tr>
           </tbody>
         </table>
@@ -345,7 +336,6 @@ interface DocType {
   fields: DocTypeField[];
   updated_at: string;
   created_at: string;
-  documents_count: number;
   permissions: DocTypePermissions;
   linked_doctypes: string[];
 }
@@ -402,7 +392,7 @@ const categories = [
   'Other'
 ];
 
-const docTypeData = ref<Omit<DocType, 'updated_at' | 'created_at' | 'documents_count' | 'permissions' | 'linked_doctypes'>>({
+const docTypeData = ref<Omit<DocType, 'updated_at' | 'created_at' |  'permissions' | 'linked_doctypes'>>({
   id: '',
   name: '',
   description: '',
@@ -483,7 +473,6 @@ const fetchDocTypes = async (page = 1) => {
         fields: fields,
         updated_at: docType.modified,
         created_at: docType.creation,
-        documents_count: docType.documents_count || 0,
         permissions: docType.permissions || {},
         linked_doctypes: docType.linked_doctypes || []
       };

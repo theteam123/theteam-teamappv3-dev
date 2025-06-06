@@ -64,7 +64,8 @@ export const erp = createAxiosInstance();
 const apiKeyEndpoints = [
   '/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions',
   '/api/method/frappe.client.get_list',
-  '/api/resource/'
+  '/api/resource/',
+  '/api/method/frappe.desk.form.load.getdoc'
 ];
 
 erp.interceptors.request.use(async (config) => {
@@ -114,39 +115,6 @@ erp.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-export const login = async (email, password) => {
-  try {
-    // First clear any existing cookies and storage
-    document.cookie = 'sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    localStorage.removeItem('authState');
-    localStorage.removeItem('frappe_user');
-
-    const loginData = {
-      usr: email,
-      pwd: password,
-      device: 'desktop',
-      cmd: 'login'
-    };
-
-    const loginResponse = await erp.post('/api/method/login', loginData);
-
-    if (loginResponse.data.message === 'Logged In') {
-      // Store the session ID and user ID in localStorage for persistence
-      const sid = document.cookie.split(';').find(c => c.trim().startsWith('sid='));
-      if (sid) {
-        localStorage.setItem('frappe_sid', sid.split('=')[1].trim());
-      }
-      localStorage.setItem('frappe_user', email); // Store the user ID
-      return loginResponse.data;
-    } else {
-      throw new Error('Login failed');
-    }
-  } catch (err) {
-    console.error('Login failed:', err);
-    throw err;
-  }
-};
 
 // Metadata caching implementation
 const metadataCache = new Map();
@@ -363,63 +331,25 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
     const doctypesWithDetails = await Promise.all(
       paginatedDoctypes.map(async (dt) => {
         try {
-          // Get doctype metadata
-          const metaResponse = await erp.get('/api/method/frappe.desk.form.load.getdoctype', {
-            params: {
-              doctype: dt.name
-            }
-          });
 
-          // Get document count for this DocType
-          let count = 0;
-          try {
-            const countResponse = await erp.get('/api/method/frappe.client.get_count', {
-              params: {
-                doctype: dt.name,
-                filters: '[]'
-              }
-            });
-            
-            if (countResponse.data && countResponse.data.message !== undefined) {
-              count = Number(countResponse.data.message);
-            }
-          } catch (err) {
-            // Handle 500 errors gracefully
-            if (err.response?.status === 500) {
-              console.warn(`Server error getting count for ${dt.name}, defaulting to 0`);
-              count = 0;
-            } else {
-              console.error(`Error getting count for ${dt.name}:`, err);
-              count = 0;
-            }
-          }
-
-          const metadata = metaResponse.data;
+          // const metadata = metaResponse.data;
           return {
             id: dt.name,
             name: dt.name,
-            description: metadata?.docs?.[0]?.description || '',
-            module: metadata?.docs?.[0]?.module || 'Other',
-            fields: metadata?.docs?.[0]?.fields || [],
             permissions: dt.permissions,
             linked_doctypes: dt.linked_doctypes,
             modified: dt.modified,
             creation: dt.creation,
-            documents_count: count
           };
         } catch (error) {
           console.error(`Error fetching details for doctype ${dt.name}:`, error);
           return {
             id: dt.name,
             name: dt.name,
-            description: '',
-            module: 'Other',
-            fields: [],
             permissions: dt.permissions,
             linked_doctypes: dt.linked_doctypes,
             modified: dt.modified,
             creation: dt.creation,
-            documents_count: 0
           };
         }
       })
