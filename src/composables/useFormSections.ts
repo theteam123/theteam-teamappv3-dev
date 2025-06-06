@@ -116,17 +116,6 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
       }
     }
 
-    if (tabs.length === 0 && sections.length > 0) {
-      const defaultTab: FormTab = {
-        id: 'default',
-        label: 'Main',
-        sections: [...sections],
-        hidden: false
-      };
-      tabs.push(defaultTab);
-      sections = [];
-    }
-
     const finalTabs = tabs.filter(tab => 
       !tab.hidden && 
       tab.sections.some(section => 
@@ -137,7 +126,7 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
     return {
       tabs: finalTabs,
       hasTabs: finalTabs.length > 0,
-      sections
+      sections: finalTabs.length === 0 ? sections : []
     };
   });
 
