@@ -11,12 +11,14 @@
         <!-- Logo -->
         <div class="flex items-center justify-between h-16 px-4" :class="{ 'border-b border-gray-200': !isSidebarCollapsed }">
           <div class="flex items-center">
-            <img 
-              v-if="!isSidebarCollapsed" 
-              :src="logo" 
-              alt="Team App Logo" 
-              class="h-8" 
-            />
+            <router-link to="/">
+              <img 
+                v-if="!isSidebarCollapsed" 
+                :src="logo" 
+                alt="Team App Logo" 
+                class="h-8" 
+              />
+            </router-link>
           </div>
           <button 
             v-if="!isSidebarCollapsed"
@@ -316,11 +318,13 @@
             v-if="route.path !== '/'" 
             class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
           >
-            <img 
-              :src="logo" 
-              alt="Team App Logo" 
-              class="h-8" 
-            />
+            <router-link to="/">
+              <img 
+                :src="logo" 
+                alt="Team App Logo" 
+                class="h-8" 
+              />
+            </router-link>
           </div>
 
           <!-- Support Button -->
@@ -341,8 +345,14 @@
 
         <!-- Footer -->
         <footer class="py-4 px-8 border-t border-gray-200 bg-white">
-          <div class="text-center text-sm text-gray-500">
-            Powered by <a href="https://frappe.io" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-700">Frappe</a> and <a href="https://theteam.net.au" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-700">theteam.net.au</a>
+          <div class="text-center text-sm text-gray-500 flex items-center justify-center gap-1">
+            Powered by <a href="https://theteam.net.au" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-700 inline-flex items-center">
+              <img 
+                src="/TeamLogo.png" 
+                alt="Team App Logo" 
+                class="h-3" 
+              />
+            </a>
           </div>
         </footer>
       </div>
