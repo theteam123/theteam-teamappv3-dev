@@ -85,20 +85,23 @@
         {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
-      <input
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-        type="date"
-        :required="field.reqd === 1"
-        :disabled="field.read_only === 1"
-        :readonly="field.read_only === 1"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
-        }"
-      />
+      <div class="relative">
+        <input
+          :id="field.fieldname"
+          :value="modelValue"
+          @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          type="date"
+          :required="field.reqd === 1"
+          :disabled="field.read_only === 1"
+          :readonly="field.read_only === 1"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1,
+            'cursor-not-allowed': field.read_only === 1
+          }"
+        />
+
+      </div>
     </template>
 
     <!-- Datetime Input -->
@@ -107,20 +110,23 @@
         {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
       </label>
-      <input
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-        type="datetime-local"
-        :required="field.reqd === 1"
-        :disabled="field.read_only === 1"
-        :readonly="field.read_only === 1"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
-        }"
-      />
+      <div class="relative">
+        <input
+          :id="field.fieldname"
+          :value="modelValue"
+          @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          type="datetime-local"
+          :required="field.reqd === 1"
+          :disabled="field.read_only === 1"
+          :readonly="field.read_only === 1"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1,
+            'cursor-not-allowed': field.read_only === 1
+          }"
+        />
+
+      </div>
     </template>
 
     <!-- Time Input -->
@@ -669,7 +675,7 @@
     </template>
 
     <!-- Multiple Upload Table -->
-    <template v-else-if="field.fieldtype === 'Table' && field.label.toLowerCase().includes('[multiple-upload]')">
+    <template v-else-if="field.fieldtype === 'Table' && (field.label.toLowerCase().includes('[multiple-upload]') || field.label.toLowerCase().includes('[multiple-upload-view]'))">
       <label class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
         <span v-if="field.reqd" class="text-red-500">*</span>
@@ -1555,6 +1561,28 @@ watch(() => shouldShowField.value, (isVisible) => {
     });
   }
 });
+
+// Add these simple display formatting functions:
+const formatDisplayDate = (isoDate: string) => {
+  if (!isoDate) return '';
+  try {
+    const [year, month, day] = isoDate.split('-');
+    return `${day}-${month}-${year}`;
+  } catch (e) {
+    return isoDate;
+  }
+};
+
+const formatDisplayDateTime = (isoDateTime: string) => {
+  if (!isoDateTime) return '';
+  try {
+    const [datePart, timePart] = isoDateTime.split('T');
+    const [year, month, day] = datePart.split('-');
+    return `${day}-${month}-${year} ${timePart}`;
+  } catch (e) {
+    return isoDateTime;
+  }
+};
 
 defineExpose({ VueTelInput });
 </script>
