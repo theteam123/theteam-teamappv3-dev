@@ -654,21 +654,13 @@
             </div>
 
             <!-- Controls -->
-            <div v-if="!field.read_only" class="mt-2 flex justify-between items-center">
+            <div v-if="!field.read_only" class="mt-2 flex justify-end">
               <button
                 type="button"
                 @click="clearSignature"
                 class="px-3 py-1 text-sm text-red-600 hover:text-red-700 border border-red-600 rounded hover:bg-red-50"
               >
                 Clear Signature
-              </button>
-              <button
-                v-if="!modelValue"
-                type="button"
-                @click="saveSignature"
-                class="px-3 py-1 text-sm text-green-600 hover:text-green-700 border border-green-600 rounded hover:bg-green-50"
-              >
-                Save Signature
               </button>
             </div>
           </div>
@@ -1458,6 +1450,14 @@ const initSignaturePad = () => {
     backgroundColor: 'rgb(255, 255, 255)',
     penColor: 'rgb(0, 0, 0)'
   });
+
+  // Add event listener for signature changes
+  signaturePad.value.addEventListener("endStroke", () => {
+    if (signaturePad.value && !signaturePad.value.isEmpty()) {
+      const dataURL = signaturePad.value.toDataURL();
+      emit('update:modelValue', dataURL);
+    }
+  });
 };
 
 const clearSignature = () => {
@@ -1468,15 +1468,15 @@ const clearSignature = () => {
   emit('update:modelValue', '');
 };
 
-const saveSignature = () => {
-  if (!signaturePad.value || signaturePad.value.isEmpty()) {
-    alert('Please provide a signature first.');
-    return;
+// Watch for form submission by watching modelValue
+watch(() => props.modelValue, (newValue) => {
+  // If the form is being submitted and we have a signature pad with content
+  if (!newValue && signaturePad.value && !signaturePad.value.isEmpty()) {
+    // Save the signature
+    const dataURL = signaturePad.value.toDataURL();
+    emit('update:modelValue', dataURL);
   }
-
-  const dataURL = signaturePad.value.toDataURL();
-  emit('update:modelValue', dataURL);
-};
+});
 
 // Add this to the onMounted section
 onMounted(() => {
@@ -1545,6 +1545,15 @@ watch(() => props.modelValue, (newValue) => {
 // Add watcher for shouldAutoDownload to log its changes
 watch(() => shouldAutoDownload.value, (newValue) => {
   console.log('shouldAutoDownload changed:', newValue);
+});
+
+// Add this watcher after other watch statements
+watch(() => shouldShowField.value, (isVisible) => {
+  if (isVisible && props.field.fieldtype === 'Signature') {
+    nextTick(() => {
+      initSignaturePad();
+    });
+  }
 });
 
 defineExpose({ VueTelInput });
