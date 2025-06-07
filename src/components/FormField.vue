@@ -14,7 +14,7 @@
     <template v-else-if="field.fieldtype === 'Data'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="relative mt-1">
         <input
@@ -22,7 +22,7 @@
           :value="modelValue"
           @input="!isGeolocationField && $emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           type="text"
-          :required="field.reqd === 1"
+          :required="isFieldRequired"
           :disabled="isGettingLocation || isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
           :readonly="isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -61,14 +61,14 @@
     <template v-else-if="field.fieldtype === 'Int' || field.fieldtype === 'Float'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <input
         :id="field.fieldname"
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         type="number"
-        :required="field.reqd === 1"
+        :required="isFieldRequired"
         :disabled="field.read_only === 1"
         :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -83,7 +83,7 @@
     <template v-else-if="field.fieldtype === 'Date'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="relative">
         <input
@@ -91,7 +91,7 @@
           :value="modelValue"
           @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           type="date"
-          :required="field.reqd === 1"
+          :required="isFieldRequired"
           :disabled="field.read_only === 1"
           :readonly="field.read_only === 1"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -108,7 +108,7 @@
     <template v-else-if="field.fieldtype === 'Datetime'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="relative">
         <input
@@ -116,7 +116,7 @@
           :value="modelValue"
           @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           type="datetime-local"
-          :required="field.reqd === 1"
+          :required="isFieldRequired"
           :disabled="field.read_only === 1"
           :readonly="field.read_only === 1"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -133,14 +133,14 @@
     <template v-else-if="field.fieldtype === 'Time'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <input
         :id="field.fieldname"
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         type="time"
-        :required="field.reqd === 1"
+        :required="isFieldRequired"
         :disabled="field.read_only === 1"
         :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -155,7 +155,7 @@
     <template v-else-if="field.fieldtype === 'Duration'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="relative mt-1" ref="durationWrapperRef">
         <input
@@ -164,7 +164,7 @@
           @focus="handleDurationFocus"
           @input="onDurationInput($event)"
           type="text"
-          :required="field.reqd === 1"
+          :required="isFieldRequired"
           :disabled="field.read_only === 1"
           :readonly="field.read_only === 1"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -202,13 +202,13 @@
     <template v-else-if="field.fieldtype === 'Select'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <select
         :id="field.fieldname"
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
-        :required="field.reqd === 1"
+        :required="isFieldRequired"
         :disabled="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
         :class="{
@@ -227,13 +227,13 @@
     <template v-else-if="field.fieldtype === 'Link'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <select
         :id="field.fieldname"
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
-        :required="field.reqd === 1"
+        :required="isFieldRequired"
         :disabled="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
         :class="{
@@ -256,7 +256,7 @@
           :checked="modelValue == 1"
           @change="$emit('update:modelValue', ($event.target as HTMLInputElement).checked)"
           type="checkbox"
-          :required="field.reqd === 1"
+          :required="isFieldRequired"
           :disabled="field.read_only === 1"
           class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
           :class="{
@@ -273,14 +273,14 @@
     <template v-else-if="field.fieldtype === 'Small Text'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <textarea
         :id="field.fieldname"
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
         rows="3"
-        :required="field.reqd === 1"
+        :required="isFieldRequired"
         :disabled="field.read_only === 1"
         :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -295,7 +295,7 @@
     <template v-else-if="field.fieldtype === 'Text Editor'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="mt-1">
         <div class="prose prose-sm max-w-none">
@@ -304,7 +304,7 @@
             :value="modelValue"
             @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
             rows="6"
-            :required="field.reqd === 1"
+            :required="isFieldRequired"
             :disabled="field.read_only === 1"
             :readonly="field.read_only === 1"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -321,7 +321,7 @@
     <template v-else-if="field.fieldtype === 'Attach'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="mt-1 flex items-center space-x-4">
         <div class="flex-grow">
@@ -329,7 +329,7 @@
             :id="field.fieldname"
             type="file"
             @change="handleFileUpload"
-            :required="field.reqd === 1 && !hasExistingFile"
+            :required="isFieldRequired && !hasExistingFile"
             :disabled="field.read_only === 1"
             class="block w-full text-sm text-gray-500
               file:mr-4 file:py-2 file:px-4
@@ -388,7 +388,7 @@
     <template v-else-if="field.fieldtype === 'Attach Image'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="mt-1 flex items-center space-x-4">
         <div class="flex-grow">
@@ -415,7 +415,7 @@
               capture="environment"
               class="hidden"
               @change="handleImageUpload"
-              :required="field.reqd === 1 && !hasExistingFile"
+              :required="isFieldRequired && !hasExistingFile"
               :disabled="field.read_only === 1"
             />
           </template>
@@ -426,7 +426,7 @@
               type="file"
               accept="image/*"
               @change="handleImageUpload"
-              :required="field.reqd === 1 && !hasExistingFile"
+              :required="isFieldRequired && !hasExistingFile"
               :disabled="field.read_only === 1"
               class="block w-full text-sm text-gray-500
                 file:mr-4 file:py-2 file:px-4
@@ -487,7 +487,7 @@
     <template v-else-if="field.fieldtype === 'Color'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="mt-1 flex items-center space-x-2">
         <input
@@ -495,7 +495,7 @@
           :value="modelValue"
           @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           type="color"
-          :required="field.reqd === 1"
+          :required="isFieldRequired"
           :disabled="field.read_only === 1"
           class="h-8 w-8 rounded-md border-gray-300 p-1"
           :class="{
@@ -506,7 +506,7 @@
           :value="modelValue"
           @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           type="text"
-          :required="field.reqd === 1"
+          :required="isFieldRequired"
           :disabled="field.read_only === 1"
           :readonly="field.read_only === 1"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -522,7 +522,7 @@
     <template v-else-if="field.fieldtype === 'Currency'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="mt-1 relative rounded-md shadow-sm">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -534,7 +534,7 @@
           @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           type="number"
           step="0.01"
-          :required="field.reqd === 1"
+          :required="isFieldRequired"
           :disabled="field.read_only === 1"
           :readonly="field.read_only === 1"
           class="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -550,12 +550,12 @@
     <template v-else-if="field.fieldtype === 'Phone'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <vue-tel-input
         v-model="phoneValue"
         :id="field.fieldname"
-        :required="field.reqd === 1"
+        :required="isFieldRequired"
         :disabled="field.read_only === 1"
         @input="onPhoneInput"
         class="mt-1"
@@ -585,14 +585,14 @@
     <template v-else-if="field.fieldtype === 'Password'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <input
         :id="field.fieldname"
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         type="password"
-        :required="field.reqd === 1"
+        :required="isFieldRequired"
         :disabled="field.read_only === 1"
         :readonly="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -607,7 +607,7 @@
     <template v-else-if="field.fieldtype === 'Rating'">
       <label class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="mt-1 flex items-center space-x-1">
         <button
@@ -633,7 +633,7 @@
     <template v-else-if="field.fieldtype === 'Signature'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="mt-1">
         <div class="border-2 border-gray-300 rounded-md p-4">
@@ -683,7 +683,7 @@
     <template v-else-if="field.fieldtype === 'Table' && (field.label.toLowerCase().includes('[multiple-upload]') || field.label.toLowerCase().includes('[multiple-upload-view]'))">
       <label class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
-        <span v-if="field.reqd" class="text-red-500">*</span>
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="mt-1">
         <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
@@ -742,7 +742,7 @@
   <template v-else-if="field.fieldtype === 'Table'">
     <label class="block text-sm font-medium text-gray-700">
       {{ formattedLabel }}
-      <span v-if="field.reqd" class="text-red-500">*</span>
+      <span v-if="isFieldRequired" class="text-red-500">*</span>
     </label>
     <div class="mt-1">
       <div class="border border-gray-300 rounded-md">
@@ -826,6 +826,7 @@ interface FormField {
   precision?: string;
   parent?: string;
   read_only?: number;
+  mandatory_depends_on?: string;
 }
 
 interface UploadedFile {
@@ -871,14 +872,20 @@ const authStore = useAuthStore();
 const mediaQueryMatches = ref(false);
 
 const shouldShowField = computed(() => {
-  // console.log('shouldShowField', props.field);
-  // console.log('formData', props.formData);
+  console.log('shouldShowField', props.field);
   return evaluateFieldDependency(props.field, props.formData);
+});
+
+const isFieldRequired = computed(() => {
+  console.log('props.field.mandatory_depends_on for field', props.field.fieldname, props.field.mandatory_depends_on);
+  if (props.field.mandatory_depends_on) {
+    return evaluateFieldDependency(props.field, props.formData, 'mandatory_depends_on');
+  }
+  return props.field.reqd === 1;
 });
 
 const formattedLabel = computed(() => {
   if (!props.field.label) return '';
-  // Only remove text within square brackets
   return props.field.label.replace(/\[.*?\]/g, '').trim();
 });
 
@@ -966,26 +973,21 @@ const closeModal = () => {
 
 const handleConfirmDelete = () => {
   console.log('handleConfirmDelete');
-  // Set modal state to false first
   isModalOpen.value = false;
   
-  // Set deleting flag
   isDeleting.value = true;
   
-  // Wait for the next tick before proceeding with deletion
   nextTick().then(() => {
     if (deleteType.value === 'file') {
-      // Clear all file-related states
       if (filePreview.value && filePreview.value !== 'document') {
         URL.revokeObjectURL(filePreview.value);
       }
-      filePreview.value = null;  // Clear preview regardless of type
+      filePreview.value = null;
       fileExtension.value = '';
       isPreviewableImage.value = false;
       emit('update:modelValue', '');
       uploadProgress.value = 0;
     } else {
-      // Clear all image-related states
       if (imagePreview.value) {
         if (imagePreview.value.startsWith('blob:')) {
           URL.revokeObjectURL(imagePreview.value);
@@ -996,10 +998,8 @@ const handleConfirmDelete = () => {
       uploadProgress.value = 0;
     }
     
-    // Reset all states
     deleteType.value = 'file';
     
-    // Reset deleting flag after a short delay to ensure all watchers have processed
     setTimeout(() => {
       isDeleting.value = false;
     }, 100);
@@ -1013,7 +1013,7 @@ const clearFile = () => {
 
 const clearImage = () => {
   console.log('clearImage');
-  shouldAutoDownload.value = true; // Reset to default state
+  shouldAutoDownload.value = true;
   showDeleteConfirmation('image');
 };
 
@@ -1023,45 +1023,37 @@ const handleFileUpload = async (event: Event) => {
   if (input.files && input.files[0]) {
     const file = input.files[0];
     
-    // Clear existing preview if any
     if (filePreview.value && filePreview.value !== 'document') {
       URL.revokeObjectURL(filePreview.value);
     }
     
-    // Get file extension
     fileExtension.value = file.name.split('.').pop()?.toUpperCase() || '';
     
-    // Check if file is an image
     isPreviewableImage.value = file.type.startsWith('image/');
     
-    // Create preview if it's an image
     if (isPreviewableImage.value) {
       filePreview.value = URL.createObjectURL(file);
     } else {
-      filePreview.value = 'document';  // Just a flag to show document icon
+      filePreview.value = 'document';
     }
     
-    // Start upload process
     uploading.value = true;
     uploadProgress.value = 0;
     
     try {
-      // Store the original value in case upload fails
       const originalValue = props.modelValue;
       
-      // Set progress to 10% to indicate upload is starting
       uploadProgress.value = 10;
       
       const response = await uploadFile(
         file,
-        props.field.parent || '', // doctype
-        props.parentDocName || '', // docname
-        false // isPrivate
+        props.field.parent || '',
+        props.parentDocName || '',
+        false
       );
       
       uploadProgress.value = 90;
       
-      // Update the model value with the file URL
       emit('update:modelValue', response.message.file_url);
       
       uploadProgress.value = 100;
@@ -1092,26 +1084,20 @@ const handleImageUpload = async (event: Event) => {
   if (input.files && input.files[0]) {
     const file = input.files[0];
     
-    // Clear existing preview if any
     if (imagePreview.value) {
-      // Only revoke if it's a blob URL (not an existing file URL)
       if (imagePreview.value.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview.value);
       }
     }
     
-    // Show original preview immediately
     imagePreview.value = URL.createObjectURL(file);
     
-    // Optimize the image first
     const optimizedFile = await optimizeImage(file);
     
-    // Log the current state before emitting
     console.log('Current shouldAutoDownload state:', shouldAutoDownload.value);
     console.log('Is mobile:', isMobile.value);
     console.log('Has camera tag:', props.field.label?.includes('[camera]'));
     
-    // Emit the optimized file with metadata
     emit('update:modelValue', {
       file: optimizedFile,
       preview: imagePreview.value,
@@ -1175,7 +1161,6 @@ const handleMultipleFileUpload = async (event: Event) => {
     }));
     uploadedFiles.value = [...uploadedFiles.value, ...newFiles];
     
-    // Start upload process
     await uploadFiles();
   }
 };
@@ -1189,21 +1174,18 @@ const uploadFiles = async () => {
   let completedFiles = 0;
 
   try {
-    // Upload each file as temporary (unattached)
     for (let i = 0; i < uploadedFiles.value.length; i++) {
       const file = uploadedFiles.value[i];
       if (file.uploaded) continue;
 
       try {
-        // Upload without doctype and docname for temporary storage
         const response = await uploadFile(
           file.file,
-          '', // No doctype for temporary upload
-          '', // No docname for temporary upload
-          false // isPrivate
+          '',
+          '',
+          false
         );
 
-        // Update the file with upload status and URL
         uploadedFiles.value[i] = {
           ...file,
           uploaded: true,
@@ -1217,7 +1199,6 @@ const uploadFiles = async () => {
       }
     }
 
-    // Emit the updated value with just the file URLs for the form submission
     emit('update:modelValue', uploadedFiles.value
       .filter(f => f.uploaded && f.fileUrl)
       .map(f => ({ image: f.fileUrl }))
@@ -1230,25 +1211,21 @@ const uploadFiles = async () => {
 };
 
 const removeFile = (index: number) => {
-  // Revoke the object URL to prevent memory leaks
   URL.revokeObjectURL(uploadedFiles.value[index].preview);
   uploadedFiles.value.splice(index, 1);
   
-  // Emit the updated value
   emit('update:modelValue', uploadedFiles.value
     .filter(f => f.uploaded && f.fileUrl)
     .map(f => ({ image: f.fileUrl }))
   );
 };
 
-// Clean up object URLs when component is unmounted
 onUnmounted(() => {
   uploadedFiles.value.forEach(file => {
     URL.revokeObjectURL(file.preview);
   });
 });
 
-// Add the camera input ref and openCamera method in the script section
 const cameraInput = ref<HTMLInputElement | null>(null);
 
 const openCamera = () => {
@@ -1257,11 +1234,9 @@ const openCamera = () => {
   }
 };
 
-// Add geolocation state
 const isGettingLocation = ref(false);
 const locationError = ref<string | null>(null);
 
-// Helper to check if field is a geolocation field
 const isGeolocationField = computed(() => {
   return props.field.label.includes('[geolocation-');
 });
@@ -1272,7 +1247,6 @@ const geolocationFieldType = computed(() => {
   return match ? match[1] : null;
 });
 
-// Function to get current location
 const getCurrentLocation = async () => {
   if (!isGeolocationField.value || !navigator.geolocation) {
     locationError.value = 'Geolocation is not supported by your browser';
@@ -1299,7 +1273,6 @@ const getCurrentLocation = async () => {
         emit('update:modelValue', position.coords.longitude.toString());
         break;
       case 'address':
-        // Get address using reverse geocoding
         try {
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`,
@@ -1321,13 +1294,10 @@ const getCurrentLocation = async () => {
   } catch (error: any) {
     console.error('Geolocation error:', error);
     if (error.code === 1) {
-      // Permission denied error
       locationError.value = 'Location permission was denied. Please enable location access in your device settings and try again.';
     } else if (error.code === 2) {
-      // Position unavailable error
       locationError.value = 'Unable to determine your location. Please check your device\'s GPS settings and try again.';
     } else if (error.code === 3) {
-      // Timeout error
       locationError.value = 'Location request timed out. Please try again.';
     } else {
       locationError.value = error.message || 'Failed to get location';
@@ -1337,14 +1307,12 @@ const getCurrentLocation = async () => {
   }
 };
 
-// Get location on mount if field is a geolocation field and value is empty
 onMounted(() => {
   if (isGeolocationField.value && !props.modelValue) {
     getCurrentLocation();
   }
 });
 
-// Add these computed properties after the existing computed properties
 const hasExistingFile = computed(() => {
   return typeof props.modelValue === 'string' && props.modelValue.length > 0;
 });
@@ -1355,17 +1323,14 @@ const existingFileUrl = computed(() => {
   const baseUrl = getErpNextApiUrl();
   const fileUrl = props.modelValue;
 
-  // If it's already an absolute URL (starts with http:// or https://)
   if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
     return fileUrl;
   }
 
-  // If it's a relative URL (starts with /)
   if (fileUrl.startsWith('/')) {
     return `${baseUrl}${fileUrl}`;
   }
 
-  // If it's a relative URL without leading slash
   return `${baseUrl}/${fileUrl}`;
 });
 
@@ -1377,14 +1342,11 @@ const isExistingFileImage = computed(() => {
          url.endsWith('.webp');
 });
 
-// Update the watch to check the flag
 watch(() => props.modelValue, async (newValue) => {
-  // Skip if we're in the middle of a delete operation
   if (isDeleting.value) return;
 
   if (props.field.fieldtype === 'Attach' || props.field.fieldtype === 'Attach Image') {
     if (newValue && typeof newValue === 'string') {
-      // Clear any existing previews first
       if (filePreview.value && filePreview.value !== 'document') {
         URL.revokeObjectURL(filePreview.value);
       }
@@ -1392,11 +1354,9 @@ watch(() => props.modelValue, async (newValue) => {
         URL.revokeObjectURL(imagePreview.value);
       }
       
-      // For Attach Image, set the preview directly
       if (props.field.fieldtype === 'Attach Image') {
         imagePreview.value = existingFileUrl.value;
       } else {
-        // For Attach, set preview based on file type
         if (isExistingFileImage.value) {
           filePreview.value = existingFileUrl.value;
           isPreviewableImage.value = true;
@@ -1404,7 +1364,6 @@ watch(() => props.modelValue, async (newValue) => {
           filePreview.value = 'document';
           isPreviewableImage.value = false;
         }
-        // Set file extension from URL
         const urlParts = newValue.split('.');
         if (urlParts.length > 1) {
           fileExtension.value = urlParts.pop()?.toUpperCase() || '';
@@ -1414,9 +1373,7 @@ watch(() => props.modelValue, async (newValue) => {
   }
 });
 
-// Add initialization in onMounted
 onMounted(() => {
-  // Initialize file preview if there's an initial value
   if (props.modelValue && typeof props.modelValue === 'string') {
     if (props.field.fieldtype === 'Attach Image') {
       imagePreview.value = existingFileUrl.value;
@@ -1436,33 +1393,27 @@ onMounted(() => {
   }
 });
 
-// Add these refs after the existing refs
 const signatureCanvas = ref<HTMLCanvasElement | null>(null);
 const signaturePad = ref<SignaturePad | null>(null);
 const signaturePadContainer = ref<HTMLElement | null>(null);
 
-// Add these methods after the existing methods
 const initSignaturePad = () => {
   if (!signatureCanvas.value) return;
 
-  // Set canvas dimensions
   const container = signaturePadContainer.value;
   if (!container) return;
 
   const canvas = signatureCanvas.value;
   const rect = container.getBoundingClientRect();
   
-  // Set the canvas dimensions to match the container size
   canvas.width = rect.width;
-  canvas.height = 200; // Fixed height
+  canvas.height = 200;
 
-  // Initialize SignaturePad
   signaturePad.value = new SignaturePad(canvas, {
     backgroundColor: 'rgb(255, 255, 255)',
     penColor: 'rgb(0, 0, 0)'
   });
 
-  // Add event listener for signature changes
   signaturePad.value.addEventListener("endStroke", () => {
     if (signaturePad.value && !signaturePad.value.isEmpty()) {
       const dataURL = signaturePad.value.toDataURL();
@@ -1479,46 +1430,35 @@ const clearSignature = () => {
   emit('update:modelValue', '');
 };
 
-// Watch for form submission by watching modelValue
 watch(() => props.modelValue, (newValue) => {
-  // If the form is being submitted and we have a signature pad with content
   if (!newValue && signaturePad.value && !signaturePad.value.isEmpty()) {
-    // Save the signature
     const dataURL = signaturePad.value.toDataURL();
     emit('update:modelValue', dataURL);
   }
 });
 
-// Add this to the onMounted section
 onMounted(() => {
   if (props.field.fieldtype === 'Signature') {
     nextTick(() => {
       initSignaturePad();
     });
   }
-  // ... existing onMounted code ...
 });
 
-// Add window resize handler
 const handleResize = () => {
   if (props.field.fieldtype === 'Signature') {
     initSignaturePad();
   }
 };
 
-// Add to onMounted
 onMounted(() => {
-  // ... existing onMounted code ...
   window.addEventListener('resize', handleResize);
 });
 
-// Add to onUnmounted
 onUnmounted(() => {
-  // ... existing onUnmounted code ...
   window.removeEventListener('resize', handleResize);
 });
 
-// Add this to the script section with other functions
 function handleDurationFocus() {
   if (!props.field.read_only) {
     showDurationPopup.value = true;
@@ -1539,26 +1479,20 @@ watch(() => authStore.user, (user) => {
   }
 }, { immediate: true });
 
-// Add this with other refs
 const shouldAutoDownload = ref(true);
 
-// Add computed property for custom key
 const checkboxKey = computed(() => `watermark-checkbox-${props.field.fieldtype}-${props.field.label}`);
 
-// Add watcher for modelValue to reset shouldAutoDownload when form is cleared
 watch(() => props.modelValue, (newValue) => {
-  // If the form field is cleared (value becomes empty/null)
   if (!newValue) {
-    shouldAutoDownload.value = true; // Reset to default state
+    shouldAutoDownload.value = true;
   }
 }, { deep: true });
 
-// Add watcher for shouldAutoDownload to log its changes
 watch(() => shouldAutoDownload.value, (newValue) => {
   console.log('shouldAutoDownload changed:', newValue);
 });
 
-// Add this watcher after other watch statements
 watch(() => shouldShowField.value, (isVisible) => {
   if (isVisible && props.field.fieldtype === 'Signature') {
     nextTick(() => {
@@ -1567,7 +1501,6 @@ watch(() => shouldShowField.value, (isVisible) => {
   }
 });
 
-// Add these simple display formatting functions:
 const formatDisplayDate = (isoDate: string) => {
   if (!isoDate) return '';
   try {

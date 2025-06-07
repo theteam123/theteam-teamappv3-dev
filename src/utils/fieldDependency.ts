@@ -6,25 +6,32 @@ interface FormField {
   options?: string;
   hidden?: number;
   depends_on?: string;
+  mandatory_depends_on?: string;
   columnIndex?: number;
 }
 
-export function evaluateFieldDependency(field: FormField, formData: Record<string, any> | undefined): boolean {
-  /* console.log('\nEvaluating dependency for field:', {
+export function evaluateFieldDependency(
+  field: FormField, 
+  formData: Record<string, any> | undefined,
+  dependencyType: 'depends_on' | 'mandatory_depends_on' = 'depends_on'
+): boolean {
+  console.log('\nEvaluating dependency for field:', {
     fieldname: field.fieldname,
     label: field.label,
-    depends_on: field.depends_on
-  }); */
+    depends_on: field.depends_on,
+    mandatory_depends_on: field.mandatory_depends_on,
+    evaluating: dependencyType
+  });
 
-  if (!field.depends_on) {
-    console.log('No dependency condition, showing field');
-    return true;
+  if (!field[dependencyType]) {
+    console.log(`No ${dependencyType} condition, returning ${dependencyType === 'depends_on' ? 'true' : String(field.reqd === 1)}`);
+    return dependencyType === 'depends_on' ? true : field.reqd === 1;
   }
   
-  const dependsOn = field.depends_on;
+  const dependsOn = field[dependencyType];
   if (!dependsOn.startsWith('eval:doc.')) {
-    console.log('Dependency does not start with eval:doc., showing field');
-    return true;
+    console.log(`${dependencyType} does not start with eval:doc., returning ${dependencyType === 'depends_on' ? 'true' : String(field.reqd === 1)}`);
+    return dependencyType === 'depends_on' ? true : field.reqd === 1;
   }
 
   try {
@@ -83,7 +90,7 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
     // Check if there are any remaining doc. references that weren't replaced
     if (evalCondition.includes('doc.')) {
       console.warn('Unhandled field references in condition:', evalCondition);
-      return true;
+      return dependencyType === 'depends_on' ? true : field.reqd === 1;
     }
 
     // Safely evaluate the condition
@@ -147,6 +154,6 @@ export function evaluateFieldDependency(field: FormField, formData: Record<strin
     return finalResult;
   } catch (error) {
     console.error('Error evaluating field dependency:', error);
-    return true;
+    return dependencyType === 'depends_on' ? true : field.reqd === 1;
   }
 } 
