@@ -674,6 +674,11 @@
       </div>
     </template>
 
+    <!-- HTML Display -->
+    <template v-else-if="field.fieldtype === 'HTML'">
+      <div v-html="field.options" class="prose prose-sm max-w-none"></div>
+    </template>
+
     <!-- Multiple Upload Table -->
     <template v-else-if="field.fieldtype === 'Table' && (field.label.toLowerCase().includes('[multiple-upload]') || field.label.toLowerCase().includes('[multiple-upload-view]'))">
       <label class="block text-sm font-medium text-gray-700">
