@@ -39,80 +39,82 @@
         </div>
         
         <!-- Navigation -->
-        <nav v-if="!isSidebarCollapsed" class="flex-1 p-4 space-y-1">
-          <router-link 
-            to="/" 
-            class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-            :class="{ 'bg-green-50 text-green-700': $route.path === '/' }"
-          >
-            <HomeIcon class="w-5 h-5" :class="isSidebarCollapsed ? '' : 'mr-3'" />
-            <span v-if="!isSidebarCollapsed">Home</span>
-          </router-link>
+        <nav v-if="!isSidebarCollapsed" class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <div class="space-y-1">
+            <router-link 
+              to="/" 
+              class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+              :class="{ 'bg-green-50 text-green-700': $route.path === '/' }"
+            >
+              <HomeIcon class="w-5 h-5" :class="isSidebarCollapsed ? '' : 'mr-3'" />
+              <span v-if="!isSidebarCollapsed">Home</span>
+            </router-link>
 
-          <!-- Document Management Section -->
-          <div class="pt-4">
-            <!-- System Modules -->
-            <div v-if="modules.length > 0" class="space-y-1">
-              
+            <!-- Document Management Section -->
+            <div class="pt-4">
+              <!-- System Modules -->
+              <div v-if="modules.length > 0" class="space-y-1 max-h-[calc(100vh-24rem)] overflow-y-auto">
+                
+                <router-link 
+                  v-for="module in modules" 
+                  :key="module.value"
+                  :to="`/documents/?module=${module.value}`"
+                  class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
+                  :class="{ 
+                    'bg-green-50 text-green-700': $route.path === `/documents/${module.value}`,
+                    'justify-center px-2': isSidebarCollapsed,
+                    'justify-start px-4': !isSidebarCollapsed
+                  }"
+                >
+                  <FolderIcon 
+                    class="w-5 h-5 transition-colors duration-200" 
+                    :class="[
+                      isSidebarCollapsed ? 'text-gray-600' : 'mr-3 text-gray-500',
+                      $route.path === `/documents/${module.value}` ? 'text-green-600' : ''
+                    ]"
+                  />
+                  <span v-if="!isSidebarCollapsed">{{ module.value }}</span>
+                </router-link>
+              </div>
+
+              <!-- Other Document Items -->
               <router-link 
-                v-for="module in modules" 
-                :key="module.value"
-                :to="`/documents/?module=${module.value}`"
+                v-for="item in filteredDocumentItems" 
+                :key="item.path"
+                :to="item.path"
                 class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
                 :class="{ 
-                  'bg-green-50 text-green-700': $route.path === `/documents/${module.value}`,
+                  'bg-green-50 text-green-700': $route.path === item.path,
                   'justify-center px-2': isSidebarCollapsed,
                   'justify-start px-4': !isSidebarCollapsed
                 }"
+                @click="handleDocumentClick(item)"
+                :title="isSidebarCollapsed ? item.name : ''"
               >
-                <FolderIcon 
+                <component 
+                  :is="item.icon" 
                   class="w-5 h-5 transition-colors duration-200" 
                   :class="[
                     isSidebarCollapsed ? 'text-gray-600' : 'mr-3 text-gray-500',
-                    $route.path === `/documents/${module.value}` ? 'text-green-600' : ''
+                    $route.path === item.path ? 'text-green-600' : ''
                   ]"
                 />
-                <span v-if="!isSidebarCollapsed">{{ module.value }}</span>
+                <span v-if="!isSidebarCollapsed">{{ item.name }}</span>
               </router-link>
             </div>
 
-            <!-- Other Document Items -->
-            <router-link 
-              v-for="item in filteredDocumentItems" 
-              :key="item.path"
-              :to="item.path"
-              class="flex items-center py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100"
-              :class="{ 
-                'bg-green-50 text-green-700': $route.path === item.path,
-                'justify-center px-2': isSidebarCollapsed,
-                'justify-start px-4': !isSidebarCollapsed
-              }"
-              @click="handleDocumentClick(item)"
-              :title="isSidebarCollapsed ? item.name : ''"
-            >
-              <component 
-                :is="item.icon" 
-                class="w-5 h-5 transition-colors duration-200" 
-                :class="[
-                  isSidebarCollapsed ? 'text-gray-600' : 'mr-3 text-gray-500',
-                  $route.path === item.path ? 'text-green-600' : ''
-                ]"
-              />
-              <span v-if="!isSidebarCollapsed">{{ item.name }}</span>
-            </router-link>
-          </div>
-
-          <!-- Admin Settings -->
-          <div v-if="authStore.isSystemManager" class="border-gray-200">
-            <a 
-              :href="`${getErpNextApiUrl()}/app/build`"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg"
-            >
-              <SettingsIcon class="w-5 h-5 mr-3" />
-              Admin Settings
-            </a>
+            <!-- Admin Settings -->
+            <div v-if="authStore.isSystemManager" class="border-gray-200">
+              <a 
+                :href="`${getErpNextApiUrl()}/app/build`"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-lg"
+              >
+                <SettingsIcon class="w-5 h-5 mr-3" />
+                Admin Settings
+              </a>
+            </div>
           </div>
         </nav>
 

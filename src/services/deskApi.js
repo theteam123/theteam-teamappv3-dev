@@ -51,28 +51,35 @@ export const getModules = async (params = {}) => {
           name: userEmail
         });
         
-        // Get the block_modules array from user document and create a set of blocked module names
-        const blockedModules = userDoc.docs[0].block_modules || [];
-        const blockedModuleNames = new Set(blockedModules.map(bm => bm.module));
-        
-        // Filter out blocked modules from the response
-        const filteredModules = response.data.message.filter(module => 
-          !blockedModuleNames.has(module.value)
-        );
+        // Check if userDoc and docs array exists before accessing
+        if (userDoc?.docs && userDoc.docs.length > 0) {
+          // Get the block_modules array from user document and create a set of blocked module names
+          const blockedModules = userDoc.docs[0].block_modules || [];
+          const blockedModuleNames = new Set(blockedModules.map(bm => bm.module));
+          
+          // Filter out blocked modules from the response
+          const filteredModules = response.data.message.filter(module => 
+            !blockedModuleNames.has(module.value)
+          );
 
-        // Return filtered response
-        return {
-          ...response.data,
-          message: filteredModules
-        };
+          // Return filtered response
+          return {
+            ...response.data,
+            message: filteredModules
+          };
+        }
       }
   
+      // If no user document or no blocked modules, return original response
       return response.data;
     } catch (error) {
       console.error('Error fetching modules:', error);
-      throw error;
+      // Return empty array as message to prevent further errors
+      return {
+        message: []
+      };
     }
-  }; 
+}; 
 
 /**
  * Get list of doctypes for a specific module

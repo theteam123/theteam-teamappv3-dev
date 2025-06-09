@@ -275,37 +275,67 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
     }
     console.log('DocType Module Response:', doctypeModuleResponse);
 
-    // Get user's role permissions
-    const response = await erp.post('/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions', {
-      doctype: '',
-      role: authStore.user.roles[0]
-    });
+    // Define system roles to exclude
+    const systemRoles = ['Administrator', 'Desk User', 'Guest', 'All'];
+
+    // Check if user has System Manager role
+    const isSystemManager = authStore.user?.roles?.includes('System Manager');
+    console.log('Is System Manager:', isSystemManager);
+
+    let permissions;
+    if (isSystemManager) {
+      // If System Manager, only get permissions for that role
+      const response = await erp.post('/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions', {
+        doctype: '',
+        role: 'System Manager'
+      });
+      permissions = response.data.message || [];
+    } else {
+      // For non-System Managers, check all non-system roles
+      const userRoles = authStore.user.roles.filter(role => !systemRoles.includes(role));
+      console.log('Filtered user roles:', userRoles);
+
+      // Get permissions for each role
+      const rolePermissionsPromises = userRoles.map(role => 
+        erp.post('/api/method/frappe.core.page.permission_manager.permission_manager.get_permissions', {
+          doctype: '',
+          role: role
+        })
+      );
+
+      const rolePermissionsResponses = await Promise.all(rolePermissionsPromises);
+      
+      // Combine permissions from all roles
+      permissions = rolePermissionsResponses.flatMap(response => response.data.message || []);
+    }
+
+    console.log('Permissions:', permissions);
 
     // Filter permissions to get only readable doctypes
-    const permissions = response.data.message || [];
-    const readableDoctypes = permissions.filter(perm => perm.read === 1)
-                                      .map(perm => ({
-                                        name: perm.parent,
-                                        doctype: perm.parent,
-                                        permissions: {
-                                          read: perm.read,
-                                          write: perm.write,
-                                          create: perm.create,
-                                          delete: perm.delete,
-                                          submit: perm.submit,
-                                          cancel: perm.cancel,
-                                          amend: perm.amend,
-                                          report: perm.report,
-                                          export: perm.export,
-                                          import: perm.import,
-                                          share: perm.share,
-                                          print: perm.print,
-                                          email: perm.email
-                                        },
-                                        linked_doctypes: perm.linked_doctypes || [],
-                                        modified: perm.modified,
-                                        creation: perm.creation
-                                      }));
+    const readableDoctypes = permissions
+      .filter(perm => isSystemManager || perm.read === 1)
+      .map(perm => ({
+        name: perm.parent,
+        doctype: perm.parent,
+        permissions: {
+          read: isSystemManager ? 1 : perm.read,
+          write: isSystemManager ? 1 : perm.write,
+          create: isSystemManager ? 1 : perm.create,
+          delete: isSystemManager ? 1 : perm.delete,
+          submit: isSystemManager ? 1 : perm.submit,
+          cancel: isSystemManager ? 1 : perm.cancel,
+          amend: isSystemManager ? 1 : perm.amend,
+          report: isSystemManager ? 1 : perm.report,
+          export: isSystemManager ? 1 : perm.export,
+          import: isSystemManager ? 1 : perm.import,
+          share: isSystemManager ? 1 : perm.share,
+          print: isSystemManager ? 1 : perm.print,
+          email: isSystemManager ? 1 : perm.email
+        },
+        linked_doctypes: perm.linked_doctypes || [],
+        modified: perm.modified,
+        creation: perm.creation
+      }));
 
     // Apply search filter if provided
     let filteredDoctypes = readableDoctypes;
@@ -344,8 +374,6 @@ export const getDocTypes = async (page = 1, pageSize = 20, search = '', category
     const doctypesWithDetails = await Promise.all(
       paginatedDoctypes.map(async (dt) => {
         try {
-
-          // const metadata = metaResponse.data;
           return {
             id: dt.name,
             name: dt.name,

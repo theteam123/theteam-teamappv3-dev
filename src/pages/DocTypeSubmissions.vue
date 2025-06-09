@@ -444,6 +444,7 @@ interface DocTypeField {
   fieldtype: string;
   reqd: number;
   in_list_view: number;
+  in_preview?: number;
   options?: string;
 }
 
@@ -552,19 +553,59 @@ const viewMode = ref('list');
 // Methods
 const fetchDocType = async () => {
   try {
-    console.log('Fetching DocType SDSSSS:', route.params.id);
+    console.log('Fetching DocType:', route.params.id);
     const response = await getFormData('DocType', route.params.id as string);
     console.log('DocType Response:', response);
     console.log('DocType Data:', response.data);
     console.log('DocType Fields:', response.data.fields);
 
-    const permissions = await getDoctypePermissions(route.params.id, authStore.user?.roles?.[0]);
-    docTypePermissions.value = permissions[0];
-    console.log('DocType Permissions:', docTypePermissions.value);
-    ifOwnerPermission.value = permissions[0].if_owner;
+    // Check if user has System Manager role
+    const isSystemManager = authStore.user?.roles?.includes('System Manager');
+    console.log('Is System Manager:', isSystemManager);
+
+    let permissions;
+    if (isSystemManager) {
+      // If System Manager, only get permissions for that role
+      permissions = await getDoctypePermissions(route.params.id as string, 'System Manager');
+      docTypePermissions.value = permissions[0];
+      ifOwnerPermission.value = false; // System Managers bypass owner permission check
+    } else {
+      // For non-System Managers, check all non-system roles
+      const systemRoles = ['Administrator', 'Desk User', 'Guest', 'All'];
+      const userRoles = authStore.user?.roles?.filter(role => !systemRoles.includes(role)) || [];
+      console.log('Filtered user roles:', userRoles);
+
+      // Get permissions for each role
+      const rolePermissionsPromises = userRoles.map(role => 
+        getDoctypePermissions(route.params.id as string, role)
+      );
+
+      const rolePermissionsResponses = await Promise.all(rolePermissionsPromises);
+      
+      // Combine permissions from all roles
+      const allPermissions = rolePermissionsResponses.flatMap(response => response[0] || []);
+      console.log('Combined permissions from all roles:', allPermissions);
+
+      // Get the highest permission level for each permission type
+      docTypePermissions.value = {
+        create: Math.max(...allPermissions.map(p => p?.create || 0)),
+        read: Math.max(...allPermissions.map(p => p?.read || 0)),
+        write: Math.max(...allPermissions.map(p => p?.write || 0)),
+        delete: Math.max(...allPermissions.map(p => p?.delete || 0)),
+        submit: Math.max(...allPermissions.map(p => p?.submit || 0)),
+        cancel: Math.max(...allPermissions.map(p => p?.cancel || 0)),
+        amend: Math.max(...allPermissions.map(p => p?.amend || 0)),
+        if_owner: Math.max(...allPermissions.map(p => p?.if_owner || 0))
+      };
+
+      // Set if_owner permission if any role has it
+      ifOwnerPermission.value = docTypePermissions.value.if_owner === 1;
+    }
     
-    // Only proceed if user has read permission
-    if (docTypePermissions.value?.read === 1) {
+    console.log('DocType Permissions:', docTypePermissions.value);
+    
+    // Only proceed if user has read permission or is System Manager
+    if (isSystemManager || docTypePermissions.value?.read === 1) {
       // Filter fields to only show those marked for list view
       console.log('Response Data:', response.data.fields);
       docType.value = {
@@ -579,7 +620,8 @@ const fetchDocType = async () => {
       error.value = "You don't have permission to read this document";
       docType.value = null;
     }
-    console.log('DOctype Value:', docType.value);
+    
+    console.log('DocType Value:', docType.value);
   } catch (err: any) {
     console.error('Error fetching DocType:', err);
     error.value = err.message;
