@@ -15,40 +15,45 @@ export function evaluateFieldDependency(
   formData: Record<string, any> | undefined,
   dependencyType: 'depends_on' | 'mandatory_depends_on' = 'depends_on'
 ): boolean {
-  console.log('\nEvaluating dependency for field:', {
-    fieldname: field.fieldname,
-    label: field.label,
-    depends_on: field.depends_on,
-    mandatory_depends_on: field.mandatory_depends_on,
-    evaluating: dependencyType
-  });
+  // console.log('\nEvaluating dependency for field:', {
+    // fieldname: field.fieldname,
+    // label: field.label,
+    // depends_on: field.depends_on,
+    // mandatory_depends_on: field.mandatory_depends_on,
+    // evaluating: dependencyType
+  // });
 
   if (!field[dependencyType]) {
-    console.log(`No ${dependencyType} condition, returning ${dependencyType === 'depends_on' ? 'true' : String(field.reqd === 1)}`);
+    // console.log(`No ${dependencyType} condition, returning ${dependencyType === 'depends_on' ? 'true' : String(field.reqd === 1)}`);
     return dependencyType === 'depends_on' ? true : field.reqd === 1;
   }
   
   const dependsOn = field[dependencyType];
   if (!dependsOn.startsWith('eval:doc.')) {
-    console.log(`${dependencyType} does not start with eval:doc., returning ${dependencyType === 'depends_on' ? 'true' : String(field.reqd === 1)}`);
+    // console.log(`${dependencyType} does not start with eval:doc., returning ${dependencyType === 'depends_on' ? 'true' : String(field.reqd === 1)}`);
     return dependencyType === 'depends_on' ? true : field.reqd === 1;
   }
 
   try {
     const condition = dependsOn.replace('eval:doc.', '');
-    console.log('Processing condition:', condition);
+    // console.log('Processing condition:', condition);
     
     // Replace field references with their values
     let evalCondition = condition;
     
     // First, remove any trailing semicolons and handle the doc. prefix stripping
     evalCondition = evalCondition.replace(/;/g, '').replace(/doc\./g, '').trim();
+
+    if (  !(evalCondition.includes('==') || evalCondition.includes('!=')) ) {
+      // console.log('No condition:', evalCondition);
+      evalCondition = evalCondition + ' != ""';
+    }
     
     // Split the condition on both && and || to handle each part separately
     const parts = evalCondition.split(/(?:&&|\|\|)/).map(part => part.trim());
     const operators = evalCondition.match(/(?:&&|\|\|)/g) || [];
-    console.log('Condition parts:', parts);
-    console.log('Operators:', operators);
+    // console.log('Condition parts:', parts);
+    // console.log('Operators:', operators);
     
     // Process each part of the condition
     const processedParts = parts.map(part => {
@@ -61,20 +66,20 @@ export function evaluateFieldDependency(
       // Split on either == or != operator
       const operator = part.includes('==') ? '==' : '!=';
       const [fieldName, value] = part.split(operator).map(s => s.trim().replace(/['"]/g, ''));
-      console.log('Field Data', formData);
+      // console.log('Field Data', formData);
       const rawFieldValue = formData?.[fieldName];
-      console.log('Raw field name:', fieldName);
-      console.log('Raw field value:', rawFieldValue);
+      // console.log('Raw field name:', fieldName);
+      // console.log('Raw field value:', rawFieldValue);
       // Treat 'false' string as empty string
       const fieldValue = rawFieldValue === false ? '' : rawFieldValue;
       
-      console.log('Processing comparison:', {
-        fieldName,
-        rawFieldValue,
-        fieldValue,
-        operator,
-        compareValue: value
-      });
+      // console.log('Processing comparison:', {
+      //   fieldName,
+      //   rawFieldValue,
+      //   fieldValue,
+      //   operator,
+      //   compareValue: value
+      // });
       
       if (fieldValue === undefined || fieldValue === null) {
         return 'false';
@@ -85,17 +90,17 @@ export function evaluateFieldDependency(
     
     // Rejoin the parts with &&
     evalCondition = processedParts.join(' && ');
-    console.log('Final condition to evaluate:', evalCondition);
+    // console.log('Final condition to evaluate:', evalCondition);
 
     // Check if there are any remaining doc. references that weren't replaced
     if (evalCondition.includes('doc.')) {
-      console.warn('Unhandled field references in condition:', evalCondition);
+      // console.warn('Unhandled field references in condition:', evalCondition);
       return dependencyType === 'depends_on' ? true : field.reqd === 1;
     }
 
     // Safely evaluate the condition
     const evaluateCondition = (condition: string): boolean => {
-      console.log('Evaluating condition:', condition);
+      // console.log('Evaluating condition:', condition);
 
       // Handle simple boolean values
       if (condition === 'true') return true;
@@ -105,8 +110,8 @@ export function evaluateFieldDependency(
       if (condition.includes('&&') || condition.includes('||')) {
         const parts = condition.split(/(?:&&|\|\|)/).map(s => s.trim());
         const operators = condition.match(/(?:&&|\|\|)/g) || [];
-        console.log('Evaluating complex condition parts:', parts);
-        console.log('Operators:', operators);
+        // console.log('Evaluating complex condition parts:', parts);
+        // console.log('Operators:', operators);
 
         // Evaluate first part
         let result = evaluateCondition(parts[0]);
@@ -129,7 +134,7 @@ export function evaluateFieldDependency(
         const [left, right] = condition.split(operator).map(s => 
           s.trim().replace(/['"]/g, '').replace(/;/g, '')
         );
-        console.log('Comparing values:', { left, right, operator });
+        // console.log('Comparing values:', { left, right, operator });
         
         // Helper function to normalize boolean-like values
         const normalizeValue = (val: string): string => {
@@ -150,10 +155,10 @@ export function evaluateFieldDependency(
     };
     
     const finalResult = evaluateCondition(evalCondition);
-    console.log('Final evaluation result:', finalResult);
+    // console.log('Final evaluation result:', finalResult);
     return finalResult;
   } catch (error) {
-    console.error('Error evaluating field dependency:', error);
+    // console.error('Error evaluating field dependency:', error);
     return dependencyType === 'depends_on' ? true : field.reqd === 1;
   }
 } 

@@ -80,19 +80,33 @@
                 </div>
                 
                 <!-- Fields Grid -->
-                <div :class="{
-                  'grid gap-6': true,
-                  'grid-cols-2': section.columnCount === 2,
-                  'grid-cols-1': section.columnCount <= 1
-                }">
-                  <FormField
-                    v-for="field in section.fields"
-                    :key="field.fieldname"
-                    :field="field"
-                    v-model="formData[field.fieldname]"
-                    :formData="formData"
-                    :parentDocName="route.params.id as string"
-                  />
+                <div>
+                  <!-- Column Labels -->
+                  <div v-if="section.columnLabels.length > 0" :class="{
+                    'grid gap-6 mb-4': true,
+                    'grid-cols-2': section.columnCount === 2,
+                    'grid-cols-1': section.columnCount <= 1
+                  }">
+                    <div v-for="(label, idx) in section.columnLabels" :key="idx" class="text-sm font-medium text-gray-700">
+                      {{ label }}
+                    </div>
+                  </div>
+                  
+                  <!-- Fields -->
+                  <div :class="{
+                    'grid gap-6': true,
+                    'grid-cols-2': section.columnCount === 2,
+                    'grid-cols-1': section.columnCount <= 1
+                  }">
+                    <FormField
+                      v-for="field in section.fields"
+                      :key="field.fieldname"
+                      :field="field"
+                      v-model="formData[field.fieldname]"
+                      :formData="formData"
+                      :parentDocName="route.params.id as string"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -114,19 +128,33 @@
               </div>
               
               <!-- Fields Grid -->
-              <div :class="{
-                'grid gap-6': true,
-                'grid-cols-2': section.columnCount === 2,
-                'grid-cols-1': section.columnCount <= 1
-              }">
-                <FormField
-                  v-for="field in section.fields"
-                  :key="field.fieldname"
-                  :field="field"
-                  v-model="formData[field.fieldname]"
-                  :formData="formData"
-                  :parentDocName="route.params.id as string"
-                />
+              <div>
+                <!-- Column Labels -->
+                <div v-if="section.columnLabels.length > 0" :class="{
+                  'grid gap-6 mb-4': true,
+                  'grid-cols-2': section.columnCount === 2,
+                  'grid-cols-1': section.columnCount <= 1
+                }">
+                  <div v-for="(label, idx) in section.columnLabels" :key="idx" class="text-sm font-medium text-gray-700">
+                    {{ label }}
+                  </div>
+                </div>
+                
+                <!-- Fields -->
+                <div :class="{
+                  'grid gap-6': true,
+                  'grid-cols-2': section.columnCount === 2,
+                  'grid-cols-1': section.columnCount <= 1
+                }">
+                  <FormField
+                    v-for="field in section.fields"
+                    :key="field.fieldname"
+                    :field="field"
+                    v-model="formData[field.fieldname]"
+                    :formData="formData"
+                    :parentDocName="route.params.id as string"
+                  />
+                </div>
               </div>
             </div>
           </template>

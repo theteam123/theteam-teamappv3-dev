@@ -19,6 +19,7 @@ interface FormSection {
   fields: FormField[];
   hidden: boolean;
   tab_id?: string;
+  columnLabels: string[];
 }
 
 interface FormTab {
@@ -49,7 +50,8 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
       title: '',
       columnCount: 0,
       fields: [],
-      hidden: false
+      hidden: false,
+      columnLabels: []
     };
 
     fields.value.forEach((field, index) => {
@@ -76,7 +78,8 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
           columnCount: 0,
           fields: [],
           hidden: false,
-          tab_id: currentTab.id
+          tab_id: currentTab.id,
+          columnLabels: []
         };
       } else if (field.fieldtype === 'Section Break') {
         if (currentSection.fields.length > 0) {
@@ -93,11 +96,16 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
           columnCount: 0,
           fields: [],
           hidden: field.hidden === 1 || !shouldShowSection,
-          tab_id: currentTab?.id
+          tab_id: currentTab?.id,
+          columnLabels: []
         };
       } else if (field.fieldtype === 'Column Break') {
+        console.log('Column Break Label', field.label);
+        console.log('Column Break Fieldname', field.fieldname);
+        console.log('Column Break', field);
         if (!currentSection.hidden) {
           currentSection.columnCount++;
+          currentSection.columnLabels.push(field.label || '');
         }
       } else if (!field.hidden && !currentSection.hidden) {
         currentSection.fields.push({

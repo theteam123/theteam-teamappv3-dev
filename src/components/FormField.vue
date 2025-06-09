@@ -827,6 +827,7 @@ interface FormField {
   parent?: string;
   read_only?: number;
   mandatory_depends_on?: string;
+  description?: string;
 }
 
 interface UploadedFile {
@@ -872,12 +873,12 @@ const authStore = useAuthStore();
 const mediaQueryMatches = ref(false);
 
 const shouldShowField = computed(() => {
-  console.log('shouldShowField', props.field);
+  // console.log('shouldShowField', props.field);
   return evaluateFieldDependency(props.field, props.formData);
 });
 
 const isFieldRequired = computed(() => {
-  console.log('props.field.mandatory_depends_on for field', props.field.fieldname, props.field.mandatory_depends_on);
+  // console.log('props.field.mandatory_depends_on for field', props.field.fieldname, props.field.mandatory_depends_on);
   if (props.field.mandatory_depends_on) {
     return evaluateFieldDependency(props.field, props.formData, 'mandatory_depends_on');
   }
@@ -1521,6 +1522,24 @@ const formatDisplayDateTime = (isoDateTime: string) => {
     return isoDateTime;
   }
 };
+
+// Add function to extract default value from description
+const getDefaultValueFromDescription = (description?: string) => {
+  if (!description) return null;
+  const match = description.match(/default-value:(.+?)(?=\s*(?:[a-zA-Z\-]+:|$))/);
+  return match ? match[1].trim() : null;
+};
+
+// Watch for field changes and set default value if needed
+watch(() => props.field, (newField) => {
+  // Only set default if no value is currently set
+  if (!props.modelValue && newField.description) {
+    const defaultValue = getDefaultValueFromDescription(newField.description);
+    if (defaultValue) {
+      emit('update:modelValue', defaultValue);
+    }
+  }
+}, { immediate: true });
 
 defineExpose({ VueTelInput });
 </script>
