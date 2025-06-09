@@ -828,6 +828,7 @@ interface FormField {
   read_only?: number;
   mandatory_depends_on?: string;
   description?: string;
+  default?: string;
 }
 
 interface UploadedFile {
@@ -1523,21 +1524,16 @@ const formatDisplayDateTime = (isoDateTime: string) => {
   }
 };
 
-// Add function to extract default value from description
-const getDefaultValueFromDescription = (description?: string) => {
-  if (!description) return null;
-  const match = description.match(/default-value:(.+?)(?=\s*(?:[a-zA-Z\-]+:|$))/);
-  return match ? match[1].trim() : null;
+// Add function to extract default value from field
+const getDefaultValueFromField = (field: FormField) => {
+  return field.default || null;
 };
 
 // Watch for field changes and set default value if needed
 watch(() => props.field, (newField) => {
   // Only set default if no value is currently set
-  if (!props.modelValue && newField.description) {
-    const defaultValue = getDefaultValueFromDescription(newField.description);
-    if (defaultValue) {
-      emit('update:modelValue', defaultValue);
-    }
+  if (!props.modelValue && newField.default) {
+    emit('update:modelValue', newField.default);
   }
 }, { immediate: true });
 
