@@ -97,4 +97,16 @@ export const initializeGeolocationFields = (fields: DocTypeField[], formData: Re
   });
   
   return geoFields;
+};
+
+export interface DocField {
+  fieldname: string;
+  label: string;
+  fieldtype: string;
+  in_standard_filter: number;
+  [key: string]: any; // for other properties that might be present
+}
+
+export const initializeFormFilter = (fields: DocField[]): DocField[] => {
+  return fields.filter(field => field.in_standard_filter === 1);
 }; 

@@ -24,7 +24,8 @@
     </div>
 
     <!-- Search and Filter -->
-    <div class="mb-6 flex flex-col sm:flex-row gap-4">
+    <div class="mb-6 flex flex-col gap-4">
+      <!-- Global Search -->
       <div class="flex-1">
         <div class="relative">
           <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -36,7 +37,25 @@
           />
         </div>
       </div>
-      <div class="flex gap-4">
+
+      <!-- Field-specific Searches -->
+      <div v-if="filteredFields?.length" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <div v-for="field in filteredFields" :key="field.fieldname">
+          <label :for="field.fieldname" class="block text-sm font-medium text-gray-700 mb-1">
+            {{ field.label }}
+          </label>
+          <input
+            :id="field.fieldname"
+            type="text"
+            v-model="fieldSearches[field.fieldname]"
+            :placeholder="`Search by ${field.label.toLowerCase()}`"
+            class="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-sm"
+          />
+        </div>
+      </div>
+
+      <!-- View Mode Buttons -->
+      <div class="flex justify-end gap-4">
         <button
           @click="viewMode = 'grid'"
           :class="[
@@ -59,7 +78,6 @@
         </button>
       </div>
     </div>
-
 
     <!-- DocType Count -->
     <div class="mb-4 text-sm text-gray-600">
@@ -437,15 +455,18 @@ import {
 import ImageModal from '../components/ImageModal.vue';
 import PdfIcon from '../components/icons/PdfIcon.vue';
 import PdfIconBlack from '../components/icons/PdfIconBlack.vue';
+import { initializeFormFilter } from '../utils/formUtils';
 
 interface DocTypeField {
   fieldname: string;
   label: string;
   fieldtype: string;
-  reqd: number;
-  in_list_view: number;
+  reqd?: number;
+  in_list_view?: number;
   in_preview?: number;
   options?: string;
+  in_standard_filter?: number;
+  [key: string]: any; // for other properties that might be present
 }
 
 interface DocType {
@@ -483,6 +504,8 @@ const sortDirection = ref<'asc' | 'desc'>('desc');
 const ifOwnerPermission = ref(false);
 const docTypePermissions = ref<DocTypePermission | null>(null);
 const hoveredPdfIcon = ref<string | null>(null);
+const fieldSearches = ref<Record<string, string>>({});
+const filteredFields = ref<DocTypeField[]>([]);
 
 // Pagination state
 const currentPage = ref(1);
@@ -512,6 +535,7 @@ const actionFields = computed(() => {
 const filteredDocuments = computed(() => {
   let filtered = [...documents.value];
 
+  // Global search
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(doc => {
@@ -520,6 +544,16 @@ const filteredDocuments = computed(() => {
       );
     });
   }
+
+  // Field-specific searches
+  Object.entries(fieldSearches.value).forEach(([fieldname, searchValue]) => {
+    if (searchValue) {
+      filtered = filtered.filter(doc => {
+        const fieldValue = doc[fieldname];
+        return fieldValue && String(fieldValue).toLowerCase().includes(searchValue.toLowerCase());
+      });
+    }
+  });
 
   filtered.sort((a, b) => {
     const aValue = a[sortBy.value];
@@ -558,6 +592,15 @@ const fetchDocType = async () => {
     console.log('DocType Response:', response);
     console.log('DocType Data:', response.data);
     console.log('DocType Fields:', response.data.fields);
+
+    const fields = initializeFormFilter(response.data.fields);
+    console.log('Filtered Fields (in_standard_filter=1):', fields);
+    filteredFields.value = fields;
+
+    // Initialize fieldSearches with empty strings for each filtered field
+    fieldSearches.value = Object.fromEntries(
+      fields.map(field => [field.fieldname, ''])
+    );
 
     // Check if user has System Manager role
     const isSystemManager = authStore.user?.roles?.includes('System Manager');
@@ -712,6 +755,12 @@ watch(pageSize, () => {
 watch([sortBy, sortDirection], () => {
   fetchDocuments(currentPage.value);
 });
+
+// Add watch for field searches
+watch(fieldSearches, () => {
+  currentPage.value = 1;
+  fetchDocuments(1);
+}, { deep: true });
 
 const canEditDocument = (doc: Document) => {
   if (authStore.user?.roles?.includes('System Manager')) {
