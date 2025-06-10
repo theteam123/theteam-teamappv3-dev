@@ -124,3 +124,102 @@ export const getDoctypeModule = async (module) => {
     throw error;
   }
 }; 
+
+/**
+ * Get list filters for a specific doctype
+ * @param {Object} params - Parameters for the report view
+ * @param {string} params.reference_doctype - The doctype to get filters for
+ * @param {string} params.for_user - The user email to filter by
+ * @returns {Promise<Object>} Object containing the list filters
+ */
+export const getReportView = async (params = {}) => {
+  try {
+    const defaultParams = {
+      fields: ["name", "filter_name", "for_user", "filters"],
+      filters: {
+        reference_doctype: params.reference_doctype || ""
+      },
+      or_filters: [
+        ["for_user", "=", params.for_user || ""],
+        ["for_user", "=", ""]
+      ],
+      order_by: "filter_name asc",
+      doctype: "List Filter",
+      limit: 20
+    };
+
+    const response = await erp.get('/api/method/frappe.desk.reportview.get_list', {
+      params: {
+        fields: JSON.stringify(defaultParams.fields),
+        filters: JSON.stringify(defaultParams.filters),
+        or_filters: JSON.stringify(defaultParams.or_filters),
+        order_by: defaultParams.order_by,
+        doctype: defaultParams.doctype,
+        limit: defaultParams.limit
+      }
+    });
+
+    console.log('Report View response:', {
+      params: defaultParams,
+      response: response.data
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching report view:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete an item using frappe.client.delete method
+ * @param {string} doctype - The doctype of the item to delete
+ * @param {string} name - The name/id of the item to delete
+ * @returns {Promise<Object>} Response from the delete operation
+ */
+export const deleteItem = async (doctype, name) => {
+  try {
+    const formData = new FormData();
+    formData.append('doctype', doctype);
+    formData.append('name', name);
+
+    const response = await erp.post('/api/method/frappe.client.delete', formData);
+
+    console.log('Delete item response:', {
+      doctype,
+      name,
+      response: response.data
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting item:', error);
+    throw error;
+  }
+};
+
+/**
+ * Insert a new item using frappe.client.insert method
+ * @param {Object} doc - The document object containing all the fields to insert
+ * @returns {Promise<Object>} Response from the insert operation
+ */
+export const insertItem = async (doc) => {
+  try {
+    const formData = new FormData();
+    formData.append('doc', JSON.stringify(doc));
+
+    const response = await erp.post('/api/method/frappe.client.insert', formData);
+
+    console.log('Insert item response:', {
+      doc,
+      response: response.data
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error inserting item:', error);
+    throw error;
+  }
+};
+
+

@@ -699,12 +699,11 @@
                   multiple 
                   class="sr-only" 
                   @change="handleMultipleFileUpload"
-                  accept="image/*"
                 />
               </label>
               <p v-if="!isMobile" class="pl-1">or drag and drop</p>
             </div>
-            <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+            <p class="text-xs text-gray-500">PNG, JPG, GIF, PDF up to 10MB</p>
           </div>
 
           <!-- Preview Grid -->

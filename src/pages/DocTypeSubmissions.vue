@@ -37,6 +37,92 @@
           />
         </div>
       </div>
+    <!-- Saved Filters -->
+    <div class="mb-4">
+      <button
+        @click="showSavedFilters = !showSavedFilters"
+        class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border mb-2"
+        :class="[
+          showSavedFilters 
+            ? 'bg-green-50 text-green-600 border-green-200' 
+            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+        ]"
+      >
+        <component :is="showSavedFilters ? ChevronUpIcon : ChevronDownIcon" class="w-4 h-4" />
+        Saved Filters
+      </button>
+
+      <!-- Save Current Filter -->
+      <div v-if="showSavedFilters" class="mb-4">
+        <button
+          v-if="!showSaveFilter"
+          @click="showSaveFilter = true"
+          class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-green-600 hover:text-green-700"
+        >
+          <PlusIcon class="w-4 h-4" />
+          Save Current Filter
+        </button>
+        <div v-else class="flex items-center gap-2">
+          <input
+            v-model="newFilterName"
+            type="text"
+            placeholder="Enter filter name"
+            class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+            @keyup.enter="handleSaveFilter"
+          />
+          <button
+            @click="handleSaveFilter"
+            class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+            :disabled="!newFilterName.trim()"
+          >
+            Save
+          </button>
+          <button
+            @click="showSaveFilter = false; newFilterName = ''"
+            class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-700"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <div 
+        v-if="showSavedFilters" 
+        class="border-2 border-dashed border-gray-300 rounded-lg p-4"
+        :class="{ 'min-h-[60px]': savedFilters.length === 0 }"
+      >
+        <div v-if="savedFilters.length === 0" class="flex items-center justify-center h-full text-gray-500 text-sm">
+          No saved filters
+        </div>
+        <div v-else class="flex flex-wrap gap-2">
+          <button
+            v-for="filter in savedFilters"
+            :key="filter.name"
+            @click="handleFilterSelect(filter)"
+            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-full transition-colors border"
+            :class="[
+              selectedFilter?.name === filter.name
+                ? 'bg-green-100 text-green-700 hover:bg-green-200 border-green-300'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+            ]"
+          >
+            <span>{{ filter.filter_name }}</span>
+            <div class="flex gap-2 items-center">
+              <XIcon 
+                v-if="selectedFilter?.name === filter.name"
+                class="w-4 h-4 cursor-pointer text-green-600"
+                @click.stop="clearSelectedFilter"
+              />
+              <TrashIcon 
+                class="w-4 h-4 cursor-pointer text-gray-400 hover:text-red-500"
+                @click.stop="openDeleteModal(filter)"
+                title="Delete filter"
+              />
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
 
       <!-- Field-specific Searches -->
       <div v-if="filteredFields?.length" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -420,6 +506,30 @@
       :single-image-name="selectedFieldname"
       @close="showImageModal = false"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Delete Filter</h3>
+        <p class="text-gray-600 mb-6">
+          Are you sure you want to remove the "{{ filterToDelete?.filter_name }}" filter?
+        </p>
+        <div class="flex justify-end gap-3">
+          <button
+            @click="showDeleteModal = false"
+            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+          >
+            Cancel
+          </button>
+          <button
+            @click="handleDeleteFilter"
+            class="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -429,6 +539,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { getFormList, getFormData, getDoctypePermissions } from '../services/erpnext';
 import { getErpNextApiUrl } from '../utils/api';
+import { getReportView, deleteItem, insertItem } from '../services/deskApi';
 import {
   FileIcon,
   FilePlusIcon,
@@ -450,7 +561,9 @@ import {
   FolderIcon,
   LinkIcon,
   GridIcon,
-  ListIcon
+  ListIcon,
+  XIcon,
+  PlusIcon
 } from 'lucide-vue-next';
 import ImageModal from '../components/ImageModal.vue';
 import PdfIcon from '../components/icons/PdfIcon.vue';
@@ -489,6 +602,13 @@ interface DocTypePermission {
   cancel: number;
   amend: number;
   if_owner: number;
+}
+
+interface SavedFilter {
+  name: string;
+  filter_name: string;
+  for_user: string;
+  filters: string;
 }
 
 const router = useRouter();
@@ -583,6 +703,17 @@ const filteredDocuments = computed(() => {
 
 // Add viewMode ref with other refs
 const viewMode = ref('list');
+
+// Add these refs with other refs
+const showSavedFilters = ref(false);
+const savedFilters = ref<SavedFilter[]>([]);
+const selectedFilter = ref<SavedFilter | null>(null);
+const showDeleteModal = ref(false);
+const filterToDelete = ref<SavedFilter | null>(null);
+
+// Add new refs for save filter functionality
+const showSaveFilter = ref(false);
+const newFilterName = ref('');
 
 // Methods
 const fetchDocType = async () => {
@@ -905,6 +1036,127 @@ const formatDate = (date: string) => {
   }
 };
 
+const handleFilterSelect = (filter: SavedFilter) => {
+  if (!filter) return;
+  
+  try {
+    console.log('Selected Filter:', filter);
+    selectedFilter.value = filter;
+    const filterConditions = JSON.parse(filter.filters || '[]') as string[][];
+    console.log('Raw filter conditions:', filterConditions);
+
+    // Reset all existing field searches
+    fieldSearches.value = Object.fromEntries(
+      filteredFields.value.map(field => [field.fieldname, ''])
+    );
+
+    // Process each filter condition
+    filterConditions.forEach(condition => {
+      if (condition.length >= 4) {
+        const fieldname = condition[1];
+        const value = condition[3];
+        
+        console.log('Processing condition:', { fieldname, value });
+        
+        // Find the matching field and apply the value
+        if (fieldSearches.value.hasOwnProperty(fieldname)) {
+          // Remove any '%' characters and trim the value
+          const cleanValue = value.replace(/%/g, '').trim();
+          fieldSearches.value[fieldname] = cleanValue;
+        }
+      }
+    });
+
+    console.log('Applied field searches:', fieldSearches.value);
+    
+    // Trigger a new search
+    fetchDocuments(1);
+  } catch (error) {
+    console.error('Error applying filter:', error);
+  }
+};
+
+const clearSelectedFilter = () => {
+  selectedFilter.value = null;
+  fieldSearches.value = {};
+  fetchDocuments(1);
+};
+
+const handleDeleteFilter = async () => {
+  if (!filterToDelete.value) return;
+  
+  try {
+    await deleteItem('List Filter', filterToDelete.value.name);
+    
+    // Remove the filter from the list
+    savedFilters.value = savedFilters.value.filter(f => f.name !== filterToDelete.value?.name);
+    
+    // If the deleted filter was selected, clear the selection
+    if (selectedFilter.value?.name === filterToDelete.value.name) {
+      clearSelectedFilter();
+    }
+    
+    // Close the modal
+    showDeleteModal.value = false;
+    filterToDelete.value = null;
+  } catch (error) {
+    console.error('Error deleting filter:', error);
+  }
+};
+
+const openDeleteModal = (filter: SavedFilter) => {
+  filterToDelete.value = filter;
+  showDeleteModal.value = true;
+};
+
+const handleSaveFilter = async () => {
+  if (!newFilterName.value.trim()) return;
+
+  try {
+    // Create filter conditions array from current field searches
+    const filterConditions = Object.entries(fieldSearches.value)
+      .filter(([_, value]) => value) // Only include non-empty searches
+      .map(([fieldname, value]) => [
+        route.params.id as string,
+        fieldname,
+        'like',
+        `%${value}%`
+      ]);
+
+    if (filterConditions.length === 0) {
+      console.warn('No filter conditions to save');
+      return;
+    }
+
+    const newFilter = {
+      doctype: "List Filter",
+      reference_doctype: route.params.id as string,
+      filter_name: newFilterName.value.trim(),
+      for_user: authStore.user?.email || '',
+      filters: JSON.stringify(filterConditions)
+    };
+
+    const response = await insertItem(newFilter);
+    console.log('Filter saved:', response);
+
+    // Add the new filter to the list
+    if (response.message) {
+      savedFilters.value.push({
+        name: response.message.name,
+        filter_name: newFilterName.value.trim(),
+        for_user: authStore.user?.email || '',
+        filters: JSON.stringify(filterConditions)
+      });
+    }
+
+    // Clear the input and hide the save section
+    newFilterName.value = '';
+    showSaveFilter.value = false;
+  } catch (error) {
+    console.error('Error saving filter:', error);
+  }
+};
+
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/auth');
@@ -923,6 +1175,18 @@ onMounted(async () => {
   onUnmounted(() => {
     mediaQuery.removeEventListener('change', handleResize);
   });
+  
+  // Get saved filters for this doctype
+  try {
+    const filtersResponse = await getReportView({
+      reference_doctype: route.params.id as string,
+      for_user: authStore.user?.email
+    });
+    savedFilters.value = filtersResponse.message || [];
+    console.log('Saved Filters:', savedFilters.value);
+  } catch (error) {
+    console.error('Error fetching saved filters:', error);
+  }
   
   await fetchDocType();
   await fetchDocuments();
