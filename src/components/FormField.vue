@@ -20,7 +20,7 @@
         <input
           :id="field.fieldname"
           :value="modelValue"
-          @input="!isGeolocationField && $emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          @input="!isGeolocationField && handleValueUpdate(($event.target as HTMLInputElement).value)"
           type="text"
           :required="isFieldRequired"
           :disabled="isGettingLocation || isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
@@ -66,7 +66,7 @@
       <input
         :id="field.fieldname"
         :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
         type="number"
         :required="isFieldRequired"
         :disabled="field.read_only === 1"
@@ -89,7 +89,7 @@
         <input
           :id="field.fieldname"
           :value="modelValue"
-          @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
           type="date"
           :required="isFieldRequired"
           :disabled="field.read_only === 1"
@@ -114,7 +114,7 @@
         <input
           :id="field.fieldname"
           :value="modelValue"
-          @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
           type="datetime-local"
           :required="isFieldRequired"
           :disabled="field.read_only === 1"
@@ -138,7 +138,7 @@
       <input
         :id="field.fieldname"
         :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
         type="time"
         :required="isFieldRequired"
         :disabled="field.read_only === 1"
@@ -207,7 +207,7 @@
       <select
         :id="field.fieldname"
         :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
+        @input="handleValueUpdate(($event.target as HTMLSelectElement).value)"
         :required="isFieldRequired"
         :disabled="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -232,7 +232,7 @@
       <select
         :id="field.fieldname"
         :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
+        @input="handleValueUpdate(($event.target as HTMLSelectElement).value)"
         :required="isFieldRequired"
         :disabled="field.read_only === 1"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
@@ -254,7 +254,7 @@
         <input
           :id="field.fieldname"
           :checked="modelValue == 1"
-          @change="$emit('update:modelValue', ($event.target as HTMLInputElement).checked)"
+          @change="handleValueUpdate(($event.target as HTMLInputElement).checked)"
           type="checkbox"
           :required="isFieldRequired"
           :disabled="field.read_only === 1"
@@ -269,8 +269,30 @@
       </div>
     </template>
 
-    <!-- Text Area -->
+    <!-- Small Text Input -->
     <template v-else-if="field.fieldtype === 'Small Text'">
+      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+        {{ formattedLabel }}
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
+      </label>
+      <input
+        :id="field.fieldname"
+        :value="modelValue"
+        @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
+        type="text"
+        :required="isFieldRequired"
+        :disabled="field.read_only === 1"
+        :readonly="field.read_only === 1"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
+      />
+    </template>
+
+    <!-- Text Input -->
+    <template v-else-if="field.fieldtype === 'Text'">
       <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
         <span v-if="isFieldRequired" class="text-red-500">*</span>
@@ -278,8 +300,30 @@
       <textarea
         :id="field.fieldname"
         :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
-        rows="3"
+        @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
+        rows="4"
+        :required="isFieldRequired"
+        :disabled="field.read_only === 1"
+        :readonly="field.read_only === 1"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
+      ></textarea>
+    </template>
+
+    <!-- Long Text Input -->
+    <template v-else-if="field.fieldtype === 'Long Text'">
+      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+        {{ formattedLabel }}
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
+      </label>
+      <textarea
+        :id="field.fieldname"
+        :value="modelValue"
+        @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
+        rows="8"
         :required="isFieldRequired"
         :disabled="field.read_only === 1"
         :readonly="field.read_only === 1"
@@ -302,7 +346,7 @@
           <textarea
             :id="field.fieldname"
             :value="modelValue"
-            @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
+            @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
             rows="6"
             :required="isFieldRequired"
             :disabled="field.read_only === 1"
@@ -493,7 +537,7 @@
         <input
           :id="field.fieldname"
           :value="modelValue"
-          @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
           type="color"
           :required="isFieldRequired"
           :disabled="field.read_only === 1"
@@ -504,7 +548,7 @@
         />
         <input
           :value="modelValue"
-          @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
           type="text"
           :required="isFieldRequired"
           :disabled="field.read_only === 1"
@@ -531,7 +575,7 @@
         <input
           :id="field.fieldname"
           :value="modelValue"
-          @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
           type="number"
           step="0.01"
           :required="isFieldRequired"
@@ -590,7 +634,7 @@
       <input
         :id="field.fieldname"
         :value="modelValue"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
         type="password"
         :required="isFieldRequired"
         :disabled="field.read_only === 1"
@@ -613,7 +657,7 @@
         <button
           v-for="rating in 5"
           :key="rating"
-          @click="!field.read_only && $emit('update:modelValue', rating)"
+          @click="!field.read_only && handleValueUpdate(rating)"
           :disabled="field.read_only === 1"
           class="text-gray-300 hover:text-yellow-400 focus:outline-none"
           :class="{ 
@@ -1535,6 +1579,14 @@ watch(() => props.field, (newField) => {
     emit('update:modelValue', newField.default);
   }
 }, { immediate: true });
+
+const handleValueUpdate = (value: any) => {
+  emit('update:modelValue', value);
+  if (props.formData) {
+    props.formData[props.field.fieldname] = value;
+    evaluateFieldDependency(props.field, props.formData);
+  }
+};
 
 defineExpose({ VueTelInput });
 </script>

@@ -728,11 +728,6 @@ const fetchDocType = async () => {
     console.log('Filtered Fields (in_standard_filter=1):', fields);
     filteredFields.value = fields;
 
-    // Initialize fieldSearches with empty strings for each filtered field
-    fieldSearches.value = Object.fromEntries(
-      fields.map(field => [field.fieldname, ''])
-    );
-
     // Check if user has System Manager role
     const isSystemManager = authStore.user?.roles?.includes('System Manager');
     console.log('Is System Manager:', isSystemManager);
@@ -781,7 +776,6 @@ const fetchDocType = async () => {
     // Only proceed if user has read permission or is System Manager
     if (isSystemManager || docTypePermissions.value?.read === 1) {
       // Filter fields to only show those marked for list view
-      console.log('Response Data:', response.data.fields);
       docType.value = {
         ...response.data,
         fields: response.data.fields.filter((field: DocTypeField) => 
@@ -790,6 +784,7 @@ const fetchDocType = async () => {
           field.in_list_view === 1
         )
       };
+      console.log('DocType Fields:', docType.value?.fields);
     } else {
       error.value = "You don't have permission to read this document";
       docType.value = null;
@@ -825,12 +820,15 @@ const fetchDocuments = async (page = 1) => {
       order_by: `${sortBy.value} ${sortDirection.value}`,
       fields: ['name', 'owner', 'creation', 'modified', 'docstatus']
     });
+
+    console.log('Response:', response);
     
     // Fetch full data for each document in the current page
     const fullDocuments = await Promise.all(
       response.data.map(async (doc: { name: string }) => {
         try {
           const docResponse = await getFormData(route.params.id as string, doc.name);
+          console.log('DocResponse:', docResponse);
           return docResponse.data;
         } catch (err) {
           return { name: doc.name, error: 'Failed to load document data' };

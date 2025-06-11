@@ -16,11 +16,11 @@ export function evaluateFieldDependency(
   dependencyType: 'depends_on' | 'mandatory_depends_on' = 'depends_on'
 ): boolean {
   // console.log('\nEvaluating dependency for field:', {
-    // fieldname: field.fieldname,
-    // label: field.label,
-    // depends_on: field.depends_on,
-    // mandatory_depends_on: field.mandatory_depends_on,
-    // evaluating: dependencyType
+  //   fieldname: field.fieldname,
+  //   label: field.label,
+  //   depends_on: field.depends_on,
+  //   mandatory_depends_on: field.mandatory_depends_on,
+  //   evaluating: dependencyType
   // });
 
   if (!field[dependencyType]) {
@@ -89,7 +89,7 @@ export function evaluateFieldDependency(
     });
     
     // Rejoin the parts with &&
-    evalCondition = processedParts.join(' && ');
+    evalCondition = processedParts.join(` ${operators[0]} `);
     // console.log('Final condition to evaluate:', evalCondition);
 
     // Check if there are any remaining doc. references that weren't replaced
@@ -158,7 +158,7 @@ export function evaluateFieldDependency(
     // console.log('Final evaluation result:', finalResult);
     return finalResult;
   } catch (error) {
-    // console.error('Error evaluating field dependency:', error);
+    console.error('Error evaluating field dependency:', error);
     return dependencyType === 'depends_on' ? true : field.reqd === 1;
   }
 } 

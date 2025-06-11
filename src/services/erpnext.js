@@ -193,17 +193,17 @@ export const getFormData = async (doctype, name) => {
     }
     
     // Get the doctype metadata using the getdoctype endpoint
-    const response = await erp.get(`/api/method/frappe.desk.form.load.getdoctype`, {
-      params: {
-        doctype: doctype_param
-      }
-    });
+    // const response = await erp.get(`/api/method/frappe.desk.form.load.getdoctype`, {
+    //   params: {
+    //     doctype: doctype_param
+    //   }
+    // });
     // console.log('Response from getdoctype:', response.data);
-    setCachedMetadata(cacheKey, response.data);
+    // setCachedMetadata(cacheKey, response.data);
     return {
       data: {
         ...webFormData,
-        doctype_meta: response.data
+        // doctype_meta: response.data
       }
     };
   } catch (error) {
