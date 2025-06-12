@@ -275,11 +275,11 @@
         {{ formattedLabel }}
         <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
-      <input
+      <textarea
         :id="field.fieldname"
         :value="modelValue"
-        @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
-        type="text"
+        @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
+        rows="5"
         :required="isFieldRequired"
         :disabled="field.read_only === 1"
         :readonly="field.read_only === 1"
@@ -288,7 +288,7 @@
           'bg-gray-50': field.read_only === 1,
           'cursor-not-allowed': field.read_only === 1
         }"
-      />
+      ></textarea>
     </template>
 
     <!-- Text Input -->
