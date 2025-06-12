@@ -572,6 +572,7 @@ import ErrorMessage from './components/ErrorMessage.vue';
 import DocTypeSearch from './components/DocTypeSearch.vue';
 import FormField from './components/FormField.vue';
 import { useFormSections } from './composables/useFormSections';
+import { errorCapture } from './utils/errorCapture';
 import { 
   HomeIcon, 
   FileTextIcon, 
@@ -818,6 +819,8 @@ const fetchSupportFormData = async () => {
 
     const response2 = await getDocTypeData(response.data.doc_type as string);
 
+    console.log('response2', response2);
+
     // Get the fields from the web form's web_form_fields property
     let fields: RawFormField[] = [];
     try {
@@ -957,6 +960,10 @@ const handleClickOutside = (event: MouseEvent) => {
 // Add and remove event listeners
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
+  console.error('❌ Test Error On Mount');
+  
+  // Initialize error capture (access the singleton to ensure it's initialized)
+  console.log('Error capture initialized. Current error count:', errorCapture.getErrorCount());
   
   // Only fetch modules if user is authenticated
   if (authStore.isAuthenticated) {

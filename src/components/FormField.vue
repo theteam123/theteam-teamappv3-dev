@@ -857,6 +857,7 @@ import { optimizeImage } from '../utils/imageUtils';
 import SignaturePad from 'signature_pad';
 import { useAuthStore } from '../stores/auth';
 import { getCurrentDateFormatted, getCurrentTimeFormatted, getCurrentDateTimeFormatted, toAppTimezoneISO } from '../utils/timezone';
+import { getErrorsAsJson } from '../utils/errorCapture';
 
 interface FormField {
   fieldname: string;
@@ -1587,7 +1588,12 @@ watch(() => props.field, (newField) => {
       const fullUrl = window.location.origin + route.fullPath;
       console.log('Setting page url with all parameters', fullUrl);
       emit('update:modelValue', fullUrl);
-    } 
+    } else if (newField.label?.includes('[support-data]')) {
+      // Get captured errors as JSON
+      const supportData = getErrorsAsJson();
+      console.log('Setting support data (captured errors)', supportData);
+      emit('update:modelValue', supportData);
+    }
     // Handle explicit default values
     else if (newField.default) {
       console.log('setting default value', newField.default);
