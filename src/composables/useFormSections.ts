@@ -107,7 +107,7 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
           currentSection.columnCount++;
           currentSection.columnLabels.push(field.label || '');
         }
-      } else if (!field.hidden && !currentSection.hidden) {
+      } else if (!currentSection.hidden) {
         currentSection.fields.push({
           ...field,
           columnIndex: currentSection.columnCount,

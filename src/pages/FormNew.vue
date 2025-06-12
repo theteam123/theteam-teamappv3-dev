@@ -28,26 +28,126 @@
 
       <div class="bg-white shadow rounded-lg p-6">
         <div class="space-y-8">
-          <div v-for="(section, sectionIndex) in processedSections" :key="sectionIndex">
-            <!-- Section Title -->
-            <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
-              <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
-            </div>
-            
-            <!-- Fields Grid -->
-            <div :class="{
-              'grid gap-6': true,
-              'grid-cols-2': section.columnCount === 2,
-              'grid-cols-1': section.columnCount <= 1
-            }">
-              <FormField
-                v-for="field in section.fields"
-                :key="field.fieldname"
-                :field="field"
-                v-model="formData[field.fieldname]"
-              />
-            </div>
+          <!-- Tabs -->
+          <div v-if="processedSections.hasTabs" class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+              <button
+                v-for="tab in processedSections.tabs"
+                :key="tab.id"
+                type="button"
+                @click="currentTab = tab.id"
+                :class="[
+                  currentTab === tab.id
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                  'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                ]"
+              >
+                {{ tab.label }}
+              </button>
+            </nav>
           </div>
+
+          <!-- Tab Content -->
+          <template v-if="processedSections.hasTabs">
+            <div
+              v-for="tab in processedSections.tabs"
+              :key="tab.id"
+              v-show="currentTab === tab.id"
+              class="space-y-8"
+            >
+              <div 
+                v-for="(section, sectionIndex) in tab.sections" 
+                :key="sectionIndex"
+                :class="[
+                  'transition-all duration-200 ease-in-out',
+                  { 'opacity-0 h-0 overflow-hidden': section.hidden }
+                ]"
+              >
+                <!-- Section Title -->
+                <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
+                  <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                </div>
+                
+                <!-- Fields Grid -->
+                <div>
+                  <!-- Column Labels -->
+                  <div v-if="section.columnLabels.length > 0" :class="{
+                    'grid gap-6 mb-4': true,
+                    'grid-cols-2': section.columnCount === 2,
+                    'grid-cols-1': section.columnCount <= 1
+                  }">
+                    <div v-for="(label, idx) in section.columnLabels" :key="idx" class="text-sm font-medium text-gray-700">
+                      {{ label }}
+                    </div>
+                  </div>
+                  
+                  <!-- Fields -->
+                  <div :class="{
+                    'grid gap-6': true,
+                    'grid-cols-2': section.columnCount === 2,
+                    'grid-cols-1': section.columnCount <= 1
+                  }">
+                    <FormField
+                      v-for="field in section.fields"
+                      :key="field.fieldname"
+                      :field="field"
+                      v-model="formData[field.fieldname]"
+                      :formData="formData"
+                      :parentDocName="route.params.id as string"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Non-tabbed content -->
+          <template v-else>
+            <div 
+              v-for="(section, sectionIndex) in processedSections.sections" 
+              :key="sectionIndex"
+              :class="[
+                'transition-all duration-200 ease-in-out',
+                { 'opacity-0 h-0 overflow-hidden': section.hidden }
+              ]"
+            >
+              <!-- Section Title -->
+              <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
+                <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+              </div>
+              
+              <!-- Fields Grid -->
+              <div>
+                <!-- Column Labels -->
+                <div v-if="section.columnLabels.length > 0" :class="{
+                  'grid gap-6 mb-4': true,
+                  'grid-cols-2': section.columnCount === 2,
+                  'grid-cols-1': section.columnCount <= 1
+                }">
+                  <div v-for="(label, idx) in section.columnLabels" :key="idx" class="text-sm font-medium text-gray-700">
+                    {{ label }}
+                  </div>
+                </div>
+                
+                <!-- Fields -->
+                <div :class="{
+                  'grid gap-6': true,
+                  'grid-cols-2': section.columnCount === 2,
+                  'grid-cols-1': section.columnCount <= 1
+                }">
+                  <FormField
+                    v-for="field in section.fields"
+                    :key="field.fieldname"
+                    :field="field"
+                    v-model="formData[field.fieldname]"
+                    :formData="formData"
+                    :parentDocName="route.params.id as string"
+                  />
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
@@ -85,10 +185,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { getFormData, createForm } from '../services/erpnext';
+import { getFormData, createForm, getDocTypeData } from '../services/erpnext';
 import FormField from '../components/FormField.vue';
 import { useFormSections } from '../composables/useFormSections';
 import {
@@ -133,6 +233,7 @@ const error = ref<string | null>(null);
 const form = ref<Form | null>(null);
 const formData = ref<Record<string, any>>({});
 const showSubmittedModal = ref(false);
+const currentTab = ref<string>('');
 
 const { processedSections } = useFormSections(computed(() => form.value?.fields));
 
@@ -149,14 +250,20 @@ const fetchFormData = async () => {
     }
 
     console.log('Raw API response:', response.data);
-    console.log('Raw API response doctype_meta:', response.data.doctype_meta.docs[0].fields);
+    console.log('Raw API response doctype:', response.data.doc_type);
+    console.log('Raw API response doctype_meta:', response.data.web_form_fields);
+
+    const response2 = await getDocTypeData(response.data.doc_type as string);
+
+    console.log('Raw API response:', response2.docs[0]);
+    console.log('Raw API response doctype_meta:', response2.docs[0].fields);
 
     // Get the fields from the web form's web_form_fields property
     let fields: RawFormField[] = [];
     try {
-      if (response.data.web_form_fields) {
+      if (response2.docs[0].fields) {
         // fields = response.data.web_form_fields;
-        fields = response.data.doctype_meta.docs[0].fields;
+        fields = response2.docs[0].fields;
       }
     } catch (err) {
       console.error('Error parsing fields:', err);
@@ -225,6 +332,13 @@ const resetFormForNewSubmission = () => {
     });
   }
 };
+
+// Set initial tab when form loads
+watch(() => processedSections.value, (newValue) => {
+  if (newValue.hasTabs && newValue.tabs.length > 0 && !currentTab.value) {
+    currentTab.value = newValue.tabs[0].id;
+  }
+}, { immediate: true });
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) {

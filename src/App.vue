@@ -304,6 +304,202 @@
         </div>
       </div>
 
+      <!-- Support Modal -->
+      <div v-if="showSupportModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50" @click="showSupportModal = false">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4" @click.stop>
+          <!-- Modal Header -->
+          <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900">Support</h3>
+            <button @click="showSupportModal = false" class="text-gray-400 hover:text-gray-500">
+              <XIcon class="w-6 h-6" />
+            </button>
+          </div>
+
+          <!-- Modal Content -->
+          <div class="px-6 py-4">
+            <!-- Loading State -->
+            <div v-if="supportLoading" class="flex justify-center items-center py-8">
+              <LoaderIcon class="w-8 h-8 animate-spin text-green-600" />
+            </div>
+
+            <!-- Error State -->
+            <div v-else-if="supportError" class="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
+              {{ supportError }}
+            </div>
+
+            <!-- Form -->
+            <form v-else-if="supportForm" @submit.prevent="handleSupportSubmit" class="max-w-3xl">
+              <div class="space-y-6">
+                <!-- Tabs -->
+                <div v-if="supportProcessedSections.hasTabs" class="border-b border-gray-200">
+                  <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button
+                      v-for="tab in supportProcessedSections.tabs"
+                      :key="tab.id"
+                      type="button"
+                      @click="currentSupportTab = tab.id"
+                      :class="[
+                        currentSupportTab === tab.id
+                          ? 'border-green-500 text-green-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                        'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                      ]"
+                    >
+                      {{ tab.label }}
+                    </button>
+                  </nav>
+                </div>
+
+                <!-- Tab Content -->
+                <template v-if="supportProcessedSections.hasTabs">
+                  <div
+                    v-for="tab in supportProcessedSections.tabs"
+                    :key="tab.id"
+                    v-show="currentSupportTab === tab.id"
+                    class="space-y-6"
+                  >
+                    <div 
+                      v-for="(section, sectionIndex) in tab.sections" 
+                      :key="sectionIndex"
+                      :class="[
+                        'transition-all duration-200 ease-in-out',
+                        { 'opacity-0 h-0 overflow-hidden': section.hidden }
+                      ]"
+                    >
+                      <!-- Section Title -->
+                      <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
+                        <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                      </div>
+                      
+                      <!-- Fields Grid -->
+                      <div>
+                        <!-- Column Labels -->
+                        <div v-if="section.columnLabels.length > 0" :class="{
+                          'grid gap-6 mb-4': true,
+                          'grid-cols-2': section.columnCount === 2,
+                          'grid-cols-1': section.columnCount <= 1
+                        }">
+                          <div v-for="(label, idx) in section.columnLabels" :key="idx" class="text-sm font-medium text-gray-700">
+                            {{ label }}
+                          </div>
+                        </div>
+                        
+                        <!-- Fields -->
+                        <div :class="{
+                          'grid gap-6': true,
+                          'grid-cols-2': section.columnCount === 2,
+                          'grid-cols-1': section.columnCount <= 1
+                        }">
+                          <FormField
+                            v-for="field in section.fields"
+                            :key="field.fieldname"
+                            :field="field"
+                            v-model="supportFormData[field.fieldname]"
+                            :formData="supportFormData"
+                            parentDocName="support-request"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Non-tabbed content -->
+                <template v-else>
+                  <div 
+                    v-for="(section, sectionIndex) in supportProcessedSections.sections" 
+                    :key="sectionIndex"
+                    :class="[
+                      'transition-all duration-200 ease-in-out',
+                      { 'opacity-0 h-0 overflow-hidden': section.hidden }
+                    ]"
+                  >
+                    <!-- Section Title -->
+                    <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
+                      <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                    </div>
+                    
+                    <!-- Fields Grid -->
+                    <div>
+                      <!-- Column Labels -->
+                      <div v-if="section.columnLabels.length > 0" :class="{
+                        'grid gap-6 mb-4': true,
+                        'grid-cols-2': section.columnCount === 2,
+                        'grid-cols-1': section.columnCount <= 1
+                      }">
+                        <div v-for="(label, idx) in section.columnLabels" :key="idx" class="text-sm font-medium text-gray-700">
+                          {{ label }}
+                        </div>
+                      </div>
+                      
+                      <!-- Fields -->
+                      <div :class="{
+                        'grid gap-6': true,
+                        'grid-cols-2': section.columnCount === 2,
+                        'grid-cols-1': section.columnCount <= 1
+                      }">
+                        <FormField
+                          v-for="field in section.fields"
+                          :key="field.fieldname"
+                          :field="field"
+                          v-model="supportFormData[field.fieldname]"
+                          :formData="supportFormData"
+                          parentDocName="support-request"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </form>
+
+            <!-- Placeholder for empty state -->
+            <div v-else class="text-center py-12">
+              <HelpCircleIcon class="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              <h4 class="text-xl font-semibold text-gray-900 mb-2">How can we help you?</h4>
+              <p class="text-gray-500">Loading support form...</p>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            <button
+              @click="showSupportModal = false"
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              v-if="supportForm && !supportLoading && !supportError"
+              @click="handleSupportSubmit"
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md hover:bg-green-700"
+              :disabled="supportSubmitting"
+            >
+              {{ supportSubmitting ? 'Submitting...' : 'Submit Request' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Support Success Modal -->
+      <div v-if="showSupportSuccessModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20 z-50" @click="showSupportSuccessModal = false">
+        <div class="bg-white rounded-lg shadow-lg p-8 max-w-lg w-full flex flex-col items-center" @click.stop>
+          <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Request Submitted</h2>
+          <p class="text-gray-600 mb-6 text-center">Thank you for your support request. Our team will get back to you soon.</p>
+          <div class="flex gap-3 justify-center">
+            <button @click="resetSupportForm" class="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">Submit another request</button>
+            <button @click="showSupportSuccessModal = false" class="px-4 py-2 rounded btn-primary text-white hover:bg-green-700">Close</button>
+          </div>
+        </div>
+      </div>
+
       <div class="flex-1 flex flex-col">
         <!-- Top Navigation Bar -->
         <div class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 fixed top-0 left-0 right-0 z-40">
@@ -369,10 +565,13 @@ import { useAuthStore } from './stores/auth';
 import { getErpNextApiUrl } from './utils/api';
 import { getLogo, getDocumentItems } from './config/domains';
 import { getModules } from './services/deskApi';
+import { getFormData, createForm, getDocTypeData } from './services/erpnext';
 import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
 import ErrorMessage from './components/ErrorMessage.vue';
 import DocTypeSearch from './components/DocTypeSearch.vue';
+import FormField from './components/FormField.vue';
+import { useFormSections } from './composables/useFormSections';
 import { 
   HomeIcon, 
   FileTextIcon, 
@@ -412,6 +611,34 @@ interface Module {
   description: string;
 }
 
+interface FormField {
+  fieldname: string;
+  label: string;
+  fieldtype: string;
+  reqd: number;
+  options?: string;
+  hidden?: number;
+  depends_on?: string;
+}
+
+interface Form {
+  id: string;
+  title: string;
+  description: string;
+  fields: FormField[];
+}
+
+interface RawFormField {
+  fieldname: string;
+  label: string;
+  fieldtype: string;
+  reqd: number;
+  options?: string;
+  hidden?: number;
+  depends_on?: string;
+  default?: string;
+}
+
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
@@ -425,10 +652,20 @@ const searchQuery = ref('');
 const showSearchResults = ref(false);
 const searchResults = ref<SearchResult[]>([]);
 const showUserModal = ref(false);
+const showSupportModal = ref(false);
 const isEditing = ref(false);
 const isSaving = ref(false);
 const userData = ref(null);
 const sidebarRef = ref<HTMLElement | null>(null);
+
+// Support form related state
+const supportForm = ref<Form | null>(null);
+const supportFormData = ref<Record<string, any>>({});
+const supportLoading = ref(false);
+const supportSubmitting = ref(false);
+const supportError = ref<string | null>(null);
+const showSupportSuccessModal = ref(false);
+const currentSupportTab = ref<string>('');
 
 const documentItems = computed(() => {
   const items = getDocumentItems();
@@ -539,10 +776,129 @@ const handleDocumentClick = (item) => {
   router.push(item.path);
 };
 
-const handleSupportClick = () => {
-  // TODO: Implement support functionality
-  window.open('https://support.theteam.net.au', '_blank');
+const handleSupportClick = async () => {
+  showSupportModal.value = true;
+  if (!supportForm.value) {
+    await fetchSupportFormData();
+  } else {
+    // Update page URL field with current route if form is already loaded
+    updatePageUrlField();
+  }
 };
+
+// Function to update page URL field with current route
+const updatePageUrlField = () => {
+  if (supportForm.value) {
+    // Find any field with [page-url] in the label
+    const pageUrlField = supportForm.value.fields.find(field => 
+      field.label?.includes('[page-url]')
+    );
+    
+    if (pageUrlField) {
+      // Update the form data with current page URL
+      const currentUrl = window.location.origin + route.fullPath;
+      supportFormData.value[pageUrlField.fieldname] = currentUrl;
+      console.log('Updated page URL field with current route:', currentUrl);
+    }
+  }
+};
+
+// Support form functions
+const fetchSupportFormData = async () => {
+  supportLoading.value = true;
+  supportError.value = null;
+  
+  try {
+    // Get the form data which includes the fields
+    const response = await getFormData('Web Form', 'support-request');
+    
+    if (!response.data) {
+      throw new Error('No form data received');
+    }
+
+    const response2 = await getDocTypeData(response.data.doc_type as string);
+
+    // Get the fields from the web form's web_form_fields property
+    let fields: RawFormField[] = [];
+    try {
+      if (response2.docs[0].fields) {
+        fields = response2.docs[0].fields;
+      }
+    } catch (err) {
+      console.error('Error parsing fields:', err);
+      fields = [];
+    }
+
+
+    supportForm.value = {
+      id: 'support-request',
+      title: response.data.title || 'Support Request',
+      description: response.data.description || '',
+      fields: fields.map((field: RawFormField) => ({
+        fieldname: field.fieldname,
+        label: field.label,
+        fieldtype: field.fieldtype,
+        default: field.default,
+        reqd: field.reqd || 0,
+        options: field.options || '',
+        depends_on: field.depends_on,
+        hidden: field.hidden || 0
+      }))
+    };
+    
+    // Initialize form data with empty values
+    supportFormData.value = {};
+    supportForm.value.fields.forEach((field: FormField) => {
+      if (!['Section Break', 'Column Break'].includes(field.fieldtype)) {
+        supportFormData.value[field.fieldname] = '';
+      }
+    });
+
+  } catch (err: any) {
+    console.error('Error fetching support form data:', err);
+    supportError.value = err.message || 'Failed to load support form data';
+  } finally {
+    supportLoading.value = false;
+  }
+};
+
+const handleSupportSubmit = async () => {
+  supportSubmitting.value = true;
+  supportError.value = null;
+
+  try {
+    await createForm('support-request', supportFormData.value);
+    showSupportSuccessModal.value = true;
+    showSupportModal.value = false;
+  } catch (err: any) {
+    supportError.value = err.message;
+  } finally {
+    supportSubmitting.value = false;
+  }
+};
+
+const resetSupportForm = () => {
+  showSupportSuccessModal.value = false;
+  supportFormData.value = {};
+  // Re-initialize form fields
+  if (supportForm.value) {
+    supportForm.value.fields.forEach((field: FormField) => {
+      if (!['Section Break', 'Column Break'].includes(field.fieldtype) ) {
+        supportFormData.value[field.fieldname] = '';
+      }
+    });
+  }
+};
+
+// Add computed for form sections
+const { processedSections: supportProcessedSections } = useFormSections(computed(() => supportForm.value?.fields));
+
+// Set initial tab when form loads
+watch(() => supportProcessedSections.value, (newValue) => {
+  if (newValue.hasTabs && newValue.tabs.length > 0 && !currentSupportTab.value) {
+    currentSupportTab.value = newValue.tabs[0].id;
+  }
+}, { immediate: true });
 
 // Add new refs and methods
 const editForm = ref({

@@ -85,7 +85,7 @@ export const useAuthStore = defineStore('auth', {
         
         // Store token in localStorage first
         localStorage.setItem('oauth_token', token);
-        localStorage.setItem('oauth_token_expiry', Date.now() + (3600 * 1000)); // 1 hour expiry
+        localStorage.setItem('oauth_token_expiry',Date.now() + (30 * 24 * 60 * 60 * 1000)); // 1 hour expiry
         
         const apiUrl = getErpNextApiUrl();
         

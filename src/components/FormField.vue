@@ -1,7 +1,7 @@
 <template>
   <div :class="[
     'transition-all duration-200 ease-in-out',
-    shouldShowField ? 'space-y-2' : 'hidden'
+    field.hidden === 1 ? 'hidden' : (shouldShowField ? 'space-y-2' : 'hidden')
   ]">
     <!-- Section Break -->
     <template v-if="field.fieldtype === 'Section Break'">
@@ -845,6 +845,7 @@
 
 <script setup lang="ts">
 import { ref, onUnmounted, watch, onMounted, nextTick, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { VueTelInput } from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
 import { getFormList, uploadFile } from '../services/erpnext';
@@ -900,6 +901,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: any): void;
 }>();
 
+const route = useRoute();
 const imagePreview = ref<string | null>(null);
 const showDurationPopup = ref(false);
 const durationParts = ref({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -1576,25 +1578,36 @@ const getDefaultValueFromField = (field: FormField) => {
 
 // Watch for field changes and set default value if needed
 watch(() => props.field, (newField) => {
-  // Only set default if no value is currently set
-  if (!props.modelValue && newField.default) {
-    console.log('setting default value', newField.default);
-    if (newField.default == 'Now') {
-      if (newField.fieldtype === 'Datetime') {
-        // For datetime-local input, use Australia/Sydney timezone
-        emit('update:modelValue', getCurrentDateTimeFormatted());
-      } else if (newField.fieldtype === 'Date') {
-        // For date input, use Australia/Sydney timezone
-        emit('update:modelValue', getCurrentDateFormatted());
-      } else if (newField.fieldtype === 'Time') {
-        // For time input, use Australia/Sydney timezone
-        emit('update:modelValue', getCurrentTimeFormatted());
+
+  // Only set if no value is currently set
+  if (!props.modelValue) {
+    // Handle special labels first (these don't need explicit default values)
+    if (newField.label?.includes('[page-url]')) {
+      // Get complete URL with all parameters using Vue Router
+      const fullUrl = window.location.origin + route.fullPath;
+      console.log('Setting page url with all parameters', fullUrl);
+      emit('update:modelValue', fullUrl);
+    } 
+    // Handle explicit default values
+    else if (newField.default) {
+      console.log('setting default value', newField.default);
+      if (newField.default == 'Now') {
+        if (newField.fieldtype === 'Datetime') {
+          // For datetime-local input, use Australia/Sydney timezone
+          emit('update:modelValue', getCurrentDateTimeFormatted());
+        } else if (newField.fieldtype === 'Date') {
+          // For date input, use Australia/Sydney timezone
+          emit('update:modelValue', getCurrentDateFormatted());
+        } else if (newField.fieldtype === 'Time') {
+          // For time input, use Australia/Sydney timezone
+          emit('update:modelValue', getCurrentTimeFormatted());
+        } else {
+          // For other field types, use ISO string in app timezone
+          emit('update:modelValue', toAppTimezoneISO());
+        }
       } else {
-        // For other field types, use ISO string in app timezone
-        emit('update:modelValue', toAppTimezoneISO());
+        emit('update:modelValue', newField.default);
       }
-    } else {
-      emit('update:modelValue', newField.default);
     }
   }
 }, { immediate: true });
