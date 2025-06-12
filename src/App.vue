@@ -333,7 +333,6 @@
           <button
             @click="handleSupportClick"
             class="flex items-center gap-2 px-4 py-2 btn-primary text-white rounded-lg shadow-sm transition-colors"
-            style="display: none;"
           >
             <HelpCircleIcon class="w-5 h-5" />
             <span class="hidden sm:inline">Support</span>

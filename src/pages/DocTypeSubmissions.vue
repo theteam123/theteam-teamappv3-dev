@@ -1023,7 +1023,8 @@ const formatDate = (date: string) => {
       return 'N/A';
     }
     
-    return parsedDate.toLocaleDateString('en-US', {
+    return parsedDate.toLocaleDateString('en-AU', {
+      timeZone: 'Australia/Sydney',
       year: 'numeric',
       month: 'short',
       day: 'numeric'

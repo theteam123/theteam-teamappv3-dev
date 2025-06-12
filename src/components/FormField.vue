@@ -855,6 +855,7 @@ import { getErpNextApiUrl } from '../utils/api';
 import { optimizeImage } from '../utils/imageUtils';
 import SignaturePad from 'signature_pad';
 import { useAuthStore } from '../stores/auth';
+import { getCurrentDateFormatted, getCurrentTimeFormatted, getCurrentDateTimeFormatted, toAppTimezoneISO } from '../utils/timezone';
 
 interface FormField {
   fieldname: string;
@@ -1569,6 +1570,7 @@ const formatDisplayDateTime = (isoDateTime: string) => {
 
 // Add function to extract default value from field
 const getDefaultValueFromField = (field: FormField) => {
+  console.log('getDefaultValueFromField', field.default);
   return field.default || null;
 };
 
@@ -1576,7 +1578,24 @@ const getDefaultValueFromField = (field: FormField) => {
 watch(() => props.field, (newField) => {
   // Only set default if no value is currently set
   if (!props.modelValue && newField.default) {
-    emit('update:modelValue', newField.default);
+    console.log('setting default value', newField.default);
+    if (newField.default == 'Now') {
+      if (newField.fieldtype === 'Datetime') {
+        // For datetime-local input, use Australia/Sydney timezone
+        emit('update:modelValue', getCurrentDateTimeFormatted());
+      } else if (newField.fieldtype === 'Date') {
+        // For date input, use Australia/Sydney timezone
+        emit('update:modelValue', getCurrentDateFormatted());
+      } else if (newField.fieldtype === 'Time') {
+        // For time input, use Australia/Sydney timezone
+        emit('update:modelValue', getCurrentTimeFormatted());
+      } else {
+        // For other field types, use ISO string in app timezone
+        emit('update:modelValue', toAppTimezoneISO());
+      }
+    } else {
+      emit('update:modelValue', newField.default);
+    }
   }
 }, { immediate: true });
 

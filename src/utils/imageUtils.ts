@@ -1,4 +1,5 @@
 import { GeolocationData, WatermarkField } from './formUtils';
+import { formatInAppTimezone, toAppTimezoneISO } from './timezone';
 
 interface GeolocationField {
   type: 'lat' | 'lng' | 'address';
@@ -105,12 +106,11 @@ export const addWatermark = async (imageFile: File, options: WatermarkOptions): 
         bottomBarHeight += addressLines * lineHeight;
       }
 
-      // Add space for timestamp
-      const timestamp = new Date().toLocaleDateString('en-AU', {
+      // Add space for timestamp (in Australia/Sydney timezone)
+      const timestamp = formatInAppTimezone(new Date(), {
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric'
-      }) + ' ' + new Date().toLocaleTimeString('en-AU', {
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
@@ -265,7 +265,7 @@ export const downloadWatermarkedFile = (options: WatermarkDownloadOptions) => {
   const downloadUrl = URL.createObjectURL(file);
   const downloadLink = document.createElement('a');
   downloadLink.href = downloadUrl;
-  downloadLink.download = `watermarked_${fieldname}_${docTypeId}_${new Date().toISOString()}.jpg`;
+  downloadLink.download = `watermarked_${fieldname}_${docTypeId}_${toAppTimezoneISO().replace(/[:.]/g, '-')}.jpg`;
   document.body.appendChild(downloadLink);
   downloadLink.click();
   document.body.removeChild(downloadLink);

@@ -354,7 +354,8 @@ const formatFileSize = (bytes: number) => {
 };
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', {
+  return new Date(date).toLocaleDateString('en-AU', {
+    timeZone: 'Australia/Sydney',
     year: 'numeric',
     month: 'short',
     day: 'numeric'

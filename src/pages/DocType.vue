@@ -600,12 +600,12 @@ const formatDate = (date: string) => {
       return 'N/A';
     }
 
-    // Format in local timezone
-    return parsedDate.toLocaleDateString('en-US', {
+    // Format in Australia/Sydney timezone
+    return parsedDate.toLocaleDateString('en-AU', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      timeZone: 'UTC' // Keep in UTC to match server time
+      timeZone: 'Australia/Sydney'
     });
   } catch (err) {
     console.warn('Error formatting date:', err);
