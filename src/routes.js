@@ -116,7 +116,7 @@ const routes = [
     component: DocType,
     meta: { 
       requiresAuth: true,
-      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
     }
   },
   {
@@ -125,7 +125,7 @@ const routes = [
     component: DocType,
     meta: { 
       requiresAuth: true,
-      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician'],
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician'],
       portal: 'taktec'
     }
   },
@@ -135,7 +135,7 @@ const routes = [
     component: DocTypeSubmissions,
     meta: { 
       requiresAuth: true,
-      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
     }
   },
   {
@@ -144,7 +144,7 @@ const routes = [
     component: DocTypeForm,
     meta: { 
       requiresAuth: true,
-      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
     }
   },
   {
@@ -153,7 +153,7 @@ const routes = [
     component: DocTypeDocumentEdit,
     meta: { 
       requiresAuth: true,
-      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
     }
   },
   {
@@ -162,7 +162,7 @@ const routes = [
     component: DocTypeImages,
     meta: { 
       requiresAuth: true,
-      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
     }
   },
   {
@@ -171,7 +171,7 @@ const routes = [
     component: () => import('./pages/DocTypeSingleImage.vue'),
     meta: { 
       requiresAuth: true,
-      requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician' ]
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician' ]
     }
   },
   {

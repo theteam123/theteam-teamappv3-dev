@@ -109,8 +109,26 @@ export const DOMAINS = {
     },
     documentItems: []
   },
+  'mrces': {
+    key: 'TheTeamApp',
+    apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
+    fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
+    logo: '/mrces-logo.jpg',
+    ico: '/mrces-logo.jpg',
+    theme: {
+      primary: '#15803d', // green-700
+      secondary: '#4ade80', // green-400
+      accent: '#22c55e' // green-500
+    },
+    oauthConfig: {
+      clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
+      clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET,
+      redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI
+    },
+    documentItems: []
+  },
   'default': {
-    key: 'TheTeam',
+    key: 'TheTeamApp',
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/TeamLogo.png',
@@ -134,10 +152,11 @@ export const DOMAINS = {
  * @returns {Object} Domain configuration object
  */
 export const getDomainConfig = () => {
-  const currentDomain = window.location.hostname;
+  // const currentDomain = window.location.hostname;
   // For testing purposes, set the current domain to 'teamsite-sgcloud'
   // const currentDomain = 'teamsite-sgcloud';
   // const currentDomain = 'taktec';
+  const currentDomain = 'mrces';
   
   // Find the matching domain configuration
   const domainKey = Object.keys(DOMAINS).find(key => 
