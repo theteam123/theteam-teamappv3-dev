@@ -75,16 +75,21 @@ const handleCallback = async () => {
     console.log('OAuth Callback - Token received:', token ? 'Present' : 'Missing');
     
     // Update auth store with token
-    const success = await authStore.setToken(token);
-    
-    if (success) {
-      console.log('OAuth Callback - Auth store updated successfully');
-      // Clear the URL hash to prevent double processing
-      window.history.replaceState(null, '', window.location.pathname);
-      // Automatically redirect to home
-      router.push('/');
-    } else {
-      throw new Error('Failed to update auth store');
+    try {
+      const success = await authStore.setToken(token);
+      
+      if (success) {
+        console.log('OAuth Callback - Auth store updated successfully');
+        // Clear the URL hash to prevent double processing
+        window.history.replaceState(null, '', window.location.pathname);
+        // Automatically redirect to home
+        router.push('/');
+      } else {
+        throw new Error('Failed to update auth store - Token validation failed');
+      }
+    } catch (storeError) {
+      console.error('OAuth Callback - Auth Store Error:', storeError);
+      throw new Error(`Auth store update failed: ${storeError.message}`);
     }
   } catch (err) {
     console.error('OAuth Callback - Error:', err);
@@ -92,7 +97,9 @@ const handleCallback = async () => {
     errorDetails.value = JSON.stringify({
       url: window.location.href,
       hash: window.location.hash,
-      error: err.message
+      error: err.message,
+      timestamp: new Date().toISOString(),
+      domain: window.location.hostname
     }, null, 2);
     loading.value = false;
   } finally {

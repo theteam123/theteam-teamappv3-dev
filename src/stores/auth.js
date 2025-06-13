@@ -102,11 +102,15 @@ export const useAuthStore = defineStore('auth', {
         if (!response.ok) {
           const errorData = await response.json();
           console.error('Auth Store - User info error:', errorData);
-          throw new Error('Failed to get user info');
+          throw new Error(`Failed to get user info: ${errorData.message || 'Unknown error'}`);
         }
 
         const userData = await response.json();
         console.log('Auth Store - User info received:', userData);
+
+        if (!userData.message) {
+          throw new Error('Invalid user data received from server');
+        }
 
         // Get detailed user information
         const userDetailsResponse = await fetch(`${apiUrl}/api/resource/User/${userData.message}`, {
@@ -116,12 +120,17 @@ export const useAuthStore = defineStore('auth', {
         });
 
         if (!userDetailsResponse.ok) {
-          console.error('Auth Store - User details fetch failed:', await userDetailsResponse.json());
-          throw new Error('Failed to get user details');
+          const errorData = await userDetailsResponse.json();
+          console.error('Auth Store - User details fetch failed:', errorData);
+          throw new Error(`Failed to get user details: ${errorData.message || 'Unknown error'}`);
         }
 
         const userDetails = await userDetailsResponse.json();
         console.log('Auth Store - User details received:', userDetails);
+
+        if (!userDetails.data) {
+          throw new Error('Invalid user details received from server');
+        }
 
         // Get user roles to verify identity
         const rolesResponse = await fetch(`${apiUrl}/api/method/frappe.core.doctype.user.user.get_roles`, {
@@ -136,12 +145,17 @@ export const useAuthStore = defineStore('auth', {
         });
 
         if (!rolesResponse.ok) {
-          console.error('Auth Store - Roles verification failed:', await rolesResponse.json());
-          throw new Error('Failed to verify user roles');
+          const errorData = await rolesResponse.json();
+          console.error('Auth Store - Roles verification failed:', errorData);
+          throw new Error(`Failed to verify user roles: ${errorData.message || 'Unknown error'}`);
         }
 
         const rolesData = await rolesResponse.json();
         console.log('Auth Store - User roles:', rolesData);
+
+        if (!rolesData.message) {
+          throw new Error('Invalid roles data received from server');
+        }
 
         // Update state with verified user info
         this.user = {
