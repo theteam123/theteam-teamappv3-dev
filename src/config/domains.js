@@ -123,7 +123,7 @@ export const DOMAINS = {
     oauthConfig: {
       clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
       clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET,
-      redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI
+      redirectUri: import.meta.env.VITE_OAUTH_MRCES_REDIRECT_URI
     },
     documentItems: []
   },
@@ -152,11 +152,11 @@ export const DOMAINS = {
  * @returns {Object} Domain configuration object
  */
 export const getDomainConfig = () => {
-  // const currentDomain = window.location.hostname;
+  const currentDomain = window.location.hostname;
   // For testing purposes, set the current domain to 'teamsite-sgcloud'
   // const currentDomain = 'teamsite-sgcloud';
   // const currentDomain = 'taktec';
-  const currentDomain = 'mrces';
+  // const currentDomain = 'mrces';
   
   // Find the matching domain configuration
   const domainKey = Object.keys(DOMAINS).find(key => 
