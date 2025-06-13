@@ -69,9 +69,10 @@ export const getAccessToken = async (code) => {
     if (response.data.access_token) {
       // Store the token and its expiry
       localStorage.setItem('oauth_token', response.data.access_token);
-      console.log('oauth_token', response.data.access_token);
-      console.log('oauth_token_expiry', Date.now() + (30 * 24 * 60 * 60 * 1000)); // 30 days expiry
-      localStorage.setItem('oauth_token_expiry', Date.now() + (30 * 24 * 60 * 60 * 1000));
+      // Set expiry to 1 hour from now (3600 seconds)
+      const expiryTime = Date.now() + (3600 * 1000);
+      console.log('Token expiry set to:', new Date(expiryTime).toISOString());
+      localStorage.setItem('oauth_token_expiry', expiryTime);
       return response.data.access_token;
     }
     throw new Error('No access token received');
@@ -93,7 +94,10 @@ export const refreshAccessToken = async (refreshToken) => {
 
     if (response.data.access_token) {
       localStorage.setItem('oauth_token', response.data.access_token);
-      localStorage.setItem('oauth_token_expiry', Date.now() + (30 * 24 * 60 * 60 * 1000)); // 30 days expiry
+      // Set expiry to 1 hour from now (3600 seconds)
+      const expiryTime = Date.now() + (3600 * 1000);
+      console.log('Token expiry set to:', new Date(expiryTime).toISOString());
+      localStorage.setItem('oauth_token_expiry', expiryTime);
       return response.data.access_token;
     }
     throw new Error('No access token received');
@@ -110,14 +114,25 @@ export const getCurrentToken = async () => {
   const refreshToken = localStorage.getItem('oauth_refresh_token');
 
   if (!token || !expiry) {
+    console.log('No token or expiry found');
     return null;
   }
 
+  const expiryTime = parseInt(expiry);
+  const now = Date.now();
+  console.log('Token expiry check:', {
+    expiryTime: new Date(expiryTime).toISOString(),
+    now: new Date(now).toISOString(),
+    isExpired: now > expiryTime
+  });
+
   // If token is expired and we have a refresh token, try to refresh
-  if (Date.now() > parseInt(expiry) && refreshToken) {
+  if (now > expiryTime && refreshToken) {
+    console.log('Token expired, attempting refresh');
     try {
       return await refreshAccessToken(refreshToken);
     } catch (error) {
+      console.error('Token refresh failed:', error);
       // If refresh fails, clear tokens and return null
       localStorage.removeItem('oauth_token');
       localStorage.removeItem('oauth_token_expiry');

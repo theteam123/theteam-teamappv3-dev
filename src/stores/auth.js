@@ -85,9 +85,11 @@ export const useAuthStore = defineStore('auth', {
         
         // Store token in localStorage first
         localStorage.setItem('oauth_token', token);
-        localStorage.setItem('oauth_token_expiry',Date.now() + (30 * 24 * 60 * 60 * 1000)); // 1 hour expiry
+        // Set expiry to 30 days
+        localStorage.setItem('oauth_token_expiry', Date.now() + (30 * 24 * 60 * 60 * 1000));
         
         const apiUrl = getErpNextApiUrl();
+        console.log('Auth Store - Using API URL:', apiUrl);
         
         // Get user info using the token
         console.log('Auth Store - Fetching user info...');
@@ -113,6 +115,7 @@ export const useAuthStore = defineStore('auth', {
         }
 
         // Get detailed user information
+        console.log('Auth Store - Fetching user details...');
         const userDetailsResponse = await fetch(`${apiUrl}/api/resource/User/${userData.message}`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -133,6 +136,7 @@ export const useAuthStore = defineStore('auth', {
         }
 
         // Get user roles to verify identity
+        console.log('Auth Store - Fetching user roles...');
         const rolesResponse = await fetch(`${apiUrl}/api/method/frappe.core.doctype.user.user.get_roles`, {
           method: 'POST',
           headers: {
