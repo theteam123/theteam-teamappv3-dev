@@ -110,7 +110,7 @@ export const DOMAINS = {
     documentItems: []
   },
   'mrces': {
-    key: 'TheTeamApp',
+    key: 'MRCES',
     apiUrl: import.meta.env.VITE_ERPNEXT_API_URL,
     fallbackUrl: 'https://desk.theteamapp.theteam.net.au',
     logo: '/mrces-logo.jpg',
@@ -121,8 +121,8 @@ export const DOMAINS = {
       accent: '#22c55e' // green-500
     },
     oauthConfig: {
-      clientId: import.meta.env.VITE_OAUTH_CLIENT_ID,
-      clientSecret: import.meta.env.VITE_OAUTH_CLIENT_SECRET,
+      clientId: import.meta.env.VITE_OAUTH_MRCES_CLIENT_ID,
+      clientSecret: import.meta.env.VITE_OAUTH_MRCES_CLIENT_SECRET,
       redirectUri: import.meta.env.VITE_OAUTH_MRCES_REDIRECT_URI
     },
     documentItems: []
