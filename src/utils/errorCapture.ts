@@ -14,8 +14,8 @@ class ErrorCapture {
   private maxErrors = 50; // Limit to prevent memory issues
 
   constructor() {
+    this.clearErrors(); // Clear any existing errors on page load
     this.setupErrorCapture();
-    this.loadStoredErrors();
   }
 
   private setupErrorCapture() {
@@ -105,18 +105,6 @@ class ErrorCapture {
       } catch (e2) {
         console.warn('Unable to store captured errors in localStorage');
       }
-    }
-  }
-
-  private loadStoredErrors() {
-    try {
-      const stored = localStorage.getItem('capturedErrors');
-      if (stored) {
-        this.errors = JSON.parse(stored);
-      }
-    } catch (e) {
-      console.warn('Unable to load stored errors from localStorage');
-      this.errors = [];
     }
   }
 

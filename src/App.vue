@@ -565,7 +565,7 @@ import { useAuthStore } from './stores/auth';
 import { getErpNextApiUrl } from './utils/api';
 import { getLogo, getDocumentItems } from './config/domains';
 import { getModules } from './services/deskApi';
-import { getFormData, createForm, getDocTypeData } from './services/erpnext';
+import { getFormData, createForm, getDocTypeData, getSupportDocTypeData, createSupportForm } from './services/erpnext';
 import axios from 'axios';
 import CompanySelectionDropdown from './components/CompanySelectionDropdown.vue';
 import ErrorMessage from './components/ErrorMessage.vue';
@@ -810,14 +810,7 @@ const fetchSupportFormData = async () => {
   supportError.value = null;
   
   try {
-    // Get the form data which includes the fields
-    const response = await getFormData('Web Form', 'support-request');
-    
-    if (!response.data) {
-      throw new Error('No form data received');
-    }
-
-    const response2 = await getDocTypeData(response.data.doc_type as string);
+    const response2 = await getSupportDocTypeData('Support Request');
 
     console.log('response2', response2);
 
@@ -835,8 +828,8 @@ const fetchSupportFormData = async () => {
 
     supportForm.value = {
       id: 'support-request',
-      title: response.data.title || 'Support Request',
-      description: response.data.description || '',
+      title: 'Support Request Form',
+      description: '',
       fields: fields.map((field: RawFormField) => ({
         fieldname: field.fieldname,
         label: field.label,
@@ -870,7 +863,7 @@ const handleSupportSubmit = async () => {
   supportError.value = null;
 
   try {
-    await createForm('support-request', supportFormData.value);
+    await createSupportForm(supportFormData.value);
     showSupportSuccessModal.value = true;
     showSupportModal.value = false;
   } catch (err: any) {
@@ -960,7 +953,6 @@ const handleClickOutside = (event: MouseEvent) => {
 // Add and remove event listeners
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
-  console.error('❌ Test Error On Mount');
   
   // Initialize error capture (access the singleton to ensure it's initialized)
   console.log('Error capture initialized. Current error count:', errorCapture.getErrorCount());
@@ -971,7 +963,7 @@ onMounted(async () => {
       const modulesResponse = await getModules();
       modules.value = modulesResponse.message || [];
     } catch (error) {
-      console.error('❌ Error fetching modules:', error);
+      // console.error('❌ Error fetching modules:', error);
     }
   }
 });
@@ -983,7 +975,7 @@ watch(() => authStore.isAuthenticated, async (isAuthenticated) => {
       const modulesResponse = await getModules();
       modules.value = modulesResponse.message || [];
     } catch (error) {
-      console.error('❌ Error fetching modules:', error);
+      // console.error('❌ Error fetching modules:', error);
     }
   }
 });

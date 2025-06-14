@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 import { getCurrentToken } from './oauth';
-import { getErpNextApiUrl, getApiKeyAuthHeader } from '../utils/api';
+import { getErpNextApiUrl, getApiKeyAuthHeader, getTheTeamAuthHeader } from '../utils/api';
 import { getDomainConfig } from '../config/domains';
 import { getDoctypeModule } from './deskApi';
 
@@ -73,6 +73,7 @@ const apiKeyEndpoints = [
 erp.interceptors.request.use(async (config) => {
   const authStore = useAuthStore();
   console.log('Request interceptor - Is System Manager:', authStore.isSystemManager);
+  console.log('Request interceptor - Config:', config.url);
 
   // Check if the current endpoint should use API key auth
   const shouldUseApiKey = apiKeyEndpoints.some(endpoint => config.url?.includes(endpoint));
@@ -80,6 +81,7 @@ erp.interceptors.request.use(async (config) => {
   if (shouldUseApiKey && !authStore.isSystemManager) {
     // Use API key authentication for specified endpoints
     try {
+      console.log('Request interceptor - Using API key authentication');
       config.headers.Authorization = getApiKeyAuthHeader();
     } catch (error) {
       console.error('Failed to get API key authentication:', error);
@@ -177,13 +179,6 @@ export const getFormData = async (doctype, name) => {
     const cacheKey = `${doctype}-${name}`;
     const cachedData = getCachedMetadata(cacheKey);
     
-    // if (cachedData) {
-    //   console.log('Using cached metadata for:', cacheKey);
-    //   return cachedData;
-    // }
-
-    console.log('Debug - Input parameters:', { doctype, name });
-    
     // First, get the web form details
     const webFormResponse = await erp.get(`/api/resource/${doctype}/${name}`);
     const webFormData = webFormResponse.data.data;
@@ -192,6 +187,16 @@ export const getFormData = async (doctype, name) => {
       doctype_param = webFormData.doc_type;
     }
     
+    
+    // Get the doctype metadata using the getdoctype endpoint
+    // const response = await erp.get(`/api/method/frappe.desk.form.load.getdoctype`, {
+    //   params: {
+    //     doctype: doctype_param
+    //   }
+    // });
+    // console.log('Response from getdoctype:', response.data);
+    // setCachedMetadata(cacheKey, response.data);
+
     // Get the doctype metadata using the getdoctype endpoint
     // const response = await erp.get(`/api/method/frappe.desk.form.load.getdoctype`, {
     //   params: {
@@ -203,7 +208,6 @@ export const getFormData = async (doctype, name) => {
     return {
       data: {
         ...webFormData,
-        // doctype_meta: response.data
       }
     };
   } catch (error) {
@@ -856,6 +860,51 @@ export const getDocTypeData = async (doctypeName) => {
     console.error('Error fetching DocType:', err);
     throw err;
   }
+};
+
+export const getSupportDocTypeData = async (doctypeName) => {
+  try {
+    // Support Request is a custom doctype that is not available in the ERPNext instance
+    // so we need to use the TheTeam API to get the data
+    let fullUrl = `https://desk.theteamapp.theteam.net.au/api/method/frappe.desk.form.load.getdoctype?doctype=${doctypeName}`;
+
+    const response = await fetch(fullUrl, {
+      headers: {
+        'Authorization': getTheTeamAuthHeader(),
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch DocType data');
+    }
+    
+    return await response.json();
+  } catch (err) {
+    console.error('Error fetching DocType:', err);
+    throw err;
+  }
+};
+
+export const createSupportForm = async (data) => {
+  // Support Request is a custom doctype that is not available in the ERPNext instance
+  // so we need to use the TheTeam API to create it
+  const response = await fetch(`https://desk.theteamapp.theteam.net.au/api/resource/Support Request`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': getTheTeamAuthHeader()
+    },
+    body: JSON.stringify({ data }) // Wrap the data in a data object
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to submit form');
+  }
+
+  return await response.json();
 };
 
 export const getChildTableData = async (doctype, name) => {
