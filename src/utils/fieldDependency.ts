@@ -1,3 +1,5 @@
+import { useAuthStore } from '../stores/auth';
+
 interface FormField {
   fieldname: string;
   label: string;
@@ -14,7 +16,7 @@ export function evaluateFieldDependency(
   field: FormField, 
   formData: Record<string, any> | undefined,
   dependencyType: 'depends_on' | 'mandatory_depends_on' = 'depends_on',
-  debug: boolean = true
+  debug: boolean = false
 ): boolean {
   if (debug) {
     console.log('\nEvaluating dependency for field:', {
@@ -100,13 +102,10 @@ export function evaluateFieldDependency(
         });
       }
       
-      if (fieldValue === undefined || fieldValue === null) {
-        return 'false';
-      }
-
       // Special handling for login_user_role field
       if (fieldName === 'login_user_role') {
-        const roles = fieldValue.split(',').map(role => role.trim());
+        const authStore = useAuthStore();
+        const roles = authStore.user?.roles || [];
         const targetRole = value.trim();
         console.log('roles', roles);
         console.log('targetRole', targetRole);
@@ -117,6 +116,10 @@ export function evaluateFieldDependency(
           console.log('roles.includes(targetRole)', roles.includes(targetRole));
           return String(!roles.includes(targetRole));
         }
+      }
+
+      if (fieldValue === undefined || fieldValue === null) {
+        return 'false';
       }
       
       return `'${fieldValue}' ${operator} '${value}'`;
