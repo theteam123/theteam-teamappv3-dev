@@ -950,7 +950,7 @@ export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
 
     let response;
 
-    if (docname == 'Support Request') {
+    if (docname == 'support-request') {
       response = await fetch(`https://desk.theteamapp.theteam.net.au/api/method/upload_file`, {
         method: 'POST',
         headers: {
