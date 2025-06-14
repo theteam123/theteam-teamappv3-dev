@@ -7,7 +7,7 @@
       </div>
       <button
         @click="openCreateTagModal"
-        class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+        class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2"
       >
         <PlusSquare class="w-5 h-5" />
         Create Tag
@@ -83,7 +83,7 @@
       <div class="mt-6">
         <button
           @click="openCreateTagModal"
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <PlusSquare class="w-5 h-5 mr-2" />
           Create Tag
@@ -167,7 +167,7 @@
             </button>
             <button
               type="submit"
-              class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+              class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md"
               :disabled="loading"
             >
               {{ isEditing ? 'Update' : 'Create' }}
@@ -220,22 +220,8 @@ const fetchTags = async () => {
   
   loading.value = true;
   try {
-    const { data, error: fetchError } = await supabase
-      .from('tags')
-      .select(`
-        *,
-        tagged_items (
-          count
-        )
-      `)
-      .eq('company_id', authStore.currentCompanyId);
-
-    if (fetchError) throw fetchError;
-
-    tags.value = data.map(tag => ({
-      ...tag,
-      usage_count: tag.tagged_items[0]?.count || 0
-    }));
+    // TODO: Implement your data fetching logic here
+    tags.value = [];
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -279,18 +265,9 @@ const handleSubmit = async () => {
     };
 
     if (isEditing.value) {
-      const { error: updateError } = await supabase
-        .from('tags')
-        .update(tagData)
-        .eq('id', formData.value.id);
-
-      if (updateError) throw updateError;
+      // TODO: Implement your update logic here
     } else {
-      const { error: insertError } = await supabase
-        .from('tags')
-        .insert(tagData);
-
-      if (insertError) throw insertError;
+      // TODO: Implement your insert logic here
     }
 
     showModal.value = false;
@@ -307,12 +284,7 @@ const deleteTag = async (tag) => {
 
   loading.value = true;
   try {
-    const { error: err } = await supabase
-      .from('tags')
-      .delete()
-      .eq('id', tag.id);
-
-    if (err) throw err;
+    // TODO: Implement your delete logic here
     await fetchTags();
   } catch (err) {
     error.value = err.message;

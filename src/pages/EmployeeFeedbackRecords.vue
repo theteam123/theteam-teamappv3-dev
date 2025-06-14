@@ -8,7 +8,7 @@
       </div>
       <button
         @click="openNewFeedbackModal"
-        class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+        class="btn-primary text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
       >
         <PlusIcon class="w-5 h-5" />
         New Feedback
@@ -120,7 +120,7 @@
               </div>
               <button
                 @click="applyFilters"
-                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
+                class="btn-primary text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
               >
                 Apply Filters
               </button>
