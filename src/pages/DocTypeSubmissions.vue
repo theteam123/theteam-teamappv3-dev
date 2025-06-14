@@ -290,6 +290,15 @@
                       />
                       <span v-else class="text-gray-400 text-sm">No signature added</span>
                     </template>
+                    <template v-else-if="field.label.toLowerCase().includes('[support-data]') && doc[field.fieldname]">
+                      <button 
+                        @click="showJsonModal(doc[field.fieldname])"
+                        class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        title="View JSON Data"
+                      >
+                        <FileCodeIcon class="w-5 h-5" />
+                      </button>
+                    </template>
                     <template v-else>
                       {{ doc[field.fieldname] }}
                     </template>
@@ -437,6 +446,15 @@
                         />
                         <span v-else class="text-gray-400 text-sm">No signature added</span>
                       </template>
+                      <template v-else-if="field.label.toLowerCase().includes('[support-data]') && doc[field.fieldname]">
+                        <button 
+                          @click="showJsonModal(doc[field.fieldname])"
+                          class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                          title="View JSON Data"
+                        >
+                          <FileCodeIcon class="w-5 h-5" />
+                        </button>
+                      </template>
                       <template v-else>
                         {{ doc[field.fieldname] }}
                       </template>
@@ -527,6 +545,24 @@
           >
             Delete
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- JSON Data Modal -->
+    <div v-if="showJsonDataModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium text-gray-900">JSON Data</h3>
+          <button 
+            @click="showJsonDataModal = false"
+            class="text-gray-400 hover:text-gray-500"
+          >
+            <XIcon class="w-6 h-6" />
+          </button>
+        </div>
+        <div class="flex-1 overflow-auto">
+          <pre class="text-sm whitespace-pre-wrap bg-gray-50 p-4 rounded">{{ formattedJsonData }}</pre>
         </div>
       </div>
     </div>
@@ -714,6 +750,24 @@ const filterToDelete = ref<SavedFilter | null>(null);
 // Add new refs for save filter functionality
 const showSaveFilter = ref(false);
 const newFilterName = ref('');
+
+// Add these refs with other refs
+const showJsonDataModal = ref(false);
+const jsonData = ref<any>(null);
+
+// Add this computed property
+const formattedJsonData = computed(() => {
+  if (!jsonData.value) return '';
+  try {
+    const data = typeof jsonData.value === 'string' 
+      ? JSON.parse(jsonData.value)
+      : jsonData.value;
+    return JSON.stringify(data, null, 2);
+  } catch (error) {
+    console.error('Error formatting JSON:', error);
+    return 'Invalid JSON data';
+  }
+});
 
 // Methods
 const fetchDocType = async () => {
@@ -1154,6 +1208,11 @@ const handleSaveFilter = async () => {
   } catch (error) {
     console.error('Error saving filter:', error);
   }
+};
+
+const showJsonModal = (data: any) => {
+  jsonData.value = data;
+  showJsonDataModal.value = true;
 };
 
 onMounted(async () => {
