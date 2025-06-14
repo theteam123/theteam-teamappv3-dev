@@ -53,7 +53,7 @@
            'Address' }} will be automatically populated. Click the location icon to update the current location.
       </p>
       <p v-else-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
-        This field will be automatically populated with your {{ field.label?.includes('[login-user]') ? 'full name' : 'email' }}.
+        This field will be automatically populated with your {{ field.label?.includes('[login-user]') ? 'full name' : field.label?.includes('[login-role]') ? 'role' : 'email' }}.
       </p>
     </template>
 
@@ -303,14 +303,17 @@
         @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
         rows="4"
         :required="isFieldRequired"
-        :disabled="field.read_only === 1"
-        :readonly="field.read_only === 1"
+        :disabled="field.read_only === 1 || shouldAutoFillUserData"
+        :readonly="field.read_only === 1 || shouldAutoFillUserData"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
         :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
+          'bg-gray-50': field.read_only === 1 || shouldAutoFillUserData,
+          'cursor-not-allowed': field.read_only === 1 || shouldAutoFillUserData
         }"
       ></textarea>
+      <p v-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
+        This field will be automatically populated with your {{ field.label?.includes('[login-user]') ? 'full name' : field.label?.includes('[login-role]') ? 'role' : 'email' }}.
+      </p>
     </template>
 
     <!-- Long Text Input -->
@@ -333,6 +336,42 @@
           'cursor-not-allowed': field.read_only === 1
         }"
       ></textarea>
+    </template>
+
+    <!-- JSON Input -->
+    <template v-else-if="field.fieldtype === 'JSON'">
+      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+        {{ formattedLabel }}
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
+      </label>
+      <div class="mt-1">
+        <textarea
+          :id="field.fieldname"
+          :value="formattedJsonValue"
+          @input="handleJsonInput"
+          rows="8"
+          :required="isFieldRequired"
+          :disabled="field.read_only === 1"
+          :readonly="field.read_only === 1"
+          class="mt-1 block w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1,
+            'cursor-not-allowed': field.read_only === 1,
+            'border-red-500': jsonError
+          }"
+        ></textarea>
+        <p v-if="jsonError" class="mt-1 text-sm text-red-600">{{ jsonError }}</p>
+        <div class="mt-2 flex justify-end space-x-2">
+          <button
+            v-if="!field.read_only"
+            type="button"
+            @click="formatJson"
+            class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          >
+            Format JSON
+          </button>
+        </div>
+      </div>
     </template>
 
     <!-- Text Editor -->
@@ -948,7 +987,6 @@ const shouldUseCameraInput = computed(() => {
 });
 
 const shouldAutoFillUserData = computed(() => {
-  if (props.field.fieldtype !== 'Data') return false;
   return props.field.label?.includes('[login-user]') || props.field.label?.includes('[login-email]') || props.field.label?.includes('[login-role]');
 });
 
@@ -1527,7 +1565,8 @@ watch(() => authStore.user, (user) => {
     } else if (props.field.label?.includes('[login-email]') && user?.email) {
       emit('update:modelValue', user.email);
     } else if (props.field.label?.includes('[login-role]') && user?.roles[0]) {
-      emit('update:modelValue', user.roles[0]);
+      console.log('setting login-role', user.roles[0]);
+      emit('update:modelValue', user.roles.join(', '));
     }
   }
 }, { immediate: true });
@@ -1627,6 +1666,47 @@ const handleValueUpdate = (value: any) => {
   if (props.formData) {
     props.formData[props.field.fieldname] = value;
     evaluateFieldDependency(props.field, props.formData);
+  }
+};
+
+// JSON field handling
+const jsonError = ref<string | null>(null);
+
+const formattedJsonValue = computed(() => {
+  if (!props.modelValue) return '';
+  try {
+    // If the value is already a string, try to parse it
+    const value = typeof props.modelValue === 'string' 
+      ? JSON.parse(props.modelValue)
+      : props.modelValue;
+    return JSON.stringify(value, null, 2);
+  } catch (e) {
+    return props.modelValue;
+  }
+});
+
+const handleJsonInput = (event: Event) => {
+  const value = (event.target as HTMLTextAreaElement).value;
+  try {
+    // Try to parse the JSON to validate it
+    const parsed = JSON.parse(value);
+    jsonError.value = null;
+    emit('update:modelValue', JSON.stringify(parsed));
+  } catch (e) {
+    jsonError.value = 'Invalid JSON format';
+    emit('update:modelValue', value);
+  }
+};
+
+const formatJson = () => {
+  try {
+    const value = typeof props.modelValue === 'string' 
+      ? JSON.parse(props.modelValue)
+      : props.modelValue;
+    emit('update:modelValue', JSON.stringify(value, null, 2));
+    jsonError.value = null;
+  } catch (e) {
+    jsonError.value = 'Invalid JSON format';
   }
 };
 
