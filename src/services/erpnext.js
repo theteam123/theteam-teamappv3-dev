@@ -948,15 +948,27 @@ export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
     formData.append('docname', docname);
     formData.append('is_private', isPrivate ? '1' : '0');
 
-    console.log(formData);
+    let response;
 
-    const response = await fetch(`${getErpNextApiUrl()}/api/method/upload_file`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${await getCurrentToken()}`
-      },
-      body: formData
-    });
+    if (docname == 'Support Request') {
+      response = await fetch(`https://desk.theteamapp.theteam.net.au/api/method/upload_file`, {
+        method: 'POST',
+        headers: {
+          'Authorization': getTheTeamAuthHeader()
+        },
+        body: formData
+      });
+    } else {
+      response = await fetch(`${getErpNextApiUrl()}/api/method/upload_file`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await getCurrentToken()}`
+        },
+        body: formData
+      });
+    }
+
+
 
     if (!response.ok) {
       throw new Error('Failed to upload file');

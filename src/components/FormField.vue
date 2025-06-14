@@ -1215,12 +1215,16 @@ const handleMultipleFileUpload = async (event: Event) => {
 };
 
 const uploadFiles = async () => {
+  console.log('uploadFiles ==== ');
+  console.log('uploadedFiles.value', uploadedFiles.value);
   if (uploadedFiles.value.length === 0) return;
 
   uploading.value = true;
   uploadProgress.value = 0;
   const totalFiles = uploadedFiles.value.length;
   let completedFiles = 0;
+
+  console.log('uploadedFiles.value', uploadedFiles.value);
 
   try {
     for (let i = 0; i < uploadedFiles.value.length; i++) {
