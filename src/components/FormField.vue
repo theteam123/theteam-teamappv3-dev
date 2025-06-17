@@ -790,7 +790,7 @@
     </template>
 
     <!-- Multiple Upload Table -->
-    <template v-else-if="field.fieldtype === 'Table' && (field.label.toLowerCase().includes('[multiple-upload]') || field.label.toLowerCase().includes('[multiple-upload-view]'))">
+    <template v-else-if="field.fieldtype === 'Table' && (field.label.toLowerCase().includes('[multiple-upload]') || field.label.toLowerCase().includes('[multiple-upload-view]') || field.label.toLowerCase().includes('[multiple-camera]') || field.label.toLowerCase().includes('[multiple-camera-view]'))">
       <label class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
         <span v-if="isFieldRequired" class="text-red-500">*</span>
@@ -806,6 +806,8 @@
                 <span>Upload files</span>
                 <input 
                   type="file" 
+                  :accept="field.label.toLowerCase().includes('[multiple-camera]') || field.label.toLowerCase().includes('[multiple-camera-view]') ? 'image/*' : 'image/*,application/*'"
+                  :capture="field.label.toLowerCase().includes('[multiple-camera]') || field.label.toLowerCase().includes('[multiple-camera-view]') ? 'environment' : undefined"
                   multiple 
                   class="sr-only" 
                   @change="handleMultipleFileUpload"
