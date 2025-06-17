@@ -21,7 +21,16 @@
         <FilePlusIcon class="w-5 h-5" />
         New {{ docType?.name }}
       </button>
+
+    <button
+      @click="showFilters = !showFilters"
+      class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 ml-2"
+    >
+      <FilterIcon class="w-5 h-5" />
+      {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+    </button>
     </div>
+
 
     <!-- Search and Filter -->
     <div class="mb-6 flex flex-col gap-4">
@@ -37,108 +46,108 @@
           />
         </div>
       </div>
-    <!-- Saved Filters -->
-    <div class="mb-4">
-      <button
-        @click="showSavedFilters = !showSavedFilters"
-        class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border mb-2"
-        :class="[
-          showSavedFilters 
-            ? 'bg-green-50 text-green-600 border-green-200' 
-            : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-        ]"
-      >
-        <component :is="showSavedFilters ? ChevronUpIcon : ChevronDownIcon" class="w-4 h-4" />
-        Saved Filters
-      </button>
-
-      <!-- Save Current Filter -->
-      <div v-if="showSavedFilters" class="mb-4">
+      <!-- Saved Filters -->
+      <div class="mb-4 saved-filters-all-filters" v-show="showFilters">
         <button
-          v-if="!showSaveFilter"
-          @click="showSaveFilter = true"
-          class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-green-600 hover:text-green-700"
+          @click="showSavedFilters = !showSavedFilters"
+          class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border mb-2"
+          :class="[
+            showSavedFilters 
+              ? 'bg-green-50 text-green-600 border-green-200' 
+              : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+          ]"
         >
-          <PlusIcon class="w-4 h-4" />
-          Save Current Filter
+          <component :is="showSavedFilters ? ChevronUpIcon : ChevronDownIcon" class="w-4 h-4" />
+          Saved Filters
         </button>
-        <div v-else class="flex items-center gap-2">
-          <input
-            v-model="newFilterName"
-            type="text"
-            placeholder="Enter filter name"
-            class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
-            @keyup.enter="handleSaveFilter"
-          />
-          <button
-            @click="handleSaveFilter"
-            class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
-            :disabled="!newFilterName.trim()"
-          >
-            Save
-          </button>
-          <button
-            @click="showSaveFilter = false; newFilterName = ''"
-            class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-700"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
 
-      <div 
-        v-if="showSavedFilters" 
-        class="border-2 border-dashed border-gray-300 rounded-lg p-4"
-        :class="{ 'min-h-[60px]': savedFilters.length === 0 }"
-      >
-        <div v-if="savedFilters.length === 0" class="flex items-center justify-center h-full text-gray-500 text-sm">
-          No saved filters
-        </div>
-        <div v-else class="flex flex-wrap gap-2">
+        <!-- Save Current Filter -->
+        <div v-if="showSavedFilters" class="mb-4">
           <button
-            v-for="filter in savedFilters"
-            :key="filter.name"
-            @click="handleFilterSelect(filter)"
-            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-full transition-colors border"
-            :class="[
-              selectedFilter?.name === filter.name
-                ? 'bg-green-100 text-green-700 hover:bg-green-200 border-green-300'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
-            ]"
+            v-if="!showSaveFilter"
+            @click="showSaveFilter = true"
+            class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-green-600 hover:text-green-700"
           >
-            <span>{{ filter.filter_name }}</span>
-            <div class="flex gap-2 items-center">
-              <XIcon 
-                v-if="selectedFilter?.name === filter.name"
-                class="w-4 h-4 cursor-pointer text-green-600"
-                @click.stop="clearSelectedFilter"
-              />
-              <TrashIcon 
-                class="w-4 h-4 cursor-pointer text-gray-400 hover:text-red-500"
-                @click.stop="openDeleteModal(filter)"
-                title="Delete filter"
-              />
-            </div>
+            <PlusIcon class="w-4 h-4" />
+            Save Current Filter
           </button>
+          <div v-else class="flex items-center gap-2">
+            <input
+              v-model="newFilterName"
+              type="text"
+              placeholder="Enter filter name"
+              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
+              @keyup.enter="handleSaveFilter"
+            />
+            <button
+              @click="handleSaveFilter"
+              class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+              :disabled="!newFilterName.trim()"
+            >
+              Save
+            </button>
+            <button
+              @click="showSaveFilter = false; newFilterName = ''"
+              class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-700"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-      </div>
+
+        <div 
+          v-if="showSavedFilters" 
+          class="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4"
+          :class="{ 'min-h-[60px]': savedFilters.length === 0 }"
+        >
+          <div v-if="savedFilters.length === 0" class="flex items-center justify-center h-full text-gray-500 text-sm">
+            No saved filters
+          </div>
+          <div v-else class="flex flex-wrap gap-2">
+            <button
+              v-for="filter in savedFilters"
+              :key="filter.name"
+              @click="handleFilterSelect(filter)"
+              class="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-full transition-colors border"
+              :class="[
+                selectedFilter?.name === filter.name
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200 border-green-300'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+              ]"
+            >
+              <span>{{ filter.filter_name }}</span>
+              <div class="flex gap-2 items-center">
+                <XIcon 
+                  v-if="selectedFilter?.name === filter.name"
+                  class="w-4 h-4 cursor-pointer text-green-600"
+                  @click.stop="clearSelectedFilter"
+                />
+                <TrashIcon 
+                  class="w-4 h-4 cursor-pointer text-gray-400 hover:text-red-500"
+                  @click.stop="openDeleteModal(filter)"
+                  title="Delete filter"
+                />
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Field-specific Searches -->
+        <div v-if="filteredFields?.length" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          <div v-for="field in filteredFields" :key="field.fieldname">
+            <label :for="field.fieldname" class="block text-sm font-medium text-gray-700 mb-1">
+              {{ field.label }}
+            </label>
+            <input
+              :id="field.fieldname"
+              type="text"
+              v-model="fieldSearches[field.fieldname]"
+              :placeholder="`Search by ${field.label.toLowerCase()}`"
+              class="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-sm"
+            />
+          </div>
+        </div>
     </div>
-
-      <!-- Field-specific Searches -->
-      <div v-if="filteredFields?.length" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        <div v-for="field in filteredFields" :key="field.fieldname">
-          <label :for="field.fieldname" class="block text-sm font-medium text-gray-700 mb-1">
-            {{ field.label }}
-          </label>
-          <input
-            :id="field.fieldname"
-            type="text"
-            v-model="fieldSearches[field.fieldname]"
-            :placeholder="`Search by ${field.label.toLowerCase()}`"
-            class="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-sm"
-          />
-        </div>
-      </div>
 
       <!-- View Mode Buttons -->
       <div class="flex justify-end gap-4">
@@ -194,21 +203,6 @@
         >
           <div class="p-6">
             <div class="flex justify-between items-start">
-              <div class="flex-1">
-                <div class="flex items-center gap-2">
-                  <div class="p-2 bg-green-50 rounded-lg">
-                    <FileIcon class="w-6 h-6 text-green-600" />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-gray-900 truncate">
-                      {{ doc.name }}
-                    </h3>
-                    <p class="text-sm text-gray-500">
-                      Created {{ formatDate(doc.creation) }}
-                    </p>
-                  </div>
-                </div>
-              </div>
               <div class="flex gap-2">
                 <button
                   v-if="canEditDocument(doc)"
@@ -245,7 +239,7 @@
             <div class="mt-4 space-y-2">
               <template v-for="field in docType?.fields.filter(f => !f.label.toLowerCase().includes('[action]'))" :key="field.fieldname">
                 <div v-if="doc[field.fieldname]" class="flex items-start gap-2">
-                  <span class="text-sm font-medium text-gray-500">{{ field.label }}:</span>
+                  <span class="text-sm font-medium text-gray-500">{{ field.label.replace(/\[.*?\]/g, '').trim() }}:</span>
                   <span class="text-sm text-gray-900">
                     <template v-if="field.fieldtype === 'Table' && (field.label.includes('[multiple-upload]') || field.label.includes('[multiple-upload-view]') )">
                       <button 
@@ -305,13 +299,6 @@
                   </span>
                 </div>
               </template>
-            </div>
-
-            <div class="mt-4 text-sm text-gray-500">
-              <div class="flex items-center gap-2">
-                <ClockIcon class="w-4 h-4" />
-                <span>Updated {{ formatDate(doc.modified) }}</span>
-              </div>
             </div>
           </div>
         </div>
@@ -599,7 +586,8 @@ import {
   GridIcon,
   ListIcon,
   XIcon,
-  PlusIcon
+  PlusIcon,
+  FilterIcon
 } from 'lucide-vue-next';
 import ImageModal from '../components/ImageModal.vue';
 import PdfIcon from '../components/icons/PdfIcon.vue';
@@ -739,6 +727,7 @@ const filteredDocuments = computed(() => {
 
 // Add viewMode ref with other refs
 const viewMode = ref('list');
+const showFilters = ref(false);
 
 // Add these refs with other refs
 const showSavedFilters = ref(false);

@@ -204,23 +204,50 @@
         {{ formattedLabel }}
         <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
-      <select
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="handleValueUpdate(($event.target as HTMLSelectElement).value)"
-        :required="isFieldRequired"
-        :disabled="field.read_only === 1"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
-        }"
-      >
-        <option value="">Select an option</option>
-        <option v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" :value="option">
-          {{ option }}
-        </option>
-      </select>
+      <!-- Radio Button Group -->
+      <template v-if="field.label?.includes('[radio]')">
+        <div class="mt-2 flex flex-wrap gap-4">
+          <div v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" class="flex items-center">
+            <input
+              :id="`${field.fieldname}-${option}`"
+              :name="field.fieldname"
+              :value="option"
+              :checked="modelValue === option"
+              @change="handleValueUpdate(option)"
+              type="radio"
+              :required="isFieldRequired"
+              :disabled="field.read_only === 1"
+              class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+              :class="{
+                'cursor-not-allowed': field.read_only === 1
+              }"
+            />
+            <label :for="`${field.fieldname}-${option}`" class="ml-2 block text-sm text-gray-700">
+              {{ option }}
+            </label>
+          </div>
+        </div>
+      </template>
+      <!-- Regular Select Dropdown -->
+      <template v-else>
+        <select
+          :id="field.fieldname"
+          :value="modelValue"
+          @input="handleValueUpdate(($event.target as HTMLSelectElement).value)"
+          :required="isFieldRequired"
+          :disabled="field.read_only === 1"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1,
+            'cursor-not-allowed': field.read_only === 1
+          }"
+        >
+          <option value="">Select an option</option>
+          <option v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" :value="option">
+            {{ option }}
+          </option>
+        </select>
+      </template>
     </template>
 
     <!-- Link Input -->
