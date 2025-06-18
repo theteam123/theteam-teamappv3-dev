@@ -190,7 +190,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { getFormData, updateDoctypeSubmission, uploadFile } from '../services/erpnext';
+import { getFormData, updateDoctypeSubmission, uploadFile, getDocTypeData } from '../services/erpnext';
 import FormField from '../components/FormField.vue';
 import { useFormSections } from '../composables/useFormSections';
 import { useSuccessStore } from '../stores/success';
@@ -238,10 +238,12 @@ const geoLocationFields = ref<GeolocationData[]>([]);
 const watermarkConfigs = ref<WatermarkConfig[]>([]);
 const filesToDownload = ref<Array<{ file: File; fieldname: string }>>([]);
 const currentTab = ref<string>('');
+const docTypeTable = ref<DocTypeField[]>([]);
 
 const { processedSections } = useFormSections(
   computed(() => docType.value?.fields),
-  computed(() => formData.value)
+  computed(() => formData.value),
+  computed(() => docTypeTable.value)
 );
 
 // Set initial tab when form loads
@@ -257,29 +259,43 @@ const fetchDocTypeAndDocument = async () => {
   
   try {
     // Fetch DocType metadata
-    const docTypeResponse = await getFormData('DocType', route.params.id as string);
+    const response = await getDocTypeData(route.params.id as string);
+    console.log('DocType response:', response);
     
-    if (!docTypeResponse.data) {
-      throw new Error('No DocType data received');
+    if (!response || !response.docs || !Array.isArray(response.docs) || response.docs.length === 0) {
+      throw new Error('Invalid response format from DocType API');
     }
-
-    const fields = docTypeResponse.data.fields || [];
+    // const docTypeResponse = await getFormData('DocType', route.params.id as string);
     
+    // if (!docTypeResponse.data) {
+    //   throw new Error('No DocType data received');
+    // }
+
+    // const fields = docTypeResponse.data.fields || [];
+    const docTypeData = response.docs[0];
+    docTypeTable.value = response.docs.filter(doc => doc.istable === 1);
+
     docType.value = {
-      name: docTypeResponse.data.name || 'Untitled Document',
-      description: docTypeResponse.data.description || '',
-      fields: fields.map(field => ({
-        fieldname: field.fieldname,
-        label: field.label,
-        fieldtype: field.fieldtype,
-        reqd: field.reqd || 0,
-        options: field.options || '',
-        depends_on: field.depends_on,
-        hidden: field.hidden || 0,
-        parent: field.parent,
-        description: field.description
-      }))
+      name: docTypeData.name || route.params.id,
+      description: docTypeData.description || '',
+      fields: docTypeData.fields || []
     };
+    
+    // docType.value = {
+    //   name: docTypeResponse.data.name || 'Untitled Document',
+    //   description: docTypeResponse.data.description || '',
+    //   fields: fields.map(field => ({
+    //     fieldname: field.fieldname,
+    //     label: field.label,
+    //     fieldtype: field.fieldtype,
+    //     reqd: field.reqd || 0,
+    //     options: field.options || '',
+    //     depends_on: field.depends_on,
+    //     hidden: field.hidden || 0,
+    //     parent: field.parent,
+    //     description: field.description
+    //   }))
+    // };
 
     // Fetch document data
     const documentResponse = await getFormData(route.params.id as string, route.params.documentId as string);

@@ -859,17 +859,121 @@
       <div class="border border-gray-300 rounded-md">
         <div class="px-4 py-3 bg-gray-50 border-b border-gray-300">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-medium text-gray-700">{{ field.options }}</h3>
             <button
               type="button"
+              @click="handleAddRow"
               class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
               Add Row
             </button>
+            <button
+              v-if="selectedRows.length > 0"
+              type="button"
+              @click="deleteSelectedRows"
+              class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Delete Selected ({{ selectedRows.length }})
+            </button>
           </div>
         </div>
-        <div class="px-4 py-3">
-          <p class="text-sm text-gray-500">No rows added yet</p>
+
+        <!-- Add Row Form -->
+        <div v-if="showAddRowForm" class="p-4 border-b border-gray-200">
+          <div class="space-y-4">
+            <FormField
+              v-for="tableField in field.tableFields"
+              :key="tableField.fieldname"
+              :field="{
+                ...tableField,
+                reqd: tableField.reqd || 0,
+                hidden: tableField.hidden || 0,
+                read_only: tableField.read_only || 0
+              }"
+              v-model="newRowData[tableField.fieldname]"
+              :form-data="newRowData"
+            />
+          </div>
+          <div class="mt-4 flex justify-end space-x-3">
+            <button
+              type="button"
+              @click="cancelAddRow"
+              class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click="saveNewRow"
+              class="px-3 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              Save Row
+            </button>
+          </div>
+        </div>
+
+        <!-- Child Table Implementation -->
+        <div v-if="field.tableFields" class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-300">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="relative w-12 px-6 sm:w-16 sm:px-8">
+                  <input
+                    type="checkbox"
+                    :checked="isAllSelected"
+                    @change="toggleSelectAll"
+                    class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                </th>
+                <th
+                  v-for="tableField in visibleTableFields"
+                  :key="tableField.fieldname"
+                  scope="col"
+                  class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                >
+                  {{ tableField.label }}
+                </th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                  <span class="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              <tr v-for="(row, index) in tableData" :key="index" :class="{ 'bg-gray-50': selectedRows.includes(index) }">
+                <td class="relative w-12 px-6 sm:w-16 sm:px-8">
+                  <input
+                    type="checkbox"
+                    :checked="selectedRows.includes(index)"
+                    @change="toggleRowSelection(index)"
+                    class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                </td>
+                <td
+                  v-for="tableField in visibleTableFields"
+                  :key="tableField.fieldname"
+                  class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"
+                >
+                  {{ row[tableField.fieldname] }}
+                </td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                  <button
+                    type="button"
+                    @click="deleteRow(index)"
+                    class="text-red-600 hover:text-red-900"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+              <tr v-if="tableData.length === 0">
+                <td :colspan="visibleTableFields.length + 2" class="px-3 py-4 text-sm text-gray-500 text-center">
+                  No rows added yet
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else class="px-4 py-3">
+          <p class="text-sm text-gray-500">No table fields defined</p>
         </div>
       </div>
     </div>
@@ -926,6 +1030,24 @@ import SignaturePad from 'signature_pad';
 import { useAuthStore } from '../stores/auth';
 import { getCurrentDateFormatted, getCurrentTimeFormatted, getCurrentDateTimeFormatted, toAppTimezoneISO } from '../utils/timezone';
 import { getErrorsAsJson } from '../utils/errorCapture';
+import FormField from './FormField.vue';
+
+interface TableField {
+  fieldname: string;
+  label: string;
+  fieldtype: string;
+  in_list_view?: number;
+  reqd?: number;
+  options?: string;
+  hidden?: number;
+  depends_on?: string;
+  max_length?: number;
+  max_value?: number;
+  precision?: string;
+  read_only?: number;
+  description?: string;
+  default?: string;
+}
 
 interface FormField {
   fieldname: string;
@@ -943,6 +1065,7 @@ interface FormField {
   mandatory_depends_on?: string;
   description?: string;
   default?: string;
+  tableFields?: TableField[];
 }
 
 interface UploadedFile {
@@ -1740,6 +1863,105 @@ const formatJson = () => {
 };
 
 defineExpose({ VueTelInput });
+
+// Add these refs and computed properties after the existing ones
+const selectedRows = ref<number[]>([]);
+const tableData = ref<any[]>([]);
+const showAddRowForm = ref(false);
+const newRowData = ref<Record<string, any>>({});
+
+const visibleTableFields = computed(() => {
+  if (!props.field.tableFields) return [];
+  return props.field.tableFields.filter(field => field.in_list_view === 1);
+});
+
+const isAllSelected = computed(() => {
+  return tableData.value.length > 0 && selectedRows.value.length === tableData.value.length;
+});
+
+// Add these methods after the existing ones
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedRows.value = [];
+  } else {
+    selectedRows.value = tableData.value.map((_, index) => index);
+  }
+};
+
+const toggleRowSelection = (index: number) => {
+  const position = selectedRows.value.indexOf(index);
+  if (position === -1) {
+    selectedRows.value.push(index);
+  } else {
+    selectedRows.value.splice(position, 1);
+  }
+};
+
+const deleteRow = (index: number) => {
+  tableData.value.splice(index, 1);
+  // Remove the index from selectedRows and adjust other indices
+  selectedRows.value = selectedRows.value
+    .filter(i => i !== index)
+    .map(i => i > index ? i - 1 : i);
+  
+  // Update the model value
+  emit('update:modelValue', tableData.value);
+};
+
+const deleteSelectedRows = () => {
+  // Sort indices in descending order to avoid index shifting issues
+  const sortedIndices = [...selectedRows.value].sort((a, b) => b - a);
+  
+  // Remove rows
+  sortedIndices.forEach(index => {
+    tableData.value.splice(index, 1);
+  });
+  
+  // Clear selection
+  selectedRows.value = [];
+  
+  // Update the model value
+  emit('update:modelValue', tableData.value);
+};
+
+// Initialize table data from model value
+watch(() => props.modelValue, (newValue) => {
+  if (props.field.fieldtype === 'Table') {
+    tableData.value = Array.isArray(newValue) ? newValue : [];
+  }
+}, { immediate: true });
+
+// Add this method to handle adding new rows
+const handleAddRow = () => {
+  showAddRowForm.value = true;
+  // Initialize newRowData with empty values for each field
+  newRowData.value = {};
+  if (props.field.tableFields) {
+    props.field.tableFields.forEach(field => {
+      // Ensure all required properties are set
+      const tableField = {
+        ...field,
+        reqd: field.reqd || 0,
+        hidden: field.hidden || 0,
+        read_only: field.read_only || 0
+      };
+      newRowData.value[tableField.fieldname] = '';
+    });
+  }
+};
+
+const saveNewRow = () => {
+  tableData.value.push({ ...newRowData.value });
+  showAddRowForm.value = false;
+  newRowData.value = {};
+  // Update the model value
+  emit('update:modelValue', tableData.value);
+};
+
+const cancelAddRow = () => {
+  showAddRowForm.value = false;
+  newRowData.value = {};
+};
 </script>
 
 <style>
