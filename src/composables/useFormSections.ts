@@ -35,7 +35,7 @@ interface ProcessedSections {
   sections: FormSection[];
 }
 
-export function useFormSections(fields: Ref<FormField[] | undefined>, formData?: Ref<Record<string, any> | undefined>) {
+export function useFormSections(fields: Ref<FormField[] | undefined>, formData?: Ref<Record<string, any> | undefined>, docTypeTable?: Ref<FormField[] | undefined>) {
   const processedSections = computed<ProcessedSections>(() => {
     if (!fields.value) return {
       tabs: [],
@@ -108,7 +108,10 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
           currentSection.columnLabels.push(field.label || '');
         }
       } else if (!currentSection.hidden) {
+        let table = docTypeTable?.value?.find(table => table.name === field.options);
+        let tableFields = table?.fields;
         currentSection.fields.push({
+          tableFields: tableFields,
           ...field,
           columnIndex: currentSection.columnCount,
           tab_id: currentTab?.id
@@ -130,6 +133,8 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
         !section.hidden && section.fields.length > 0
       )
     );
+    console.log('Final Tabs', finalTabs);
+    console.log('Sections', sections);
 
     return {
       tabs: finalTabs,

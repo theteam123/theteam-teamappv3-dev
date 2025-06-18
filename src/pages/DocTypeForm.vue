@@ -226,6 +226,7 @@ const loading = ref(false);
 const submitting = ref(false);
 const error = ref<string | null>(null);
 const docType = ref<DocType | null>(null);
+const docTypeTable = ref<DocTypeField[]>([]);
 const formData = ref<Record<string, any>>({});
 const geoLocationFields = ref<GeolocationData[]>([]);
 const uploading = ref(false);
@@ -236,7 +237,8 @@ const currentTab = ref<string>('');
 
 const { processedSections } = useFormSections(
   computed(() => docType.value?.fields),
-  computed(() => formData.value)
+  computed(() => formData.value),
+  computed(() => docTypeTable.value)
 );
 
 const fetchDocType = async () => {
@@ -247,9 +249,11 @@ const fetchDocType = async () => {
     if (!response || !response.docs || !Array.isArray(response.docs) || response.docs.length === 0) {
       throw new Error('Invalid response format from DocType API');
     }
+    
 
     const docTypeData = response.docs[0];
-    
+    docTypeTable.value = response.docs.filter(doc => doc.istable === 1);
+
     docType.value = {
       name: docTypeData.name || route.params.id,
       description: docTypeData.description || '',

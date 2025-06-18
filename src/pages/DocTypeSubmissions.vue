@@ -241,7 +241,7 @@
                 <div v-if="doc[field.fieldname]" class="flex items-start gap-2">
                   <span class="text-sm font-medium text-gray-500">{{ field.label.replace(/\[.*?\]/g, '').trim() }}:</span>
                   <span class="text-sm text-gray-900">
-                    <template v-if="field.fieldtype === 'Table' && (field.label.includes('[multiple-upload]') || field.label.includes('[multiple-upload-view]') )">
+                    <template v-if="field.fieldtype === 'Table' && ( field.label.includes('[multiple-upload-view]')  || field.label.includes('[multiple-camera-view]') )">
                       <button 
                         @click="handleImageClick(doc, field.fieldname)"
                         class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
@@ -384,7 +384,7 @@
                       class="px-6 py-4 text-sm text-gray-900"
                       :class="{'whitespace-nowrap': !field.fieldtype.includes('Text')}"
                     >
-                      <template v-if="field.fieldtype === 'Table' && (field.label.includes('[multiple-upload]') || field.label.includes('[multiple-upload-view]') )">
+                      <template v-if="field.fieldtype === 'Table' && ( field.label.includes('[multiple-upload-view]') || field.label.includes('[multiple-camera-view]') )">
                         <button 
                           @click="handleImageClick(doc, field.fieldname)"
                           class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
@@ -823,6 +823,7 @@ const fetchDocType = async () => {
         ...response.data,
         fields: response.data.fields.filter((field: DocTypeField) => 
           field.label.toLowerCase().includes('[multiple-upload-view]') || 
+          field.label.toLowerCase().includes('[multiple-camera-view]') || 
           field.in_preview === 1 ||
           field.in_list_view === 1
         )
