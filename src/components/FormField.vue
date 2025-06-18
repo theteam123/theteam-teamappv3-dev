@@ -979,6 +979,40 @@
     </div>
   </template>
 
+  <!-- Geolocation Input -->
+  <template v-else-if="field.fieldtype === 'Geolocation'">
+    <label class="block text-sm font-medium text-gray-700">
+      {{ formattedLabel }}
+      <span v-if="isFieldRequired" class="text-red-500">*</span>
+    </label>
+    <div class="mt-1 relative">
+      <div 
+        :id="`map-${field.fieldname}`" 
+        class="h-96 w-full rounded-md border border-gray-300"
+      ></div>
+
+      <div class="mt-2 flex space-x-2">
+        <button
+          v-if="!field.read_only"
+          @click="getGeolocation"
+          type="button"
+          class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        >
+          <MapPinIcon class="h-4 w-4 mr-2" />
+          Use Current Location
+        </button>
+        <button
+          v-if="!field.read_only"
+          @click="clearDrawing"
+          type="button"
+          class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        >
+          Clear Drawing
+        </button>
+      </div>
+    </div>
+  </template>
+
   </div>
 
   <!-- Delete Confirmation Modal -->
@@ -1020,6 +1054,10 @@ import { ref, onUnmounted, watch, onMounted, nextTick, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { VueTelInput } from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw';
+import 'leaflet-draw/dist/leaflet.draw.css';
 import { getFormList, uploadFile } from '../services/erpnext';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 import { useErrorStore } from '../stores/error';
@@ -1962,6 +2000,249 @@ const cancelAddRow = () => {
   showAddRowForm.value = false;
   newRowData.value = {};
 };
+
+// Add these to the script setup section
+const map = ref<L.Map | null>(null);
+const marker = ref<L.Marker | null>(null);
+const latitude = ref<number | ''>('');
+const longitude = ref<number | ''>('');
+const drawnItems = ref<L.FeatureGroup | null>(null);
+const drawControl = ref<L.Control.Draw | null>(null);
+
+// Initialize map when component is mounted
+onMounted(() => {
+  if (props.field.fieldtype === 'Geolocation') {
+    nextTick(() => {
+      initializeMap();
+    });
+  }
+});
+
+function initializeMap() {
+  const mapElement = document.getElementById(`map-${props.field.fieldname}`);
+  if (!mapElement) return;
+
+  // Initialize map
+  map.value = L.map(mapElement).setView([0, 0], 2);
+  
+  // Add OpenStreetMap tile layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map.value);
+
+  // Initialize marker
+  marker.value = L.marker([0, 0], {
+    draggable: !props.field.read_only
+  }).addTo(map.value);
+
+  // Initialize the FeatureGroup to store editable layers
+  drawnItems.value = new L.FeatureGroup().addTo(map.value);
+
+  // Initialize the draw control and pass it the FeatureGroup of editable layers
+  if (!props.field.read_only) {
+    drawControl.value = new L.Control.Draw({
+      draw: {
+        polyline: true,
+        polygon: true,
+        circle: true,
+        rectangle: true,
+        marker: false, // We already have a marker
+        circlemarker: false
+      },
+      edit: {
+        featureGroup: drawnItems.value,
+        remove: true
+      }
+    }).addTo(map.value);
+
+    // Handle drawing events
+    map.value.on('draw:created', (e: any) => {
+      const layer = e.layer;
+      drawnItems.value?.addLayer(layer);
+
+      // If it's a point, update the marker position
+      if (e.layerType === 'marker') {
+        const latlng = layer.getLatLng();
+        setMapPosition(latlng.lat, latlng.lng);
+      }
+
+      // Update the model value with the drawn shape
+      updateDrawnShapeValue();
+    });
+
+    map.value.on('draw:edited', () => {
+      updateDrawnShapeValue();
+    });
+
+    map.value.on('draw:deleted', () => {
+      updateDrawnShapeValue();
+    });
+  }
+
+  // Handle marker drag end
+  marker.value.on('dragend', (event) => {
+    const position = event.target.getLatLng();
+    latitude.value = position.lat;
+    longitude.value = position.lng;
+    updateModelValue();
+  });
+
+  // Set initial position if value exists
+  if (props.modelValue) {
+    try {
+      // Try to parse as GeoJSON first
+      let geoJson;
+      try {
+        geoJson = typeof props.modelValue === 'string' ? JSON.parse(props.modelValue) : props.modelValue;
+      } catch (e) {
+        geoJson = null;
+      }
+
+      if (geoJson && (geoJson.type === 'Feature' || geoJson.type === 'FeatureCollection')) {
+        // Handle GeoJSON
+        if (geoJson.type === 'Feature') {
+          const layer = L.geoJSON(geoJson).addTo(drawnItems.value!);
+          map.value.fitBounds(layer.getBounds());
+        } else if (geoJson.type === 'FeatureCollection') {
+          const layer = L.geoJSON(geoJson).addTo(drawnItems.value!);
+          map.value.fitBounds(layer.getBounds());
+        }
+      } else {
+        // Handle simple coordinates
+        const coords = typeof props.modelValue === 'string' ? props.modelValue.split(',') : [props.modelValue.lat, props.modelValue.lng];
+        const [lat, lng] = coords.map(Number);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          setMapPosition(lat, lng);
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing geolocation value:', error);
+    }
+  }
+}
+
+// Add a watch for modelValue changes
+watch(() => props.modelValue, (newValue) => {
+  if (map.value && newValue) {
+    try {
+      // Clear existing layers
+      drawnItems.value?.clearLayers();
+      
+      // Try to parse as GeoJSON first
+      let geoJson;
+      try {
+        geoJson = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+      } catch (e) {
+        geoJson = null;
+      }
+
+      if (geoJson && (geoJson.type === 'Feature' || geoJson.type === 'FeatureCollection')) {
+        // Handle GeoJSON
+        if (geoJson.type === 'Feature') {
+          const layer = L.geoJSON(geoJson).addTo(drawnItems.value!);
+          map.value.fitBounds(layer.getBounds());
+        } else if (geoJson.type === 'FeatureCollection') {
+          const layer = L.geoJSON(geoJson).addTo(drawnItems.value!);
+          map.value.fitBounds(layer.getBounds());
+        }
+      } else {
+        // Handle simple coordinates
+        const coords = typeof newValue === 'string' ? newValue.split(',') : [newValue.lat, newValue.lng];
+        const [lat, lng] = coords.map(Number);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          setMapPosition(lat, lng);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating map from new value:', error);
+    }
+  }
+}, { immediate: true });
+
+function setMapPosition(lat: number, lng: number) {
+  if (!map.value || !marker.value) return;
+  
+  latitude.value = lat;
+  longitude.value = lng;
+  
+  const newPosition = L.latLng(lat, lng);
+  marker.value.setLatLng(newPosition);
+  map.value.setView(newPosition, 13);
+}
+
+function updateMapPosition() {
+  if (latitude.value === '' || longitude.value === '') return;
+  setMapPosition(latitude.value, longitude.value);
+  updateModelValue();
+}
+
+function updateModelValue() {
+  if (latitude.value === '' || longitude.value === '') {
+    emit('update:modelValue', '');
+  } else {
+    emit('update:modelValue', `${latitude.value},${longitude.value}`);
+  }
+}
+
+async function getGeolocation() {
+  if (!navigator.geolocation) {
+    errorStore.setError('Geolocation is not supported by your browser');
+    return;
+  }
+
+  try {
+    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject);
+    });
+
+    const { latitude: lat, longitude: lng } = position.coords;
+    setMapPosition(lat, lng);
+    updateModelValue();
+  } catch (error) {
+    errorStore.setError('Unable to retrieve your location');
+  }
+}
+
+function updateDrawnShapeValue() {
+  if (!drawnItems.value) return;
+
+  const layers = drawnItems.value.getLayers();
+  if (layers.length === 0) {
+    updateModelValue();
+    return;
+  }
+
+  // Create a GeoJSON feature collection
+  const features = layers.map(layer => {
+    const geoJson = (layer as any).toGeoJSON();
+    return geoJson;
+  });
+
+  const geoJson = {
+    type: 'FeatureCollection',
+    features: features
+  };
+
+  emit('update:modelValue', JSON.stringify(geoJson));
+}
+
+function clearDrawing() {
+  if (drawnItems.value) {
+    drawnItems.value.clearLayers();
+    updateDrawnShapeValue();
+  }
+}
+
+// Update the cleanup in onUnmounted
+onUnmounted(() => {
+  if (map.value) {
+    if (drawControl.value) {
+      map.value.removeControl(drawControl.value);
+    }
+    map.value.remove();
+    map.value = null;
+  }
+});
 </script>
 
 <style>
