@@ -36,6 +36,22 @@
 
     <!-- Form -->
     <form v-else @submit.prevent="handleSubmit" class="space-y-6 bg-white rounded-lg sm:p-6">
+      <!-- Prefill Indicator -->
+      <div v-if="hasPrefilledFields" class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-blue-700">
+              Some fields have been pre-filled from URL parameters. You can modify these values as needed.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="bg-white shadow rounded-lg p-6">
         <div class="space-y-8">
           <!-- Tabs -->
@@ -182,7 +198,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useSuccessStore } from '../stores/success';
@@ -241,6 +257,16 @@ const { processedSections } = useFormSections(
   computed(() => docTypeTable.value)
 );
 
+// Add computed property to check if fields are prefilled
+const hasPrefilledFields = computed(() => {
+  const url = new URL(window.location.href);
+  const urlParams = new URLSearchParams(url.search);
+  
+  return Array.from(urlParams.keys()).some(key => 
+    docType.value?.fields.some(field => field.fieldname === key)
+  );
+});
+
 const fetchDocType = async () => {
   try {
     const response = await getDocTypeData(route.params.id as string);
@@ -274,6 +300,9 @@ const fetchDocType = async () => {
       // Initialize watermark fields
       watermarkConfigs.value = initializeWatermarkFields(docTypeData.fields, formData.value);
       // console.log('watermarkConfigs:', watermarkConfigs.value);
+      
+      // Load form data from URL parameters after initialization
+      loadFormDataFromURL();
     } else {
       // console.warn('No fields found in DocType response');
       formData.value = {};
@@ -379,6 +408,9 @@ const handleSubmit = async () => {
         // Show success message
         successStore.showSuccess('Form submitted successfully!');
         
+        // Clear URL parameters after successful submission
+        clearURLParameters();
+        
         // Wait a brief moment for the success message to be visible
         setTimeout(() => {
           router.push(`/documents/${route.params.id}`);
@@ -425,15 +457,65 @@ watch(() => processedSections.value, (newValue) => {
   }
 }, { immediate: true });
 
+// Add URL parameter handling for form prefilling
+// URL Parameters supported:
+// - Any fieldname from the DocType can be used as a URL parameter
+// - Example: ?swms_no=SWMS-TELCO-001&swms_version_no=6.0&project_name=Telco Project
+// - The form will automatically prefill fields that match the URL parameters on page load
+const loadFormDataFromURL = () => {
+  const url = new URL(window.location.href);
+  
+  // Get all URL parameters
+  const urlParams = new URLSearchParams(url.search);
+  
+  // Check if there are any parameters that match form fields
+  let hasPrefilledData = false;
+  
+  urlParams.forEach((value, key) => {
+    // Check if this parameter corresponds to a form field
+    if (docType.value?.fields.some(field => field.fieldname === key)) {
+      formData.value[key] = value;
+      hasPrefilledData = true;
+    }
+  });
+  
+};
+
+const clearURLParameters = () => {
+  const url = new URL(window.location.href);
+  
+  // Remove all form-related parameters
+  Object.keys(formData.value).forEach(fieldname => {
+    url.searchParams.delete(fieldname);
+  });
+  
+  // Update browser history without reloading the page
+  window.history.replaceState({}, '', url.toString());
+};
+
+// Add browser navigation handling
+const handleBrowserNavigation = () => {
+  loadFormDataFromURL();
+};
+
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/auth');
     return;
   }
   
+  // Add browser navigation event listener
+  window.addEventListener('popstate', handleBrowserNavigation);
+  
   loading.value = true;
   await fetchDocType();
   loading.value = false;
+});
+
+// Add cleanup for timeouts
+onUnmounted(() => {
+  // Remove browser navigation event listener
+  window.removeEventListener('popstate', handleBrowserNavigation);
 });
 </script>
 
