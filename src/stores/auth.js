@@ -81,41 +81,31 @@ export const useAuthStore = defineStore('auth', {
 
     async setToken(token) {
       try {
-        console.log('Auth Store - Setting token...');
-        
         // Store token in localStorage first
         localStorage.setItem('oauth_token', token);
         // Set expiry to 30 days
         localStorage.setItem('oauth_token_expiry', Date.now() + (30 * 24 * 60 * 60 * 1000));
         
         const apiUrl = getErpNextApiUrl();
-        console.log('Auth Store - Using API URL:', apiUrl);
-        
         // Get user info using the token
-        console.log('Auth Store - Fetching user info...');
         const response = await fetch(`${apiUrl}/api/method/frappe.auth.get_logged_user`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
-        console.log('Auth Store - User info response status:', response.status);
-        
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('Auth Store - User info error:', errorData);
           throw new Error(`Failed to get user info: ${errorData.message || 'Unknown error'}`);
         }
 
         const userData = await response.json();
-        console.log('Auth Store - User info received:', userData);
 
         if (!userData.message) {
           throw new Error('Invalid user data received from server');
         }
 
         // Get detailed user information
-        console.log('Auth Store - Fetching user details...');
         const userDetailsResponse = await fetch(`${apiUrl}/api/resource/User/${userData.message}`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -124,19 +114,16 @@ export const useAuthStore = defineStore('auth', {
 
         if (!userDetailsResponse.ok) {
           const errorData = await userDetailsResponse.json();
-          console.error('Auth Store - User details fetch failed:', errorData);
           throw new Error(`Failed to get user details: ${errorData.message || 'Unknown error'}`);
         }
 
         const userDetails = await userDetailsResponse.json();
-        console.log('Auth Store - User details received:', userDetails);
 
         if (!userDetails.data) {
           throw new Error('Invalid user details received from server');
         }
 
         // Get user roles to verify identity
-        console.log('Auth Store - Fetching user roles...');
         const rolesResponse = await fetch(`${apiUrl}/api/method/frappe.core.doctype.user.user.get_roles`, {
           method: 'POST',
           headers: {
@@ -150,12 +137,10 @@ export const useAuthStore = defineStore('auth', {
 
         if (!rolesResponse.ok) {
           const errorData = await rolesResponse.json();
-          console.error('Auth Store - Roles verification failed:', errorData);
           throw new Error(`Failed to verify user roles: ${errorData.message || 'Unknown error'}`);
         }
 
         const rolesData = await rolesResponse.json();
-        console.log('Auth Store - User roles:', rolesData);
 
         if (!rolesData.message) {
           throw new Error('Invalid roles data received from server');
@@ -192,11 +177,9 @@ export const useAuthStore = defineStore('auth', {
         
         // Persist state before any redirects
         this.persistState();
-        console.log('Auth Store - State persisted');
         
         // Verify token is stored
         const storedToken = localStorage.getItem('oauth_token');
-        console.log('Auth Store - Token verification:', storedToken ? 'Present' : 'Missing');
         
         return true;
       } catch (error) {

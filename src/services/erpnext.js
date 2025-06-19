@@ -72,8 +72,8 @@ const apiKeyEndpoints = [
 
 erp.interceptors.request.use(async (config) => {
   const authStore = useAuthStore();
-  console.log('Request interceptor - Is System Manager:', authStore.isSystemManager);
-  console.log('Request interceptor - Config:', config.url);
+  // console.log('Request interceptor - Is System Manager:', authStore.isSystemManager);
+  // console.log('Request interceptor - Config:', config.url);
 
   // Check if the current endpoint should use API key auth
   const shouldUseApiKey = apiKeyEndpoints.some(endpoint => config.url?.includes(endpoint));
@@ -81,7 +81,7 @@ erp.interceptors.request.use(async (config) => {
   if (shouldUseApiKey && !authStore.isSystemManager) {
     // Use API key authentication for specified endpoints
     try {
-      console.log('Request interceptor - Using API key authentication');
+      // console.log('Request interceptor - Using API key authentication');
       config.headers.Authorization = getApiKeyAuthHeader();
     } catch (error) {
       console.error('Failed to get API key authentication:', error);

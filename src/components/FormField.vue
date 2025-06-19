@@ -1055,6 +1055,7 @@ import { useRoute } from 'vue-router';
 import { VueTelInput } from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
 import L from 'leaflet';
+import type { Map as LeafletMap, Marker as LeafletMarker, FeatureGroup as LeafletFeatureGroup, Control as LeafletControl } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -2002,12 +2003,12 @@ const cancelAddRow = () => {
 };
 
 // Add these to the script setup section
-const map = ref<L.Map | null>(null);
-const marker = ref<L.Marker | null>(null);
+const map = ref<LeafletMap | null>(null);
+const marker = ref<LeafletMarker | null>(null);
 const latitude = ref<number | ''>('');
 const longitude = ref<number | ''>('');
-const drawnItems = ref<L.FeatureGroup | null>(null);
-const drawControl = ref<L.Control.Draw | null>(null);
+const drawnItems = ref<LeafletFeatureGroup | null>(null);
+const drawControl = ref<LeafletControl.Draw | null>(null);
 
 // Initialize map when component is mounted
 onMounted(() => {
@@ -2040,52 +2041,122 @@ function initializeMap() {
 
   // Initialize the draw control and pass it the FeatureGroup of editable layers
   if (!props.field.read_only) {
-    drawControl.value = new L.Control.Draw({
-      draw: {
-        polyline: true,
-        polygon: true,
-        circle: true,
-        rectangle: true,
-        marker: false, // We already have a marker
-        circlemarker: false
-      },
-      edit: {
-        featureGroup: drawnItems.value,
-        remove: true
+    try {
+      // Define draw options with proper type definitions
+      const drawOptions: L.Control.DrawConstructorOptions = {
+        draw: {
+          polyline: {
+            shapeOptions: {
+              color: '#3388ff',
+              weight: 2
+            },
+            showLength: true,
+            metric: true,
+            feet: false
+          },
+          polygon: {
+            shapeOptions: {
+              color: '#3388ff',
+              weight: 2
+            },
+            showArea: true,
+            metric: true,
+            feet: false
+          },
+          circle: {
+            shapeOptions: {
+              color: '#3388ff',
+              weight: 2
+            },
+            showRadius: true,
+            metric: true,
+            feet: false
+          },
+          rectangle: {
+            shapeOptions: {
+              color: '#3388ff',
+              weight: 2
+            },
+            showArea: true,
+            metric: true,
+            feet: false
+          },
+          marker: false, // We already have a marker
+          circlemarker: false
+        },
+        edit: {
+          featureGroup: drawnItems.value,
+          remove: true,
+          edit: {
+            selectedPathOptions: {
+              maintainColor: true,
+              dashArray: '10, 10'
+            }
+          }
+        }
+      };
+
+      drawControl.value = new L.Control.Draw(drawOptions);
+
+      // Only add the control after ensuring the map is ready
+      if (map.value) {
+        map.value.addControl(drawControl.value);
       }
-    }).addTo(map.value);
 
-    // Handle drawing events
-    map.value.on('draw:created', (e: any) => {
-      const layer = e.layer;
-      drawnItems.value?.addLayer(layer);
+      // Handle drawing events with error handling
+      map.value.on('draw:created', (e: any) => {
+        try {
+          const layer = e.layer;
+          if (drawnItems.value) {
+            drawnItems.value.addLayer(layer);
 
-      // If it's a point, update the marker position
-      if (e.layerType === 'marker') {
-        const latlng = layer.getLatLng();
-        setMapPosition(latlng.lat, latlng.lng);
-      }
+            // If it's a point, update the marker position
+            if (e.layerType === 'marker') {
+              const latlng = layer.getLatLng();
+              setMapPosition(latlng.lat, latlng.lng);
+            }
 
-      // Update the model value with the drawn shape
-      updateDrawnShapeValue();
-    });
+            // Update the model value with the drawn shape
+            updateDrawnShapeValue();
+          }
+        } catch (error) {
+          console.error('Error handling draw:created event:', error);
+        }
+      });
 
-    map.value.on('draw:edited', () => {
-      updateDrawnShapeValue();
-    });
+      map.value.on('draw:edited', () => {
+        try {
+          updateDrawnShapeValue();
+        } catch (error) {
+          console.error('Error handling draw:edited event:', error);
+        }
+      });
 
-    map.value.on('draw:deleted', () => {
-      updateDrawnShapeValue();
-    });
+      map.value.on('draw:deleted', () => {
+        try {
+          updateDrawnShapeValue();
+        } catch (error) {
+          console.error('Error handling draw:deleted event:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error initializing draw control:', error);
+    }
   }
 
-  // Handle marker drag end
-  marker.value.on('dragend', (event) => {
-    const position = event.target.getLatLng();
-    latitude.value = position.lat;
-    longitude.value = position.lng;
-    updateModelValue();
-  });
+  // Handle marker drag end with error handling
+  if (marker.value) {
+    marker.value.on('dragend', (event) => {
+      try {
+        const position = event.target.getLatLng();
+        latitude.value = position.lat;
+        longitude.value = position.lng;
+        updateModelValue();
+      } catch (error) {
+        console.error('Error handling marker dragend:', error);
+      }
+    });
+  }
 
   // Set initial position if value exists
   if (props.modelValue) {
@@ -2236,11 +2307,36 @@ function clearDrawing() {
 // Update the cleanup in onUnmounted
 onUnmounted(() => {
   if (map.value) {
-    if (drawControl.value) {
-      map.value.removeControl(drawControl.value);
+    try {
+      // Remove all event listeners
+      map.value.off('draw:created');
+      map.value.off('draw:edited');
+      map.value.off('draw:deleted');
+
+      // Remove the draw control first
+      if (drawControl.value) {
+        map.value.removeControl(drawControl.value);
+        drawControl.value = null;
+      }
+
+      // Clear drawn items
+      if (drawnItems.value) {
+        drawnItems.value.clearLayers();
+        drawnItems.value = null;
+      }
+
+      // Remove marker
+      if (marker.value) {
+        marker.value.remove();
+        marker.value = null;
+      }
+
+      // Finally remove the map
+      map.value.remove();
+      map.value = null;
+    } catch (error) {
+      console.error('Error cleaning up map:', error);
     }
-    map.value.remove();
-    map.value = null;
   }
 });
 </script>
