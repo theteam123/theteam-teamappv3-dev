@@ -13,8 +13,9 @@
       </div>
     </div>
     <!-- New Document Button -->
-    <div class="flex justify-start  mb-6" v-if="docTypePermissions?.create === 1">
+    <div class="flex justify-start  mb-6">
       <button
+        v-if="docTypePermissions?.create === 1 || authStore.user?.roles?.includes('System Manager')"
         @click="router.push(`/documents/${route.params.id}/new`)"
         class="btn-primary text-white px-4 py-2 rounded-lg  flex items-center gap-2"
       >
@@ -22,13 +23,13 @@
         New {{ docType?.name }}
       </button>
 
-    <button
-      @click="showFilters = !showFilters"
-      class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 ml-2"
-    >
-      <FilterIcon class="w-5 h-5" />
-      {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
-    </button>
+      <button
+        @click="showFilters = !showFilters"
+        class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 ml-2"
+      >
+        <FilterIcon class="w-5 h-5" />
+        {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+      </button>
     </div>
 
 
@@ -679,9 +680,9 @@ const actionFields = computed(() => {
 const filteredDocuments = computed(() => {
   let filtered = [...documents.value];
 
-  // Global search
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
+  // Global search using debounced value
+  if (debouncedSearchQuery.value && debouncedSearchQuery.value.length >= MIN_SEARCH_LENGTH) {
+    const query = debouncedSearchQuery.value.toLowerCase();
     filtered = filtered.filter(doc => {
       return Object.values(doc).some(value => 
         String(value).toLowerCase().includes(query)
@@ -689,9 +690,9 @@ const filteredDocuments = computed(() => {
     });
   }
 
-  // Field-specific searches
-  Object.entries(fieldSearches.value).forEach(([fieldname, searchValue]) => {
-    if (searchValue) {
+  // Field-specific searches using debounced values
+  Object.entries(debouncedFieldSearches.value).forEach(([fieldname, searchValue]) => {
+    if (searchValue && searchValue.length >= MIN_SEARCH_LENGTH) {
       filtered = filtered.filter(doc => {
         const fieldValue = doc[fieldname];
         return fieldValue && String(fieldValue).toLowerCase().includes(searchValue.toLowerCase());
@@ -743,6 +744,17 @@ const newFilterName = ref('');
 // Add these refs with other refs
 const showJsonDataModal = ref(false);
 const jsonData = ref<any>(null);
+
+// Add debounced search refs
+const debouncedSearchQuery = ref('');
+const debouncedFieldSearches = ref<Record<string, string>>({});
+
+// Add timeout refs for debouncing
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+let fieldSearchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// Add minimum character limit for search
+const MIN_SEARCH_LENGTH = 3;
 
 // Add this computed property
 const formattedJsonData = computed(() => {
@@ -812,6 +824,7 @@ const fetchDocType = async () => {
 
       // Set if_owner permission if any role has it
       ifOwnerPermission.value = docTypePermissions.value.if_owner === 1;
+      console.log('DocType Permissions:', docTypePermissions.value);
     }
     
     console.log('DocType Permissions:', docTypePermissions.value);
@@ -913,9 +926,31 @@ const sortByColumn = (column: string) => {
 };
 
 // Watch for search changes
-watch(searchQuery, () => {
-  currentPage.value = 1;
-  fetchDocuments(1);
+watch(searchQuery, (newValue) => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  
+  // If search is completely cleared, trigger immediate search to show all results
+  if (!newValue) {
+    debouncedSearchQuery.value = newValue;
+    currentPage.value = 1;
+    fetchDocuments(1);
+    return;
+  }
+  
+  // If search is too short, don't search at all
+  if (newValue.length < MIN_SEARCH_LENGTH) {
+    debouncedSearchQuery.value = newValue;
+    return;
+  }
+  
+  // Debounce search for valid queries (3+ characters)
+  searchTimeout = setTimeout(() => {
+    debouncedSearchQuery.value = newValue;
+    currentPage.value = 1;
+    fetchDocuments(1);
+  }, 300); // 300ms delay
 });
 
 // Watch for page size changes
@@ -930,19 +965,52 @@ watch([sortBy, sortDirection], () => {
 });
 
 // Add watch for field searches
-watch(fieldSearches, () => {
-  currentPage.value = 1;
-  fetchDocuments(1);
+watch(fieldSearches, (newValue) => {
+  if (fieldSearchTimeout) {
+    clearTimeout(fieldSearchTimeout);
+  }
+  
+  // Check if any field has a value
+  const hasAnyValue = Object.values(newValue).some(value => value && value.trim());
+  
+  // If no fields have any value, trigger immediate search to show all results
+  if (!hasAnyValue) {
+    debouncedFieldSearches.value = { ...newValue };
+    currentPage.value = 1;
+    fetchDocuments(1);
+    return;
+  }
+  
+  // Check if any field has a value that meets minimum length
+  const hasValidSearch = Object.values(newValue).some(value => 
+    value && value.length >= MIN_SEARCH_LENGTH
+  );
+  
+  // If no valid searches (all are too short), don't search at all
+  if (!hasValidSearch) {
+    debouncedFieldSearches.value = { ...newValue };
+    return;
+  }
+  
+  // Debounce search for valid queries
+  fieldSearchTimeout = setTimeout(() => {
+    debouncedFieldSearches.value = { ...newValue };
+    currentPage.value = 1;
+    fetchDocuments(1);
+  }, 300); // 300ms delay
 }, { deep: true });
 
 const canEditDocument = (doc: Document) => {
   if (authStore.user?.roles?.includes('System Manager')) {
     return true;
   }
+
   if (ifOwnerPermission.value) {
     return doc.owner === authStore.user?.email;
+  } else {
+    return docTypePermissions.value?.write === 1;
   }
-  return true;
+  return false;
 };
 
 const handleImageClick = (doc: Document, fieldname: string) => {
@@ -1083,10 +1151,8 @@ const handleFilterSelect = (filter: SavedFilter) => {
   if (!filter) return;
   
   try {
-    console.log('Selected Filter:', filter);
     selectedFilter.value = filter;
     const filterConditions = JSON.parse(filter.filters || '[]') as string[][];
-    console.log('Raw filter conditions:', filterConditions);
 
     // Reset all existing field searches
     fieldSearches.value = Object.fromEntries(
@@ -1099,7 +1165,6 @@ const handleFilterSelect = (filter: SavedFilter) => {
         const fieldname = condition[1];
         const value = condition[3];
         
-        console.log('Processing condition:', { fieldname, value });
         
         // Find the matching field and apply the value
         if (fieldSearches.value.hasOwnProperty(fieldname)) {
@@ -1109,6 +1174,9 @@ const handleFilterSelect = (filter: SavedFilter) => {
         }
       }
     });
+
+    // Update debounced values immediately for saved filters
+    debouncedFieldSearches.value = { ...fieldSearches.value };
 
     console.log('Applied field searches:', fieldSearches.value);
     
@@ -1122,6 +1190,7 @@ const handleFilterSelect = (filter: SavedFilter) => {
 const clearSelectedFilter = () => {
   selectedFilter.value = null;
   fieldSearches.value = {};
+  debouncedFieldSearches.value = {};
   fetchDocuments(1);
 };
 
@@ -1222,6 +1291,13 @@ onMounted(async () => {
   
   onUnmounted(() => {
     mediaQuery.removeEventListener('change', handleResize);
+    // Clear any pending timeouts
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    if (fieldSearchTimeout) {
+      clearTimeout(fieldSearchTimeout);
+    }
   });
   
   // Get saved filters for this doctype

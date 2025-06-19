@@ -109,4 +109,59 @@ export interface DocField {
 
 export const initializeFormFilter = (fields: DocField[]): DocField[] => {
   return fields.filter(field => field.in_standard_filter === 1);
+};
+
+/**
+ * Creates a debounced function that delays invoking the provided function
+ * until after the specified wait time has elapsed since the last time it was invoked.
+ * 
+ * @param func - The function to debounce
+ * @param wait - The number of milliseconds to delay
+ * @returns A debounced version of the function
+ */
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  
+  return (...args: Parameters<T>) => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
+/**
+ * Creates a debounced search function with minimum character limit
+ * 
+ * @param searchFunc - The search function to call
+ * @param wait - The number of milliseconds to delay
+ * @param minLength - Minimum characters required before triggering search
+ * @returns A debounced search function
+ */
+export const createDebouncedSearch = (
+  searchFunc: () => void,
+  wait: number = 300,
+  minLength: number = 2
+) => {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  
+  return (searchValue: string) => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    
+    // If search is cleared or too short, trigger immediate search
+    if (!searchValue || searchValue.length < minLength) {
+      searchFunc();
+      return;
+    }
+    
+    // Debounce search for longer queries
+    timeout = setTimeout(() => {
+      searchFunc();
+    }, wait);
+  };
 }; 
