@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 import { getCurrentToken } from './oauth';
 import { getErpNextApiUrl, getApiKeyAuthHeader, getTheTeamAuthHeader } from '../utils/api';
+import { handleApiError, fetchWithErrorHandling } from '../utils/api';
 import { getDomainConfig } from '../config/domains';
 import { getDoctypeModule } from './deskApi';
 
@@ -599,52 +600,20 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
 
 export const createDoctypeSubmission = async (doctypeName, data) => {
   try {
-    const response = await fetch(`${getErpNextApiUrl()}/api/resource/${doctypeName}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${await getCurrentToken()}`
+    const response = await fetchWithErrorHandling(
+      `${getErpNextApiUrl()}/api/resource/${doctypeName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${await getCurrentToken()}`
+        },
+        body: JSON.stringify({ data })
       },
-      body: JSON.stringify({ data })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.log('Error submitting doctype form:', error);
-      
-      let error_message = 'Failed to submit form';
-      
-      // Parse server messages if they exist
-      if (error._server_messages) {
-        try {
-          const serverMessages = JSON.parse(error._server_messages);
-          if (Array.isArray(serverMessages)) {
-            // Join multiple messages if they exist and strip HTML tags
-            error_message = serverMessages.map(msg => {
-              try {
-                const parsedMsg = JSON.parse(msg).message;
-                // Remove HTML tags from the message
-                return parsedMsg.replace(/<[^>]*>/g, '');
-              } catch {
-                // Remove HTML tags from the raw message
-                return msg.replace(/<[^>]*>/g, '');
-              }
-            }).join('. ');
-          }
-        } catch {
-          // Remove HTML tags from the raw server messages
-          error_message = error._server_messages.replace(/<[^>]*>/g, '');
-        }
-      }
-      
-      // Add exception type if it exists
-      if (error.exc_type) {
-        error_message = `${error.exc_type}: ${error_message}`;
-      }
-      
-      throw new Error(error_message);
-    }
+      'submit doctype form',
+      doctypeName
+    );
 
     return await response.json();
   } catch (error) {
@@ -655,17 +624,17 @@ export const createDoctypeSubmission = async (doctypeName, data) => {
 
 export const createForm = async (webFormName, data) => {
   // 1. Fetch the Web Form to get the DocType
-  const webFormResponse = await fetch(`${getErpNextApiUrl()}/api/resource/Web Form/${webFormName}`, {
-    headers: {
-      'Authorization': `Bearer ${await getCurrentToken()}`,
-      'Accept': 'application/json',
+  const webFormResponse = await fetchWithErrorHandling(
+    `${getErpNextApiUrl()}/api/resource/Web Form/${webFormName}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${await getCurrentToken()}`,
+        'Accept': 'application/json',
+      },
     },
-  });
-
-  if (!webFormResponse.ok) {
-    const error = await webFormResponse.json();
-    throw new Error(error.message || 'Failed to fetch Web Form');
-  }
+    'fetch Web Form',
+    webFormName
+  );
 
   const webFormData = await webFormResponse.json();
   const docType = webFormData.data.doc_type;
@@ -675,20 +644,20 @@ export const createForm = async (webFormName, data) => {
   }
 
   // 2. Submit the data to the DocType endpoint
-  const response = await fetch(`${getErpNextApiUrl()}/api/resource/${docType}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${await getCurrentToken()}`
+  const response = await fetchWithErrorHandling(
+    `${getErpNextApiUrl()}/api/resource/${docType}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${await getCurrentToken()}`
+      },
+      body: JSON.stringify({ data }) // Wrap the data in a data object
     },
-    body: JSON.stringify({ data }) // Wrap the data in a data object
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to submit form');
-  }
+    'submit form',
+    docType
+  );
 
   return await response.json();
 };
@@ -844,16 +813,17 @@ export const checkDocTypePermission = async (docType) => {
 export const getDocTypeData = async (doctypeName) => {
   try {
     const token = await getCurrentToken();
-    const response = await fetch(`${getErpNextApiUrl()}/api/method/frappe.desk.form.load.getdoctype?doctype=${doctypeName}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch DocType data');
-    }
+    const response = await fetchWithErrorHandling(
+      `${getErpNextApiUrl()}/api/method/frappe.desk.form.load.getdoctype?doctype=${doctypeName}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      },
+      'fetch DocType data',
+      doctypeName
+    );
     
     return await response.json();
   } catch (err) {
@@ -868,20 +838,21 @@ export const getSupportDocTypeData = async (doctypeName) => {
     // so we need to use the TheTeam API to get the data
     let fullUrl = `https://desk.theteamapp.theteam.net.au/api/method/frappe.desk.form.load.getdoctype?doctype=${doctypeName}`;
 
-    const response = await fetch(fullUrl, {
-      headers: {
-        'Authorization': getTheTeamAuthHeader(),
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch DocType data');
-    }
+    const response = await fetchWithErrorHandling(
+      fullUrl,
+      {
+        headers: {
+          'Authorization': getTheTeamAuthHeader(),
+          'Accept': 'application/json'
+        }
+      },
+      'fetch Support DocType data',
+      doctypeName
+    );
     
     return await response.json();
   } catch (err) {
-    console.error('Error fetching DocType:', err);
+    console.error('Error fetching Support DocType:', err);
     throw err;
   }
 };

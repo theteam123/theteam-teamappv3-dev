@@ -53,7 +53,7 @@
            'Address' }} will be automatically populated. Click the location icon to update the current location.
       </p>
       <p v-else-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
-        This field will be automatically populated with your {{ field.label?.includes('[login-user]') ? 'full name' : field.label?.includes('[login-role]') ? 'role' : 'email' }}.
+        This field will be automatically populated with your {{ getLoginTypeDescription() }}.
       </p>
     </template>
 
@@ -339,7 +339,7 @@
         }"
       ></textarea>
       <p v-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
-        This field will be automatically populated with your {{ field.label?.includes('[login-user]') ? 'full name' : field.label?.includes('[login-role]') ? 'role' : 'email' }}.
+        This field will be automatically populated with your {{ getLoginTypeDescription() }}.
       </p>
     </template>
 
@@ -1178,7 +1178,7 @@ const shouldUseCameraInput = computed(() => {
 });
 
 const shouldAutoFillUserData = computed(() => {
-  return props.field.label?.includes('[login-user]') || props.field.label?.includes('[login-email]') || props.field.label?.includes('[login-role]');
+  return props.field.label?.includes('[login-') && props.field.label?.includes(']');
 });
 
 watch(() => props.modelValue, (val) => {
@@ -1751,13 +1751,41 @@ function handleDurationFocus() {
 watch(() => authStore.user, (user) => {
   if (shouldAutoFillUserData.value && !props.modelValue) {
     console.log('shouldAutoFillUserData', user);
-    if (props.field.label?.includes('[login-user]') && user?.profile.full_name) {
-      emit('update:modelValue', user.profile.full_name);
-    } else if (props.field.label?.includes('[login-email]') && user?.email) {
-      emit('update:modelValue', user.email);
-    } else if (props.field.label?.includes('[login-role]') && user?.roles[0]) {
-      console.log('setting login-role', user.roles[0]);
-      emit('update:modelValue', user.roles.join(', '));
+    
+    // Extract the login type from the label (e.g., [login-user] -> user)
+    const loginMatch = props.field.label?.match(/\[login-([^\]]+)\]/);
+    if (loginMatch) {
+      const loginType = loginMatch[1];
+      
+      switch (loginType) {
+        case 'user':
+          if (user?.profile.full_name) {
+            emit('update:modelValue', user.profile.full_name);
+          }
+          break;
+        case 'email':
+          if (user?.email) {
+            emit('update:modelValue', user.email);
+          }
+          break;
+        case 'role':
+          if (user?.roles && user.roles.length > 0) {
+            console.log('setting login-role', user.roles[0]);
+            emit('update:modelValue', user.roles.join(', '));
+          }
+          break;
+        case 'name':
+          if (user?.profile.full_name) {
+            emit('update:modelValue', user.profile.full_name);
+          }
+          break;
+        default:
+          // For any other [login-*] pattern, try to get the value from user.details
+          if (user?.details && user.details[loginType]) {
+            emit('update:modelValue', user.details[loginType]);
+          }
+          break;
+      }
     }
   }
 }, { immediate: true });
@@ -2339,6 +2367,56 @@ onUnmounted(() => {
     }
   }
 });
+
+const getLoginTypeDescription = () => {
+  const loginMatch = props.field.label?.match(/\[login-([^\]]+)\]/);
+  if (loginMatch) {
+    const loginType = loginMatch[1];
+    switch (loginType) {
+      case 'user':
+        return 'full name';
+      case 'email':
+        return 'email';
+      case 'role':
+        return 'role';
+      case 'name':
+        return 'full name';
+      case 'first_name':
+        return 'first name';
+      case 'last_name':
+        return 'last name';
+      case 'middle_name':
+        return 'middle name';
+      case 'full_name':
+        return 'full name';
+      case 'position':
+        return 'position';
+      case 'mobile_no':
+        return 'mobile number';
+      case 'language':
+        return 'language';
+      case 'time_zone':
+        return 'time zone';
+      case 'user_type':
+        return 'user type';
+      case 'last_login':
+        return 'last login date';
+      case 'last_active':
+        return 'last active date';
+      case 'creation':
+        return 'account creation date';
+      case 'modified':
+        return 'last modified date';
+      case 'owner':
+        return 'account owner';
+      case 'modified_by':
+        return 'last modified by';
+      default:
+        return loginType.replace(/_/g, ' ');
+    }
+  }
+  return 'user information';
+};
 </script>
 
 <style>
