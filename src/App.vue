@@ -305,18 +305,18 @@
       </div>
 
       <!-- Support Modal -->
-      <div v-if="showSupportModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50" @click="showSupportModal = false">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4" @click.stop>
+      <div v-if="showSupportModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4" @click="showSupportModal = false">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" @click.stop>
           <!-- Modal Header -->
-          <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <div class="px-4 sm:px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
             <h3 class="text-lg font-medium text-gray-900">Support</h3>
-            <button @click="showSupportModal = false" class="text-gray-400 hover:text-gray-500">
+            <button @click="showSupportModal = false" class="text-gray-400 hover:text-gray-500 p-1">
               <XIcon class="w-6 h-6" />
             </button>
           </div>
 
           <!-- Modal Content -->
-          <div class="px-6 py-4">
+          <div class="px-4 sm:px-6 py-4 overflow-y-auto flex-1">
             <!-- Loading State -->
             <div v-if="supportLoading" class="flex justify-center items-center py-8">
               <LoaderIcon class="w-8 h-8 animate-spin text-green-600" />
@@ -328,11 +328,11 @@
             </div>
 
             <!-- Form -->
-            <form v-else-if="supportForm" @submit.prevent="handleSupportSubmit" class="max-w-3xl">
-              <div class="space-y-6">
+            <form v-else-if="supportForm" @submit.prevent="handleSupportSubmit" class="max-w-full">
+              <div class="space-y-4 sm:space-y-6">
                 <!-- Tabs -->
                 <div v-if="supportProcessedSections.hasTabs" class="border-b border-gray-200">
-                  <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                  <nav class="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto" aria-label="Tabs">
                     <button
                       v-for="tab in supportProcessedSections.tabs"
                       :key="tab.id"
@@ -342,7 +342,7 @@
                         currentSupportTab === tab.id
                           ? 'border-green-500 text-green-600'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                        'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                        'whitespace-nowrap py-3 sm:py-4 px-2 sm:px-1 border-b-2 font-medium text-sm flex-shrink-0'
                       ]"
                     >
                       {{ tab.label }}
@@ -356,7 +356,7 @@
                     v-for="tab in supportProcessedSections.tabs"
                     :key="tab.id"
                     v-show="currentSupportTab === tab.id"
-                    class="space-y-6"
+                    class="space-y-4 sm:space-y-6"
                   >
                     <div 
                       v-for="(section, sectionIndex) in tab.sections" 
@@ -367,17 +367,17 @@
                       ]"
                     >
                       <!-- Section Title -->
-                      <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
-                        <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                      <div v-if="section.title" class="mb-3 sm:mb-4 border-b border-gray-200 pb-2">
+                        <span class="text-base sm:text-lg font-semibold text-gray-700">{{ section.title }}</span>
                       </div>
                       
                       <!-- Fields Grid -->
                       <div>
                         <!-- Column Labels -->
                         <div v-if="section.columnLabels.length > 0" :class="{
-                          'grid gap-6 mb-4': true,
-                          'grid-cols-2': section.columnCount === 2,
-                          'grid-cols-1': section.columnCount <= 1
+                          'grid gap-4 sm:gap-6 mb-3 sm:mb-4': true,
+                          'grid-cols-1': section.columnCount <= 1 || isMobile,
+                          'grid-cols-2': section.columnCount === 2 && !isMobile
                         }">
                           <div v-for="(label, idx) in section.columnLabels" :key="idx" class="text-sm font-medium text-gray-700">
                             {{ label }}
@@ -386,9 +386,9 @@
                         
                         <!-- Fields -->
                         <div :class="{
-                          'grid gap-6': true,
-                          'grid-cols-2': section.columnCount === 2,
-                          'grid-cols-1': section.columnCount <= 1
+                          'grid gap-4 sm:gap-6': true,
+                          'grid-cols-1': section.columnCount <= 1 || isMobile,
+                          'grid-cols-2': section.columnCount === 2 && !isMobile
                         }">
                           <FormField
                             v-for="field in section.fields"
@@ -415,17 +415,17 @@
                     ]"
                   >
                     <!-- Section Title -->
-                    <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
-                      <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                    <div v-if="section.title" class="mb-3 sm:mb-4 border-b border-gray-200 pb-2">
+                      <span class="text-base sm:text-lg font-semibold text-gray-700">{{ section.title }}</span>
                     </div>
                     
                     <!-- Fields Grid -->
                     <div>
                       <!-- Column Labels -->
                       <div v-if="section.columnLabels.length > 0" :class="{
-                        'grid gap-6 mb-4': true,
-                        'grid-cols-2': section.columnCount === 2,
-                        'grid-cols-1': section.columnCount <= 1
+                        'grid gap-4 sm:gap-6 mb-3 sm:mb-4': true,
+                        'grid-cols-1': section.columnCount <= 1 || isMobile,
+                        'grid-cols-2': section.columnCount === 2 && !isMobile
                       }">
                         <div v-for="(label, idx) in section.columnLabels" :key="idx" class="text-sm font-medium text-gray-700">
                           {{ label }}
@@ -434,9 +434,9 @@
                       
                       <!-- Fields -->
                       <div :class="{
-                        'grid gap-6': true,
-                        'grid-cols-2': section.columnCount === 2,
-                        'grid-cols-1': section.columnCount <= 1
+                        'grid gap-4 sm:gap-6': true,
+                        'grid-cols-1': section.columnCount <= 1 || isMobile,
+                        'grid-cols-2': section.columnCount === 2 && !isMobile
                       }">
                         <FormField
                           v-for="field in section.fields"
@@ -454,19 +454,19 @@
             </form>
 
             <!-- Placeholder for empty state -->
-            <div v-else class="text-center py-12">
-              <HelpCircleIcon class="mx-auto h-16 w-16 text-gray-400 mb-4" />
-              <h4 class="text-xl font-semibold text-gray-900 mb-2">How can we help you?</h4>
+            <div v-else class="text-center py-8 sm:py-12">
+              <HelpCircleIcon class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" />
+              <h4 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">How can we help you?</h4>
               <p class="text-gray-500">Loading support form...</p>
             </div>
           </div>
 
           <!-- Modal Footer -->
-          <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+          <div class="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 flex-shrink-0">
             <button
               @click="showSupportModal = false"
               type="button"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -474,7 +474,7 @@
               v-if="supportForm && !supportLoading && !supportError"
               @click="handleSupportSubmit"
               type="button"
-              class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md hover:bg-green-700"
+              class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white btn-primary rounded-md hover:bg-green-700"
               :disabled="supportSubmitting"
             >
               {{ supportSubmitting ? 'Submitting...' : 'Submit Request' }}
@@ -905,6 +905,17 @@ const editForm = ref({
   time_zone: ''
 });
 
+// Add window width tracking for responsive design
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024);
+
+// Computed property for responsive grid columns
+const isMobile = computed(() => windowWidth.value < 640);
+
+// Window resize handler
+const handleResize = () => {
+  windowWidth.value = window.innerWidth;
+};
+
 // Watch for modal opening
 watch(showUserModal, (newValue) => {
   if (newValue) {
@@ -954,6 +965,9 @@ const handleClickOutside = (event: MouseEvent) => {
 onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
   
+  // Add window resize listener
+  window.addEventListener('resize', handleResize);
+  
   // Initialize error capture (access the singleton to ensure it's initialized)
   console.log('Error capture initialized. Current error count:', errorCapture.getErrorCount());
   
@@ -982,6 +996,7 @@ watch(() => authStore.isAuthenticated, async (isAuthenticated) => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('resize', handleResize);
 });
 
 const toggleSidebar = () => {
