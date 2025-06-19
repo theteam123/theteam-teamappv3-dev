@@ -30,6 +30,15 @@
         <FilterIcon class="w-5 h-5" />
         {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
       </button>
+
+      <button
+        @click="shareCurrentURL"
+        class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 ml-2"
+        title="Share current search results"
+      >
+        <ShareIcon class="w-5 h-5" />
+        Share Filters Results
+      </button>
     </div>
 
 
@@ -554,6 +563,18 @@
         </div>
       </div>
     </div>
+
+    <!-- Success Message -->
+    <div v-if="showSuccessMessage" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
+      <CheckCircleIcon class="w-5 h-5" />
+      <span>{{ successMessage }}</span>
+      <button
+        @click="showSuccessMessage = false"
+        class="ml-2 text-white hover:text-green-100"
+      >
+        <XIcon class="w-4 h-4" />
+      </button>
+    </div>
   </div>
 </template>
 
@@ -588,7 +609,9 @@ import {
   ListIcon,
   XIcon,
   PlusIcon,
-  FilterIcon
+  FilterIcon,
+  ShareIcon,
+  CheckCircleIcon
 } from 'lucide-vue-next';
 import ImageModal from '../components/ImageModal.vue';
 import PdfIcon from '../components/icons/PdfIcon.vue';
@@ -745,6 +768,10 @@ const newFilterName = ref('');
 const showJsonDataModal = ref(false);
 const jsonData = ref<any>(null);
 
+// Add success message ref
+const showSuccessMessage = ref(false);
+const successMessage = ref('');
+
 // Add debounced search refs
 const debouncedSearchQuery = ref('');
 const debouncedFieldSearches = ref<Record<string, string>>({});
@@ -755,6 +782,151 @@ let fieldSearchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Add minimum character limit for search
 const MIN_SEARCH_LENGTH = 3;
+
+// Add URL parameter handling
+// URL Parameters supported:
+// - search: Global search query (e.g., ?search=john)
+// - field_[fieldname]: Field-specific search (e.g., ?field_name=john&field_email=john@example.com)
+// - view: View mode (grid/list) (e.g., ?view=grid)
+// - page: Current page number (e.g., ?page=2)
+// - pageSize: Items per page (e.g., ?pageSize=50)
+// - sortBy: Sort column (e.g., ?sortBy=name)
+// - sortDir: Sort direction (asc/desc) (e.g., ?sortDir=asc)
+// - showFilters: Show filters panel (e.g., ?showFilters=true)
+// Example URL: /documents/123?search=john&field_name=john&view=grid&page=2&sortBy=name&sortDir=asc&showFilters=true
+const updateURLWithSearchParams = () => {
+  const url = new URL(window.location.href);
+  
+  // Update global search parameter
+  if (searchQuery.value && searchQuery.value.length >= MIN_SEARCH_LENGTH) {
+    url.searchParams.set('search', searchQuery.value);
+  } else {
+    url.searchParams.delete('search');
+  }
+  
+  // Update field-specific search parameters
+  Object.entries(fieldSearches.value).forEach(([fieldname, value]) => {
+    if (value && value.length >= MIN_SEARCH_LENGTH) {
+      url.searchParams.set(`field_${fieldname}`, value);
+    } else {
+      url.searchParams.delete(`field_${fieldname}`);
+    }
+  });
+  
+  // Update view mode parameter
+  if (viewMode.value !== 'list') {
+    url.searchParams.set('view', viewMode.value);
+  } else {
+    url.searchParams.delete('view');
+  }
+  
+  // Update page parameter
+  if (currentPage.value > 1) {
+    url.searchParams.set('page', currentPage.value.toString());
+  } else {
+    url.searchParams.delete('page');
+  }
+  
+  // Update page size parameter
+  if (pageSize.value !== 20) {
+    url.searchParams.set('pageSize', pageSize.value.toString());
+  } else {
+    url.searchParams.delete('pageSize');
+  }
+  
+  // Update sort parameters
+  if (sortBy.value !== 'modified' || sortDirection.value !== 'desc') {
+    url.searchParams.set('sortBy', sortBy.value);
+    url.searchParams.set('sortDir', sortDirection.value);
+  } else {
+    url.searchParams.delete('sortBy');
+    url.searchParams.delete('sortDir');
+  }
+  
+  // Update filters visibility
+  if (showFilters.value) {
+    url.searchParams.set('showFilters', 'true');
+  } else {
+    url.searchParams.delete('showFilters');
+  }
+  
+  // Update browser history without reloading the page
+  window.history.replaceState({}, '', url.toString());
+};
+
+const loadSearchParamsFromURL = () => {
+  const url = new URL(window.location.href);
+  
+  // Load global search
+  const searchParam = url.searchParams.get('search');
+  if (searchParam) {
+    searchQuery.value = searchParam;
+    debouncedSearchQuery.value = searchParam;
+  }
+  
+  // Load field-specific searches
+  const fieldParams: Record<string, string> = {};
+  url.searchParams.forEach((value, key) => {
+    if (key.startsWith('field_')) {
+      const fieldname = key.replace('field_', '');
+      fieldParams[fieldname] = value;
+    }
+  });
+  
+  if (Object.keys(fieldParams).length > 0) {
+    fieldSearches.value = { ...fieldSearches.value, ...fieldParams };
+    debouncedFieldSearches.value = { ...debouncedFieldSearches.value, ...fieldParams };
+  }
+  
+  // Load view mode
+  const viewParam = url.searchParams.get('view');
+  if (viewParam && ['grid', 'list'].includes(viewParam)) {
+    viewMode.value = viewParam;
+  }
+  
+  // Load page
+  const pageParam = url.searchParams.get('page');
+  if (pageParam) {
+    const page = parseInt(pageParam);
+    if (page > 0) {
+      currentPage.value = page;
+    }
+  }
+  
+  // Load page size
+  const pageSizeParam = url.searchParams.get('pageSize');
+  if (pageSizeParam) {
+    const size = parseInt(pageSizeParam);
+    if ([10, 20, 50, 100].includes(size)) {
+      pageSize.value = size;
+    }
+  }
+  
+  // Load sort parameters
+  const sortByParam = url.searchParams.get('sortBy');
+  const sortDirParam = url.searchParams.get('sortDir');
+  if (sortByParam && sortDirParam && ['asc', 'desc'].includes(sortDirParam)) {
+    sortBy.value = sortByParam;
+    sortDirection.value = sortDirParam as 'asc' | 'desc';
+  }
+  
+  // Load filters visibility
+  const showFiltersParam = url.searchParams.get('showFilters');
+  if (showFiltersParam === 'true') {
+    showFilters.value = true;
+  }
+};
+
+const hasURLSearchParams = () => {
+  const url = new URL(window.location.href);
+  return url.searchParams.toString().length > 0;
+};
+
+const handleBrowserNavigation = () => {
+  loadSearchParamsFromURL();
+  // Re-fetch documents with the loaded parameters
+  fetchDocuments(currentPage.value);
+};
 
 // Add this computed property
 const formattedJsonData = computed(() => {
@@ -911,6 +1083,7 @@ const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
     fetchDocuments(page);
+    updateURLWithSearchParams();
   }
 };
 
@@ -923,6 +1096,7 @@ const sortByColumn = (column: string) => {
     sortBy.value = column;
     sortDirection.value = 'desc';
   }
+  updateURLWithSearchParams();
 };
 
 // Watch for search changes
@@ -936,12 +1110,14 @@ watch(searchQuery, (newValue) => {
     debouncedSearchQuery.value = newValue;
     currentPage.value = 1;
     fetchDocuments(1);
+    updateURLWithSearchParams();
     return;
   }
   
   // If search is too short, don't search at all
   if (newValue.length < MIN_SEARCH_LENGTH) {
     debouncedSearchQuery.value = newValue;
+    updateURLWithSearchParams();
     return;
   }
   
@@ -950,6 +1126,7 @@ watch(searchQuery, (newValue) => {
     debouncedSearchQuery.value = newValue;
     currentPage.value = 1;
     fetchDocuments(1);
+    updateURLWithSearchParams();
   }, 300); // 300ms delay
 });
 
@@ -957,11 +1134,28 @@ watch(searchQuery, (newValue) => {
 watch(pageSize, () => {
   currentPage.value = 1;
   fetchDocuments(1);
+  updateURLWithSearchParams();
 });
 
 // Watch for sorting changes
 watch([sortBy, sortDirection], () => {
   fetchDocuments(currentPage.value);
+  updateURLWithSearchParams();
+});
+
+// Watch for view mode changes
+watch(viewMode, () => {
+  updateURLWithSearchParams();
+});
+
+// Watch for page changes
+watch(currentPage, () => {
+  updateURLWithSearchParams();
+});
+
+// Watch for filters visibility
+watch(showFilters, () => {
+  updateURLWithSearchParams();
 });
 
 // Add watch for field searches
@@ -978,6 +1172,7 @@ watch(fieldSearches, (newValue) => {
     debouncedFieldSearches.value = { ...newValue };
     currentPage.value = 1;
     fetchDocuments(1);
+    updateURLWithSearchParams();
     return;
   }
   
@@ -989,6 +1184,7 @@ watch(fieldSearches, (newValue) => {
   // If no valid searches (all are too short), don't search at all
   if (!hasValidSearch) {
     debouncedFieldSearches.value = { ...newValue };
+    updateURLWithSearchParams();
     return;
   }
   
@@ -997,6 +1193,7 @@ watch(fieldSearches, (newValue) => {
     debouncedFieldSearches.value = { ...newValue };
     currentPage.value = 1;
     fetchDocuments(1);
+    updateURLWithSearchParams();
   }, 300); // 300ms delay
 }, { deep: true });
 
@@ -1182,6 +1379,7 @@ const handleFilterSelect = (filter: SavedFilter) => {
     
     // Trigger a new search
     fetchDocuments(1);
+    updateURLWithSearchParams();
   } catch (error) {
     console.error('Error applying filter:', error);
   }
@@ -1192,6 +1390,7 @@ const clearSelectedFilter = () => {
   fieldSearches.value = {};
   debouncedFieldSearches.value = {};
   fetchDocuments(1);
+  updateURLWithSearchParams();
 };
 
 const handleDeleteFilter = async () => {
@@ -1274,6 +1473,51 @@ const showJsonModal = (data: any) => {
   showJsonDataModal.value = true;
 };
 
+const shareCurrentURL = async () => {
+  const url = window.location.href;
+  const shareData = {
+    title: docType.value?.name || 'Document Submissions',
+    text: 'Check out these submissions!',
+    url: url
+  };
+
+  try {
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      await navigator.share(shareData);
+      showSuccessMessage.value = true;
+      successMessage.value = 'Shared successfully!';
+    } else {
+      // Fallback to copying the URL
+      await navigator.clipboard.writeText(url);
+      showSuccessMessage.value = true;
+      successMessage.value = 'URL copied to clipboard!';
+    }
+  } catch (error) {
+    console.error('Error sharing:', error);
+    // Fallback for older browsers
+    try {
+      const tempInput = document.createElement('input');
+      tempInput.value = url;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      showSuccessMessage.value = true;
+      successMessage.value = 'URL copied to clipboard!';
+    } catch (fallbackError) {
+      console.error('Fallback copy failed:', fallbackError);
+      showSuccessMessage.value = true;
+      successMessage.value = 'Failed to copy URL';
+    }
+  }
+  
+  // Hide success message after 3 seconds
+  setTimeout(() => {
+    showSuccessMessage.value = false;
+    successMessage.value = '';
+  }, 3000);
+};
+
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/auth');
@@ -1289,8 +1533,12 @@ onMounted(async () => {
   
   mediaQuery.addEventListener('change', handleResize);
   
+  // Add browser navigation event listener
+  window.addEventListener('popstate', handleBrowserNavigation);
+  
   onUnmounted(() => {
     mediaQuery.removeEventListener('change', handleResize);
+    window.removeEventListener('popstate', handleBrowserNavigation);
     // Clear any pending timeouts
     if (searchTimeout) {
       clearTimeout(searchTimeout);
@@ -1313,6 +1561,15 @@ onMounted(async () => {
   }
   
   await fetchDocType();
+  
+  // Load search parameters from URL before fetching documents
+  loadSearchParamsFromURL();
+  
+  // Show filters if there are URL parameters
+  if (hasURLSearchParams()) {
+    showFilters.value = true;
+  }
+  
   await fetchDocuments();
 });
 </script> 
