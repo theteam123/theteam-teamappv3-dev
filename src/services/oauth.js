@@ -96,7 +96,7 @@ export const refreshAccessToken = async (refreshToken) => {
       localStorage.setItem('oauth_token', response.data.access_token);
       // Set expiry to 1 hour from now (3600 seconds)
       const expiryTime = Date.now() + (3600 * 1000);
-      console.log('Token expiry set to:', new Date(expiryTime).toISOString());
+      // console.log('Token expiry set to:', new Date(expiryTime).toISOString());
       localStorage.setItem('oauth_token_expiry', expiryTime);
       return response.data.access_token;
     }
@@ -120,11 +120,11 @@ export const getCurrentToken = async () => {
 
   const expiryTime = parseInt(expiry);
   const now = Date.now();
-  console.log('Token expiry check:', {
-    expiryTime: new Date(expiryTime).toISOString(),
-    now: new Date(now).toISOString(),
-    isExpired: now > expiryTime
-  });
+  // console.log('Token expiry check:', {
+  //   expiryTime: new Date(expiryTime).toISOString(),
+  //   now: new Date(now).toISOString(),
+  //   isExpired: now > expiryTime
+  // });
 
   // If token is expired and we have a refresh token, try to refresh
   if (now > expiryTime && refreshToken) {

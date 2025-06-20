@@ -261,17 +261,6 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   const errorStore = useErrorStore()
 
-  console.log('Route navigation:', {
-    to: to.fullPath,
-    from: from.fullPath,
-    toName: to.name,
-    fromName: from.name,
-    availableRoutes: router.getRoutes().map(r => ({
-      path: r.path,
-      name: r.name
-    }))
-  })
-
   // Always allow OAuth callback
   if (to.path === '/oauth-callback') {
     next();

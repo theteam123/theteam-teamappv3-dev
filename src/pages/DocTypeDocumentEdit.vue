@@ -260,7 +260,7 @@ const fetchDocTypeAndDocument = async () => {
   try {
     // Fetch DocType metadata
     const response = await getDocTypeData(route.params.id as string);
-    console.log('DocType response:', response);
+    // console.log('DocType response:', response);
     
     if (!response || !response.docs || !Array.isArray(response.docs) || response.docs.length === 0) {
       throw new Error('Invalid response format from DocType API');
@@ -323,7 +323,7 @@ const fetchDocTypeAndDocument = async () => {
 const handleSubmit = async () => {
   // Check if there are any changes
   if (isEqual(formData.value, originalFormData.value)) {
-    console.log('No changes detected');
+    // console.log('No changes detected');
     successStore.showSuccess('No changes to save');
     setTimeout(() => {
       router.back();
@@ -459,7 +459,7 @@ const handleSubmit = async () => {
     } finally {
       // Always try to download watermarked files, regardless of any previous errors
       if (filesToDownload.value.length > 0) {
-        console.log('Downloading watermarked files:', filesToDownload.value);
+        // console.log('Downloading watermarked files:', filesToDownload.value);
         downloadWatermarkedFiles(filesToDownload.value.map(fileData => ({
           file: fileData.file,
           fieldname: fileData.fieldname,

@@ -773,7 +773,6 @@ const handleSignOut = async () => {
 };
 
 const handleDocumentClick = (item) => {
-  console.log('Navigating to:', item.path);
   router.push(item.path);
 };
 
@@ -799,7 +798,6 @@ const updatePageUrlField = () => {
       // Update the form data with current page URL
       const currentUrl = window.location.origin + route.fullPath;
       supportFormData.value[pageUrlField.fieldname] = currentUrl;
-      console.log('Updated page URL field with current route:', currentUrl);
     }
   }
 };
@@ -811,8 +809,6 @@ const fetchSupportFormData = async () => {
   
   try {
     const response2 = await getSupportDocTypeData('Support Request');
-
-    console.log('response2', response2);
 
     // Get the fields from the web form's web_form_fields property
     let fields: RawFormField[] = [];
@@ -863,11 +859,47 @@ const handleSupportSubmit = async () => {
   supportError.value = null;
 
   try {
-    await createSupportForm(supportFormData.value);
+    // Validate form data before submission
+    const formDataToSubmit = { ...supportFormData.value };
+    
+    // Ensure all required fields are present
+    if (supportForm.value) {
+      const requiredFields = supportForm.value.fields.filter(field => field.reqd === 1);
+      for (const field of requiredFields) {
+        if (!formDataToSubmit[field.fieldname] || formDataToSubmit[field.fieldname].toString().trim() === '') {
+          throw new Error(`Please fill in the required field: ${field.label}`);
+        }
+      }
+      
+      // Validate JSON fields
+      for (const field of supportForm.value.fields) {
+        if (field.fieldtype === 'JSON' && formDataToSubmit[field.fieldname]) {
+          try {
+            const value = typeof formDataToSubmit[field.fieldname] === 'string' 
+              ? JSON.parse(formDataToSubmit[field.fieldname])
+              : formDataToSubmit[field.fieldname];
+            // Store as compact JSON string
+            formDataToSubmit[field.fieldname] = JSON.stringify(value);
+          } catch (e) {
+            throw new Error(`Invalid JSON format in field "${field.label}": ${e.message}`);
+          }
+        }
+      }
+    }
+    
+    // Clean the data before submission
+    Object.keys(formDataToSubmit).forEach(key => {
+      if (typeof formDataToSubmit[key] === 'string') {
+        formDataToSubmit[key] = formDataToSubmit[key].trim();
+      }
+    });
+
+    await createSupportForm(formDataToSubmit);
     showSupportSuccessModal.value = true;
     showSupportModal.value = false;
   } catch (err: any) {
-    supportError.value = err.message;
+    console.error('Support form submission error:', err);
+    supportError.value = err.message || 'Failed to submit support request';
   } finally {
     supportSubmitting.value = false;
   }

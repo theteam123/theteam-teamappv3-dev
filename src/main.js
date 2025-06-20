@@ -19,7 +19,7 @@ updateDocumentMeta()
 app.mount('#app')
 
 // Debug output
-console.log('Available routes:', router.getRoutes().map(r => ({ 
+/* console.log('Available routes:', router.getRoutes().map(r => ({ 
   path: r.path,
   name: r.name
-}))) 
+})))  */

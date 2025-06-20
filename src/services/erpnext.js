@@ -858,24 +858,95 @@ export const getSupportDocTypeData = async (doctypeName) => {
 };
 
 export const createSupportForm = async (data) => {
-  // Support Request is a custom doctype that is not available in the ERPNext instance
-  // so we need to use the TheTeam API to create it
-  const response = await fetch(`https://desk.theteamapp.theteam.net.au/api/resource/Support Request`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': getTheTeamAuthHeader()
-    },
-    body: JSON.stringify({ data }) // Wrap the data in a data object
-  });
+  try {
+    // Support Request is a custom doctype that is not available in the ERPNext instance
+    // so we need to use the TheTeam API to create it
+    
+    // Clean and validate the data before sending
+    const cleanedData = { ...data };
+    
+    // Handle additional_data field specifically
+    if (cleanedData.additional_data) {
+      try {
+        // If it's already a string, try to parse and re-stringify to ensure valid JSON
+        if (typeof cleanedData.additional_data === 'string') {
+          const parsed = JSON.parse(cleanedData.additional_data);
+          cleanedData.additional_data = JSON.stringify(parsed);
+          console.log('Parsed and re-stringify additional_data:', cleanedData.additional_data);
+        } else {
+          // If it's an object, stringify it
+          cleanedData.additional_data = JSON.stringify(cleanedData.additional_data);
+          console.log('Stringified additional_data object:', cleanedData.additional_data);
+        }
+      } catch (jsonError) {
+        console.warn('Invalid JSON in additional_data, setting to empty object:', jsonError);
+        cleanedData.additional_data = '{}';
+      }
+    }
+    
+    // Ensure all string fields are properly trimmed and not null
+    Object.keys(cleanedData).forEach(key => {
+      if (typeof cleanedData[key] === 'string') {
+        cleanedData[key] = cleanedData[key].trim();
+        if (cleanedData[key] === '') {
+          cleanedData[key] = null;
+        }
+      }
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to submit form');
+    // First attempt: Try with the full data
+    try {
+      const response = await fetch(`https://desk.theteamapp.theteam.net.au/api/resource/Support Request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': getTheTeamAuthHeader()
+        },
+        body: JSON.stringify({ data: cleanedData })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Support form submission error:', error);
+        
+        // If it's an additional_data constraint error, try without it
+        if (error.exc && error.exc.includes('additional_data')) {
+          const dataWithoutAdditional = { ...cleanedData };
+          delete dataWithoutAdditional.additional_data;
+          
+          const retryResponse = await fetch(`https://desk.theteamapp.theteam.net.au/api/resource/Support Request`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': getTheTeamAuthHeader()
+            },
+            body: JSON.stringify({ data: dataWithoutAdditional })
+          });
+          
+          if (!retryResponse.ok) {
+            const retryError = await retryResponse.json();
+            throw new Error(retryError.message || 'Failed to submit support request');
+          }
+          
+          const result = await retryResponse.json();
+          return result;
+        }
+        
+        throw new Error(error.message || 'Failed to submit support request');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (fetchError) {
+      console.error('Fetch error:', fetchError);
+      throw fetchError;
+    }
+  } catch (error) {
+    console.error('Error in createSupportForm:', error);
+    throw error;
   }
-
-  return await response.json();
 };
 
 export const getChildTableData = async (doctype, name) => {
@@ -994,10 +1065,6 @@ export const getRolePermissions = async (roleName) => {
       role: roleName
     });
 
-    console.log('Role permissions response:', {
-      role: roleName,
-      permissions: response.data
-    });
 
     return response.data.message || {};
   } catch (error) {

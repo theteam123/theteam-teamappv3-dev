@@ -34,6 +34,7 @@
   .btn-primary {
     @apply btn text-white focus:ring-green-500;
     background-color: var(--color-primary);
+    justify-content: center;
   }
 
   .btn-primary:hover {

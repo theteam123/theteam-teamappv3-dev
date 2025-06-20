@@ -364,6 +364,10 @@ const totalPages = ref(0);
 const debouncedSearch = ref('');
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
+// Add mobile detection
+const mediaQueryMatches = ref(false);
+const isMobile = computed(() => mediaQueryMatches.value);
+
 // Watch for search changes
 watch(searchQuery, (newValue) => {
   if (searchTimeout) {
@@ -444,8 +448,8 @@ const fetchDocTypes = async (page = 1) => {
   loading.value = true;
   error.value = null;
   try {
-    console.log('Route query:', route.query);
-    console.log('Route query module:', route.query.module);
+    // console.log('Route query:', route.query);
+    // console.log('Route query module:', route.query.module);
     const response = await getDocTypes(
       page, 
       pageSize.value, 
@@ -621,7 +625,7 @@ const goToPage = (page: number) => {
   }
 };
 
-// Change default to list view
+// Change default to list view - will be overridden in onMounted based on screen size
 const viewMode = ref('list');
 
 // Add function to fetch role permissions
@@ -640,6 +644,26 @@ onMounted(async () => {
     // router.push('/auth');
     return;
   }
+  
+  // Set up mobile detection
+  const mediaQuery = window.matchMedia('(max-width: 768px)');
+  mediaQueryMatches.value = mediaQuery.matches;
+  
+  // Set default view mode based on screen size
+  viewMode.value = mediaQuery.matches ? 'grid' : 'list';
+  
+  const handleResize = (e: MediaQueryListEvent) => {
+    mediaQueryMatches.value = e.matches;
+    // Update view mode when screen size changes
+    if (e.matches && viewMode.value === 'list') {
+      viewMode.value = 'grid';
+    } else if (!e.matches && viewMode.value === 'grid') {
+      viewMode.value = 'list';
+    }
+  };
+  
+  mediaQuery.addEventListener('change', handleResize);
+  
   await fetchDocTypes();
   await fetchRolePermissions();
 });

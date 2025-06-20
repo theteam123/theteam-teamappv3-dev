@@ -169,11 +169,11 @@ export const useAuthStore = defineStore('auth', {
         this.isLoggedIn = true;
         this.isSystemManager = rolesData.message?.includes('System Manager') || false;
         
-        console.log('Auth Store - State updated:', {
-          user: this.user,
-          isLoggedIn: this.isLoggedIn,
-          isSystemManager: this.isSystemManager
-        });
+        // console.log('Auth Store - State updated:', {
+        //   user: this.user,
+        //   isLoggedIn: this.isLoggedIn,
+        //   isSystemManager: this.isSystemManager
+        // });
         
         // Persist state before any redirects
         this.persistState();

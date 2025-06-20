@@ -1848,17 +1848,31 @@ watch(() => props.field, (newField) => {
     if (newField.label?.includes('[page-url]')) {
       // Get complete URL with all parameters using Vue Router
       const fullUrl = window.location.origin + route.fullPath;
-      console.log('Setting page url with all parameters', fullUrl);
       emit('update:modelValue', fullUrl);
     } else if (newField.label?.includes('[support-data]')) {
       // Get captured errors as JSON
-      const supportData = getErrorsAsJson();
-      console.log('Setting support data (captured errors)', supportData);
-      emit('update:modelValue', supportData);
+      try {
+        const supportData = getErrorsAsJson();
+        
+        // Validate that the support data is valid JSON
+        JSON.parse(supportData);
+        emit('update:modelValue', supportData);
+      } catch (error) {
+        console.warn('Error generating support data JSON:', error);
+        // Fallback to a minimal valid JSON structure
+        const fallbackData = {
+          captureTime: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          url: window.location.href,
+          totalErrors: 0,
+          errors: [],
+          error: 'Failed to capture error data'
+        };
+        emit('update:modelValue', JSON.stringify(fallbackData));
+      }
     }
     // Handle explicit default values
     else if (newField.default) {
-      console.log('setting default value', newField.default);
       if (newField.default == 'Now') {
         if (newField.fieldtype === 'Datetime') {
           // For datetime-local input, use Australia/Sydney timezone
@@ -1910,9 +1924,11 @@ const handleJsonInput = (event: Event) => {
     // Try to parse the JSON to validate it
     const parsed = JSON.parse(value);
     jsonError.value = null;
+    // Store as compact JSON string to avoid formatting issues
     emit('update:modelValue', JSON.stringify(parsed));
   } catch (e) {
     jsonError.value = 'Invalid JSON format';
+    // Still emit the value so user can continue editing
     emit('update:modelValue', value);
   }
 };
@@ -1927,6 +1943,22 @@ const formatJson = () => {
   } catch (e) {
     jsonError.value = 'Invalid JSON format';
   }
+};
+
+// Add function to validate JSON before submission
+const validateJsonField = () => {
+  if (props.field.fieldtype === 'JSON' && props.modelValue) {
+    try {
+      const value = typeof props.modelValue === 'string' 
+        ? JSON.parse(props.modelValue)
+        : props.modelValue;
+      // Return compact JSON string
+      return JSON.stringify(value);
+    } catch (e) {
+      throw new Error(`Invalid JSON in field "${props.field.label}": ${e.message}`);
+    }
+  }
+  return props.modelValue;
 };
 
 defineExpose({ VueTelInput });

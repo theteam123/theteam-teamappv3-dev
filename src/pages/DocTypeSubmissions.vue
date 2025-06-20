@@ -13,11 +13,11 @@
       </div>
     </div>
     <!-- New Document Button -->
-    <div class="flex justify-start  mb-6">
+    <div class="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-start mb-6">
       <button
         v-if="docTypePermissions?.create === 1 || authStore.user?.roles?.includes('System Manager')"
         @click="router.push(`/documents/${route.params.id}/new`)"
-        class="btn-primary text-white px-4 py-2 rounded-lg  flex items-center gap-2"
+        class="btn-primary text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
       >
         <FilePlusIcon class="w-5 h-5" />
         New {{ docType?.name }}
@@ -25,7 +25,7 @@
 
       <button
         @click="showFilters = !showFilters"
-        class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 ml-2"
+        class="btn-primary text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto sm:ml-2"
       >
         <FilterIcon class="w-5 h-5" />
         {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
@@ -33,7 +33,7 @@
 
       <button
         @click="shareCurrentURL"
-        class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 ml-2"
+        class="btn-primary text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto sm:ml-2"
         title="Share current search results"
       >
         <ShareIcon class="w-5 h-5" />
@@ -749,7 +749,7 @@ const filteredDocuments = computed(() => {
   return filtered;
 });
 
-// Add viewMode ref with other refs
+// Add viewMode ref with other refs - default to grid on mobile, list on desktop
 const viewMode = ref('list');
 const showFilters = ref(false);
 
@@ -947,9 +947,9 @@ const fetchDocType = async () => {
   try {
     console.log('Fetching DocType:', route.params.id);
     const response = await getFormData('DocType', route.params.id as string);
-    console.log('DocType Response:', response);
-    console.log('DocType Data:', response.data);
-    console.log('DocType Fields:', response.data.fields);
+    // console.log('DocType Response:', response);
+    // console.log('DocType Data:', response.data);
+    // console.log('DocType Fields:', response.data.fields);
 
     const fields = initializeFormFilter(response.data.fields);
     console.log('Filtered Fields (in_standard_filter=1):', fields);
@@ -1527,8 +1527,17 @@ onMounted(async () => {
   const mediaQuery = window.matchMedia('(max-width: 768px)');
   mediaQueryMatches.value = mediaQuery.matches;
   
+  // Set default view mode based on screen size
+  viewMode.value = mediaQuery.matches ? 'grid' : 'list';
+  
   const handleResize = (e: MediaQueryListEvent) => {
     mediaQueryMatches.value = e.matches;
+    // Update view mode when screen size changes
+    if (e.matches && viewMode.value === 'list') {
+      viewMode.value = 'grid';
+    } else if (!e.matches && viewMode.value === 'grid') {
+      viewMode.value = 'list';
+    }
   };
   
   mediaQuery.addEventListener('change', handleResize);

@@ -100,9 +100,9 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
           columnLabels: []
         };
       } else if (field.fieldtype === 'Column Break') {
-        console.log('Column Break Label', field.label);
-        console.log('Column Break Fieldname', field.fieldname);
-        console.log('Column Break', field);
+        // console.log('Column Break Label', field.label);
+        // console.log('Column Break Fieldname', field.fieldname);
+        // console.log('Column Break', field);
         if (!currentSection.hidden) {
           currentSection.columnCount++;
           currentSection.columnLabels.push(field.label || '');
@@ -133,8 +133,8 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
         !section.hidden && section.fields.length > 0
       )
     );
-    console.log('Final Tabs', finalTabs);
-    console.log('Sections', sections);
+    // console.log('Final Tabs', finalTabs);
+    // console.log('Sections', sections);
 
     return {
       tabs: finalTabs,
