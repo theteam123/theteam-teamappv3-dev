@@ -2,7 +2,7 @@
   <div :class="[
     'transition-all duration-200 ease-in-out',
     field.hidden === 1 ? 'hidden' : (shouldShowField ? 'space-y-2' : 'hidden')
-  ]">
+  ]" data-form-field>
     <!-- Section Break -->
     <template v-if="field.fieldtype === 'Section Break'">
       <div class="mt-8 mb-4 border-b border-gray-200 pb-2">
@@ -1696,12 +1696,13 @@ const initSignaturePad = () => {
     penColor: 'rgb(0, 0, 0)'
   });
 
-  signaturePad.value.addEventListener("endStroke", () => {
-    if (signaturePad.value && !signaturePad.value.isEmpty()) {
-      const dataURL = signaturePad.value.toDataURL();
-      emit('update:modelValue', dataURL);
-    }
-  });
+  // Remove the automatic saving on stroke end
+  // signaturePad.value.addEventListener("endStroke", () => {
+  //   if (signaturePad.value && !signaturePad.value.isEmpty()) {
+  //     const dataURL = signaturePad.value.toDataURL();
+  //     emit('update:modelValue', dataURL);
+  //   }
+  // });
 };
 
 const clearSignature = () => {
@@ -1712,12 +1713,28 @@ const clearSignature = () => {
   emit('update:modelValue', '');
 };
 
-watch(() => props.modelValue, (newValue) => {
-  if (!newValue && signaturePad.value && !signaturePad.value.isEmpty()) {
+// Add a method to save the current signature
+const saveCurrentSignature = () => {
+  if (signaturePad.value && !signaturePad.value.isEmpty()) {
     const dataURL = signaturePad.value.toDataURL();
     emit('update:modelValue', dataURL);
+    return dataURL;
   }
+  return null;
+};
+
+// Expose the save method so parent components can call it
+defineExpose({ 
+  VueTelInput,
+  saveCurrentSignature 
 });
+
+// watch(() => props.modelValue, (newValue) => {
+//   if (!newValue && signaturePad.value && !signaturePad.value.isEmpty()) {
+//     const dataURL = signaturePad.value.toDataURL();
+//     emit('update:modelValue', dataURL);
+//   }
+// });
 
 onMounted(() => {
   if (props.field.fieldtype === 'Signature') {
@@ -1960,8 +1977,6 @@ const validateJsonField = () => {
   }
   return props.modelValue;
 };
-
-defineExpose({ VueTelInput });
 
 // Add these refs and computed properties after the existing ones
 const selectedRows = ref<number[]>([]);

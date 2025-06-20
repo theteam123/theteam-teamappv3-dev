@@ -310,6 +310,15 @@ const handleSubmit = async () => {
   error.value = null;
 
   try {
+    // Save all signature fields before submission
+    const formFieldRefs = document.querySelectorAll('[data-form-field]');
+    for (const fieldRef of formFieldRefs) {
+      const vueComponent = (fieldRef as any).__vueParentComponent?.exposed;
+      if (vueComponent && typeof vueComponent.saveCurrentSignature === 'function') {
+        vueComponent.saveCurrentSignature();
+      }
+    }
+
     await createForm(route.params.id as string, formData.value);
     showSubmittedModal.value = true;
     // router.push(`/forms/${route.params.id}/submissions`); // We'll navigate from the modal

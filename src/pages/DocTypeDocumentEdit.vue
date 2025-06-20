@@ -336,6 +336,15 @@ const handleSubmit = async () => {
   filesToDownload.value = [];
 
   try {
+    // Save all signature fields before submission
+    const formFieldRefs = document.querySelectorAll('[data-form-field]');
+    for (const fieldRef of formFieldRefs) {
+      const vueComponent = (fieldRef as any).__vueParentComponent?.exposed;
+      if (vueComponent && typeof vueComponent.saveCurrentSignature === 'function') {
+        vueComponent.saveCurrentSignature();
+      }
+    }
+
     const formDataToSubmit = { ...formData.value };
 
     // Find all image fields that need to be uploaded
