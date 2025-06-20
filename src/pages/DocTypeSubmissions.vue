@@ -146,13 +146,13 @@
         <div v-if="filteredFields?.length" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           <div v-for="field in filteredFields" :key="field.fieldname">
             <label :for="field.fieldname" class="block text-sm font-medium text-gray-700 mb-1">
-              {{ field.label }}
+              {{ field.label || 'Field' }}
             </label>
             <input
               :id="field.fieldname"
               type="text"
               v-model="fieldSearches[field.fieldname]"
-              :placeholder="`Search by ${field.label.toLowerCase()}`"
+              :placeholder="`Search by ${field.label ? field.label.toLowerCase() : 'field'}...`"
               class="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-sm"
             />
           </div>
@@ -229,14 +229,14 @@
                     target="_blank"
                     rel="noopener noreferrer"
                     class="text-gray-600 hover:text-green-600 hover:bg-white border border-green-600 btn-primary p-1 rounded text-white"
-                    :title="field.label.replace('[action]', '').trim()"
+                    :title="field.label ? field.label.replace('[action]', '').trim() : ''"
                     @mouseenter="hoveredPdfIcon = doc.name + field.fieldname"
                     @mouseleave="hoveredPdfIcon = null"
                   >
                     <component 
-                      :is="field.label.toLowerCase().includes('pdf') ? 
+                      :is="(field.label && field.label.toLowerCase().includes('pdf')) ? 
                            (hoveredPdfIcon === (doc.name + field.fieldname) ? PdfIconBlack : PdfIcon) : 
-                           field.label.toLowerCase().includes('folder') ? FolderIcon : 
+                           (field.label && field.label.toLowerCase().includes('folder')) ? FolderIcon : 
                            LinkIcon" 
                       class="w-5 h-5"
                     />
@@ -247,11 +247,11 @@
 
             <!-- Document Fields -->
             <div class="mt-4 space-y-2">
-              <template v-for="field in docType?.fields.filter(f => !f.label.toLowerCase().includes('[action]'))" :key="field.fieldname">
+              <template v-for="field in docType?.fields.filter(f => !(f.label && f.label.toLowerCase().includes('[action]')))" :key="field.fieldname">
                 <div v-if="doc[field.fieldname]" class="flex items-start gap-2">
-                  <span class="text-sm font-medium text-gray-500">{{ field.label.replace(/\[.*?\]/g, '').trim() }}:</span>
+                  <span class="text-sm font-medium text-gray-500">{{ field.label ? field.label.replace(/\[.*?\]/g, '').trim() : 'Field' }}:</span>
                   <span class="text-sm text-gray-900">
-                    <template v-if="field.fieldtype === 'Table' && ( field.label.includes('[multiple-upload-view]')  || field.label.includes('[multiple-camera-view]') )">
+                    <template v-if="field.fieldtype === 'Table' && ( (field.label && field.label.includes('[multiple-upload-view]'))  || (field.label && field.label.includes('[multiple-camera-view]')) )">
                       <button 
                         @click="handleImageClick(doc, field.fieldname)"
                         class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
@@ -294,7 +294,7 @@
                       />
                       <span v-else class="text-gray-400 text-sm">No signature added</span>
                     </template>
-                    <template v-else-if="field.label.toLowerCase().includes('[support-data]') && doc[field.fieldname]">
+                    <template v-else-if="(field.label && field.label.toLowerCase().includes('[support-data]')) && doc[field.fieldname]">
                       <button 
                         @click="showJsonModal(doc[field.fieldname])"
                         class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
@@ -326,13 +326,13 @@
                       Actions
                     </th>
                     <th
-                      v-for="field in docType?.fields.filter(f => !f.label.toLowerCase().includes('[action]'))"
+                      v-for="field in docType?.fields.filter(f => !(f.label && f.label.toLowerCase().includes('[action]')))"
                       :key="field.fieldname"
                       class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                       @click="sortByColumn(field.fieldname)"
                     >
                       <div class="flex items-center gap-1">
-                        {{ field.label.replace(/\[.*?\]/g, '').trim() }}
+                        {{ field.label ? field.label.replace(/\[.*?\]/g, '').trim() : 'Field' }}
                         <div class="flex flex-col">
                           <ChevronUpIcon 
                             class="w-3 h-3" 
@@ -373,14 +373,14 @@
                             target="_blank"
                             rel="noopener noreferrer"
                             class="text-gray-600 hover:text-green-600 hover:bg-white border border-green-600 btn-primary p-1 rounded text-white"
-                            :title="field.label.replace('[action]', '').trim()"
+                            :title="field.label ? field.label.replace('[action]', '').trim() : ''"
                             @mouseenter="hoveredPdfIcon = doc.name + field.fieldname"
                             @mouseleave="hoveredPdfIcon = null"
                           >
                             <component 
-                              :is="field.label.toLowerCase().includes('pdf') ? 
+                              :is="(field.label && field.label.toLowerCase().includes('pdf')) ? 
                                    (hoveredPdfIcon === (doc.name + field.fieldname) ? PdfIconBlack : PdfIcon) : 
-                                   field.label.toLowerCase().includes('folder') ? FolderIcon : 
+                                   (field.label && field.label.toLowerCase().includes('folder')) ? FolderIcon : 
                                    LinkIcon" 
                               class="w-5 h-5"
                             />
@@ -389,12 +389,12 @@
                       </div>
                     </td>
                     <td
-                      v-for="field in docType?.fields.filter(f => !f.label.toLowerCase().includes('[action]'))"
+                      v-for="field in docType?.fields.filter(f => !(f.label && f.label.toLowerCase().includes('[action]')))"
                       :key="field.fieldname"
                       class="px-6 py-4 text-sm text-gray-900"
                       :class="{'whitespace-nowrap': !field.fieldtype.includes('Text')}"
                     >
-                      <template v-if="field.fieldtype === 'Table' && ( field.label.includes('[multiple-upload-view]') || field.label.includes('[multiple-camera-view]') )">
+                      <template v-if="field.fieldtype === 'Table' && ( (field.label && field.label.includes('[multiple-upload-view]'))  || (field.label && field.label.includes('[multiple-camera-view]')) )">
                         <button 
                           @click="handleImageClick(doc, field.fieldname)"
                           class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
@@ -443,7 +443,7 @@
                         />
                         <span v-else class="text-gray-400 text-sm">No signature added</span>
                       </template>
-                      <template v-else-if="field.label.toLowerCase().includes('[support-data]') && doc[field.fieldname]">
+                      <template v-else-if="(field.label && field.label.toLowerCase().includes('[support-data]')) && doc[field.fieldname]">
                         <button 
                           @click="showJsonModal(doc[field.fieldname])"
                           class="text-gray-500 hover:text-gray-700 flex items-center gap-1"
@@ -696,7 +696,7 @@ const isMobile = computed(() => {
 // Add this computed property before onMounted
 const actionFields = computed(() => {
   if (!docType.value) return [];
-  return docType.value.fields.filter(field => field.label.toLowerCase().includes('[action]'));
+  return docType.value.fields.filter(field => field.label && field.label.toLowerCase().includes('[action]'));
 });
 
 // Computed
@@ -1007,8 +1007,8 @@ const fetchDocType = async () => {
       docType.value = {
         ...response.data,
         fields: response.data.fields.filter((field: DocTypeField) => 
-          field.label.toLowerCase().includes('[multiple-upload-view]') || 
-          field.label.toLowerCase().includes('[multiple-camera-view]') || 
+          (field.label && field.label.toLowerCase().includes('[multiple-upload-view]')) || 
+          (field.label && field.label.toLowerCase().includes('[multiple-camera-view]')) || 
           field.in_preview === 1 ||
           field.in_list_view === 1
         )

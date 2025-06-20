@@ -280,27 +280,14 @@ const fetchDocTypeAndDocument = async () => {
       description: docTypeData.description || '',
       fields: docTypeData.fields || []
     };
-    
-    // docType.value = {
-    //   name: docTypeResponse.data.name || 'Untitled Document',
-    //   description: docTypeResponse.data.description || '',
-    //   fields: fields.map(field => ({
-    //     fieldname: field.fieldname,
-    //     label: field.label,
-    //     fieldtype: field.fieldtype,
-    //     reqd: field.reqd || 0,
-    //     options: field.options || '',
-    //     depends_on: field.depends_on,
-    //     hidden: field.hidden || 0,
-    //     parent: field.parent,
-    //     description: field.description
-    //   }))
-    // };
+
 
     // Fetch document data
     const documentResponse = await getFormData(route.params.id as string, route.params.documentId as string);
     
     if (documentResponse.data) {
+      console.log('Document response:', documentResponse.data);
+      console.log('Document response:', documentResponse.data.test_geolocation_field);
       formData.value = JSON.parse(JSON.stringify(documentResponse.data));
       originalFormData.value = JSON.parse(JSON.stringify(documentResponse.data));
       

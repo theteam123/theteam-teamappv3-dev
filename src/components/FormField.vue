@@ -1055,10 +1055,14 @@ import { useRoute } from 'vue-router';
 import { VueTelInput } from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
 import L from 'leaflet';
-import type { Map as LeafletMap, Marker as LeafletMarker, FeatureGroup as LeafletFeatureGroup, Control as LeafletControl } from 'leaflet';
+import type { Map as LeafletMap, Marker as LeafletMarker, FeatureGroup as LeafletFeatureGroup, Control as LeafletControl, Circle as LeafletCircle } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
+
+// Explicitly import Draw control
+import 'leaflet-draw/dist/leaflet.draw.js';
+
 import { getFormList, uploadFile } from '../services/erpnext';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 import { useErrorStore } from '../stores/error';
@@ -2104,15 +2108,15 @@ function initializeMap() {
   // Add OpenStreetMap tile layer
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
-  }).addTo(map.value);
+  }).addTo(map.value as any);
 
   // Initialize marker
   marker.value = L.marker([0, 0], {
     draggable: !props.field.read_only
-  }).addTo(map.value);
+  }).addTo(map.value as any);
 
   // Initialize the FeatureGroup to store editable layers
-  drawnItems.value = new L.FeatureGroup().addTo(map.value);
+  drawnItems.value = new L.FeatureGroup().addTo(map.value as any);
 
   // Initialize the draw control and pass it the FeatureGroup of editable layers
   if (!props.field.read_only) {
@@ -2126,8 +2130,7 @@ function initializeMap() {
               weight: 2
             },
             showLength: true,
-            metric: true,
-            feet: false
+            metric: true
           },
           polygon: {
             shapeOptions: {
@@ -2135,8 +2138,7 @@ function initializeMap() {
               weight: 2
             },
             showArea: true,
-            metric: true,
-            feet: false
+            metric: true
           },
           circle: {
             shapeOptions: {
@@ -2144,8 +2146,7 @@ function initializeMap() {
               weight: 2
             },
             showRadius: true,
-            metric: true,
-            feet: false
+            metric: true
           },
           rectangle: {
             shapeOptions: {
@@ -2153,18 +2154,16 @@ function initializeMap() {
               weight: 2
             },
             showArea: true,
-            metric: true,
-            feet: false
+            metric: true
           },
           marker: false, // We already have a marker
           circlemarker: false
         },
         edit: {
-          featureGroup: drawnItems.value,
+          featureGroup: drawnItems.value as any,
           remove: true,
           edit: {
             selectedPathOptions: {
-              maintainColor: true,
               dashArray: '10, 10'
             }
           }
@@ -2197,6 +2196,14 @@ function initializeMap() {
         } catch (error) {
           console.error('Error handling draw:created event:', error);
         }
+      });
+
+      map.value.on('draw:drawstart', (e: any) => {
+        console.log('Draw started:', e.layerType);
+      });
+
+      map.value.on('draw:drawstop', (e: any) => {
+        console.log('Draw stopped:', e.layerType);
       });
 
       map.value.on('draw:edited', () => {
@@ -2247,11 +2254,16 @@ function initializeMap() {
       if (geoJson && (geoJson.type === 'Feature' || geoJson.type === 'FeatureCollection')) {
         // Handle GeoJSON
         if (geoJson.type === 'Feature') {
-          const layer = L.geoJSON(geoJson).addTo(drawnItems.value!);
-          map.value.fitBounds(layer.getBounds());
+          addGeoJsonFeature(geoJson);
         } else if (geoJson.type === 'FeatureCollection') {
-          const layer = L.geoJSON(geoJson).addTo(drawnItems.value!);
-          map.value.fitBounds(layer.getBounds());
+          geoJson.features.forEach((feature: any) => {
+            addGeoJsonFeature(feature);
+          });
+        }
+        
+        // Fit bounds to show all features
+        if (drawnItems.value && drawnItems.value.getLayers().length > 0) {
+          map.value.fitBounds(drawnItems.value.getBounds());
         }
       } else {
         // Handle simple coordinates
@@ -2264,6 +2276,37 @@ function initializeMap() {
     } catch (error) {
       console.error('Error parsing geolocation value:', error);
     }
+  }
+}
+
+// Helper function to add GeoJSON features to the map
+function addGeoJsonFeature(feature: any) {
+  if (!drawnItems.value) return;
+
+  try {
+    if (feature.geometry.type === 'Point' && feature.properties?.point_type === 'circle') {
+      // Handle circle points
+      const coordinates = feature.geometry.coordinates;
+      const radius = feature.properties.radius || 1000; // Default radius if not specified
+      
+      const circle = L.circle([coordinates[1], coordinates[0]], {
+        radius: radius,
+        color: '#3388ff',
+        weight: 2,
+        fillColor: '#3388ff',
+        fillOpacity: 0.2
+      });
+      
+      drawnItems.value.addLayer(circle as any);
+    } else {
+      // Handle standard GeoJSON features
+      const layer = L.geoJSON(feature);
+      if (layer.getLayers().length > 0) {
+        drawnItems.value.addLayer(layer.getLayers()[0] as any);
+      }
+    }
+  } catch (error) {
+    console.error('Error adding GeoJSON feature:', error);
   }
 }
 
@@ -2285,11 +2328,16 @@ watch(() => props.modelValue, (newValue) => {
       if (geoJson && (geoJson.type === 'Feature' || geoJson.type === 'FeatureCollection')) {
         // Handle GeoJSON
         if (geoJson.type === 'Feature') {
-          const layer = L.geoJSON(geoJson).addTo(drawnItems.value!);
-          map.value.fitBounds(layer.getBounds());
+          addGeoJsonFeature(geoJson);
         } else if (geoJson.type === 'FeatureCollection') {
-          const layer = L.geoJSON(geoJson).addTo(drawnItems.value!);
-          map.value.fitBounds(layer.getBounds());
+          geoJson.features.forEach((feature: any) => {
+            addGeoJsonFeature(feature);
+          });
+        }
+        
+        // Fit bounds to show all features
+        if (drawnItems.value && drawnItems.value.getLayers().length > 0) {
+          map.value.fitBounds(drawnItems.value.getBounds());
         }
       } else {
         // Handle simple coordinates
@@ -2353,6 +2401,7 @@ function updateDrawnShapeValue() {
   if (!drawnItems.value) return;
 
   const layers = drawnItems.value.getLayers();
+  
   if (layers.length === 0) {
     updateModelValue();
     return;
@@ -2360,8 +2409,27 @@ function updateDrawnShapeValue() {
 
   // Create a GeoJSON feature collection
   const features = layers.map(layer => {
-    const geoJson = (layer as any).toGeoJSON();
-    return geoJson;
+    if ((layer as any).getRadius && typeof (layer as any).getRadius === 'function') {
+      // Convert circle to GeoJSON with point_type
+      const latlng = (layer as any).getLatLng();
+      const radius = (layer as any).getRadius();
+      
+      return {
+        type: 'Feature',
+        properties: {
+          point_type: 'circle',
+          radius: radius
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [latlng.lng, latlng.lat]
+        }
+      };
+    } else {
+      // Handle other layer types
+      const geoJson = (layer as any).toGeoJSON();
+      return geoJson;
+    }
   });
 
   const geoJson = {
