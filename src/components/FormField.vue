@@ -2153,7 +2153,7 @@ function initializeMap() {
               color: '#3388ff',
               weight: 2
             },
-            showArea: true,
+            showArea: false,
             metric: true
           },
           marker: false, // We already have a marker
@@ -2196,14 +2196,6 @@ function initializeMap() {
         } catch (error) {
           console.error('Error handling draw:created event:', error);
         }
-      });
-
-      map.value.on('draw:drawstart', (e: any) => {
-        console.log('Draw started:', e.layerType);
-      });
-
-      map.value.on('draw:drawstop', (e: any) => {
-        console.log('Draw stopped:', e.layerType);
       });
 
       map.value.on('draw:edited', () => {

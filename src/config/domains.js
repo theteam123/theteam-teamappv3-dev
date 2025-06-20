@@ -156,12 +156,9 @@ export const getDomainConfig = () => {
   if (currentDomain.includes('localhost')) {
     currentDomain = 'taktec';
     currentDomain = 'teamsite-sgcloud';
+    currentDomain = 'theteamapp';
   }
-  // For testing purposes, set the current domain to 'teamsite-sgcloud'
-  // const currentDomain = 'teamsite-sgcloud';
-  // const currentDomain = 'taktec';
-  // const currentDomain = 'mrces';
-  
+
   // Find the matching domain configuration
   const domainKey = Object.keys(DOMAINS).find(key => 
     key !== 'default' && currentDomain.includes(key)
