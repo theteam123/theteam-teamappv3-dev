@@ -148,7 +148,27 @@
             <label :for="field.fieldname" class="block text-sm font-medium text-gray-700 mb-1">
               {{ field.label || 'Field' }}
             </label>
+            
+            <!-- Select Field Dropdown -->
+            <select
+              v-if="field.fieldtype === 'Select'"
+              :id="field.fieldname"
+              v-model="fieldSearches[field.fieldname]"
+              class="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-sm"
+            >
+              <option value="">All {{ field.label || 'options' }}</option>
+              <option 
+                v-for="option in parseSelectOptions(field.options || '')" 
+                :key="option" 
+                :value="option"
+              >
+                {{ option }}
+              </option>
+            </select>
+            
+            <!-- Text Input for other field types -->
             <input
+              v-else
               :id="field.fieldname"
               type="text"
               v-model="fieldSearches[field.fieldname]"
@@ -715,10 +735,25 @@ const filteredDocuments = computed(() => {
 
   // Field-specific searches using debounced values
   Object.entries(debouncedFieldSearches.value).forEach(([fieldname, searchValue]) => {
-    if (searchValue && searchValue.length >= MIN_SEARCH_LENGTH) {
+    if (searchValue && searchValue.trim()) {
       filtered = filtered.filter(doc => {
         const fieldValue = doc[fieldname];
-        return fieldValue && String(fieldValue).toLowerCase().includes(searchValue.toLowerCase());
+        if (!fieldValue) return false;
+        
+        // Find the field definition to check if it's a Select field
+        const field = filteredFields.value.find(f => f.fieldname === fieldname);
+        
+        // For Select fields, use exact matching
+        if (field?.fieldtype === 'Select') {
+          return String(fieldValue).trim() === searchValue.trim();
+        }
+        
+        // For other fields, use partial matching with minimum length check
+        if (searchValue.length >= MIN_SEARCH_LENGTH) {
+          return String(fieldValue).toLowerCase().includes(searchValue.toLowerCase());
+        }
+        
+        return false;
       });
     }
   });
@@ -806,12 +841,26 @@ const updateURLWithSearchParams = () => {
   
   // Update field-specific search parameters
   Object.entries(fieldSearches.value).forEach(([fieldname, value]) => {
-    if (value && value.length >= MIN_SEARCH_LENGTH) {
-      url.searchParams.set(`field_${fieldname}`, value);
+    if (value && value.trim()) {
+      // Find the field definition to check if it's a Select field
+      const field = filteredFields.value.find(f => f.fieldname === fieldname);
+      
+      // For Select fields, include any non-empty value
+      // For other fields, only include if it meets minimum length
+      if (field?.fieldtype === 'Select' || value.length >= MIN_SEARCH_LENGTH) {
+        url.searchParams.set(`field_${fieldname}`, value);
+      } else {
+        url.searchParams.delete(`field_${fieldname}`);
+      }
     } else {
       url.searchParams.delete(`field_${fieldname}`);
     }
   });
+  
+  // Always include status parameter if it has a value
+  if (fieldSearches.value.status) {
+    url.searchParams.set('field_status', fieldSearches.value.status);
+  }
   
   // Update view mode parameter
   if (viewMode.value !== 'list') {
@@ -874,6 +923,7 @@ const loadSearchParamsFromURL = () => {
   });
   
   if (Object.keys(fieldParams).length > 0) {
+    // Load all field parameters including status if it exists in URL
     fieldSearches.value = { ...fieldSearches.value, ...fieldParams };
     debouncedFieldSearches.value = { ...debouncedFieldSearches.value, ...fieldParams };
   }
@@ -951,9 +1001,8 @@ const fetchDocType = async () => {
     // console.log('DocType Data:', response.data);
     // console.log('DocType Fields:', response.data.fields);
 
-    const fields = initializeFormFilter(response.data.fields);
-    console.log('Filtered Fields (in_standard_filter=1):', fields);
-    filteredFields.value = fields;
+    filteredFields.value = initializeFormFilter(response.data.fields);
+    console.log('Filtered Fields (in_standard_filter=1):', filteredFields.value);
 
     // Check if user has System Manager role
     const isSystemManager = authStore.user?.roles?.includes('System Manager');
@@ -1176,19 +1225,35 @@ watch(fieldSearches, (newValue) => {
     return;
   }
   
-  // Check if any field has a value that meets minimum length
-  const hasValidSearch = Object.values(newValue).some(value => 
-    value && value.length >= MIN_SEARCH_LENGTH
-  );
+  // Check if there are any Select field changes (these should trigger immediate search)
+  const hasSelectFieldChanges = Object.entries(newValue).some(([fieldname, value]) => {
+    const field = filteredFields.value.find(f => f.fieldname === fieldname);
+    return field?.fieldtype === 'Select' && value && value.trim();
+  });
   
-  // If no valid searches (all are too short), don't search at all
-  if (!hasValidSearch) {
+  // If there are Select field changes, trigger immediate search
+  if (hasSelectFieldChanges) {
+    debouncedFieldSearches.value = { ...newValue };
+    currentPage.value = 1;
+    fetchDocuments(1);
+    updateURLWithSearchParams();
+    return;
+  }
+  
+  // Check if any text field has a value that meets minimum length
+  const hasValidTextSearch = Object.entries(newValue).some(([fieldname, value]) => {
+    const field = filteredFields.value.find(f => f.fieldname === fieldname);
+    return field?.fieldtype !== 'Select' && value && value.length >= MIN_SEARCH_LENGTH;
+  });
+  
+  // If no valid text searches (all are too short), don't search at all
+  if (!hasValidTextSearch) {
     debouncedFieldSearches.value = { ...newValue };
     updateURLWithSearchParams();
     return;
   }
   
-  // Debounce search for valid queries
+  // Debounce search for text field queries only
   fieldSearchTimeout = setTimeout(() => {
     debouncedFieldSearches.value = { ...newValue };
     currentPage.value = 1;
@@ -1375,6 +1440,9 @@ const handleFilterSelect = (filter: SavedFilter) => {
     // Update debounced values immediately for saved filters
     debouncedFieldSearches.value = { ...fieldSearches.value };
 
+    // Apply default status filter if not already set by the saved filter
+    applyDefaultStatusFilter();
+
     console.log('Applied field searches:', fieldSearches.value);
     
     // Trigger a new search
@@ -1389,6 +1457,10 @@ const clearSelectedFilter = () => {
   selectedFilter.value = null;
   fieldSearches.value = {};
   debouncedFieldSearches.value = {};
+  
+  // Apply default status filter after clearing
+  applyDefaultStatusFilter();
+  
   fetchDocuments(1);
   updateURLWithSearchParams();
 };
@@ -1518,6 +1590,40 @@ const shareCurrentURL = async () => {
   }, 3000);
 };
 
+// Add this helper function after the existing helper functions and before onMounted
+const parseSelectOptions = (options: string): string[] => {
+  if (!options) return [];
+  
+  // Split by newlines and filter out empty strings
+  return options
+    .split('\n')
+    .map(option => option.trim())
+    .filter(option => option.length > 0);
+};
+
+// Helper function to apply default status filter
+const applyDefaultStatusFilter = () => {
+  if (filteredFields.value) {
+    const statusField = filteredFields.value.find(field => 
+      field.fieldname === 'status' && field.fieldtype === 'Select'
+    );
+    
+    if (statusField) {
+      // Check if "Completed" is available in the options
+      const options = parseSelectOptions(statusField.options || '');
+      
+      if (options.includes('Completed')) {
+        // Set to "Completed" if no status value exists or if it's empty
+        const currentStatus = fieldSearches.value.status;
+        if (!currentStatus || currentStatus.trim() === '') {
+          fieldSearches.value.status = 'Completed';
+          debouncedFieldSearches.value.status = 'Completed';
+        }
+      }
+    }
+  }
+};
+
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/auth');
@@ -1571,8 +1677,11 @@ onMounted(async () => {
   
   await fetchDocType();
   
-  // Load search parameters from URL before fetching documents
+  // Load search parameters from URL first
   loadSearchParamsFromURL();
+  
+  // Set default status filter to "Completed" if status field exists and no status in URL
+  applyDefaultStatusFilter();
   
   // Show filters if there are URL parameters
   if (hasURLSearchParams()) {
