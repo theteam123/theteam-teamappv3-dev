@@ -1013,6 +1013,122 @@
     </div>
   </template>
 
+  <!-- Table MultiSelect Input -->
+  <template v-else-if="field.fieldtype === 'Table MultiSelect'">
+    <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+      {{ formattedLabel }}
+      <span v-if="isFieldRequired" class="text-red-500">*</span>
+    </label>
+    <div class="mt-1 relative">
+      <!-- Selected Items Display -->
+      <div v-if="selectedTableItems.length > 0" class="mb-3">
+        <div class="flex flex-wrap gap-2">
+          <div 
+            v-for="item in selectedTableItems" 
+            :key="item.name"
+            class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 border border-green-200"
+          >
+            <span class="mr-2">{{ item.name }}</span>
+            <button
+              v-if="!field.read_only"
+              @click="removeTableItem(item)"
+              type="button"
+              class="text-green-600 hover:text-green-800"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search and Select Interface -->
+      <div class="relative">
+        <div class="relative">
+          <input
+            :id="field.fieldname"
+            v-model="tableSearchQuery"
+            @input="searchTableItems"
+            @focus="handleSearchFocus"
+            @blur="handleSearchBlur"
+            @keydown="handleSearchKeydown"
+            type="text"
+            :placeholder="`Search ${formattedLabel}...`"
+            :disabled="field.read_only === 1"
+            :readonly="field.read_only === 1"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 pr-10"
+            :class="{
+              'bg-gray-50': field.read_only === 1,
+              'cursor-not-allowed': field.read_only === 1
+            }"
+          />
+          <!-- Clear search button -->
+          <button
+            v-if="tableSearchQuery && !field.read_only"
+            @click="clearSearch"
+            type="button"
+            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Dropdown with search results -->
+        <div 
+          v-if="showTableDropdown && !field.read_only"
+          class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+        >
+          <!-- Loading state in dropdown -->
+          <div v-if="loadingTableItems" class="px-4 py-3 text-sm text-gray-500 text-center">
+            <div class="flex items-center justify-center">
+              <LoaderIcon class="h-4 w-4 mr-2 animate-spin" />
+              Searching...
+            </div>
+          </div>
+          
+          <!-- No results state -->
+          <div v-else-if="!loadingTableItems && filteredTableItems.length === 0 && tableSearchQuery.trim() !== ''" class="px-4 py-3 text-sm text-gray-500 text-center">
+            No results found for "{{ tableSearchQuery }}"
+          </div>
+          
+          <!-- Search results -->
+          <div v-else-if="filteredTableItems.length > 0">
+            <div 
+              v-for="item in filteredTableItems" 
+              :key="item.name"
+              @click="selectTableItem(item)"
+              class="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
+              :class="{
+                'bg-green-50 hover:bg-green-100': isItemSelected(item)
+              }"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="font-medium text-gray-900">{{ item.name }}</div>
+                  <div v-if="item.description" class="text-sm text-gray-500 mt-1">{{ item.description }}</div>
+                </div>
+                <!-- Checkmark for selected items -->
+                <div v-if="isItemSelected(item)" class="ml-2">
+                  <svg class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Initial state when no search query and no items loaded -->
+          <div v-else-if="tableSearchQuery.trim() === '' && !loadingTableItems" class="px-4 py-3 text-sm text-gray-500 text-center">
+            Start typing to search or browse available options
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
   </div>
 
   <!-- Delete Confirmation Modal -->
@@ -1064,6 +1180,7 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 import 'leaflet-draw/dist/leaflet.draw.js';
 
 import { getFormList, uploadFile } from '../services/erpnext';
+import { searchLink } from '../services/deskApi';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 import { useErrorStore } from '../stores/error';
 import { MapPinIcon, LoaderIcon } from 'lucide-vue-next';
@@ -1123,6 +1240,11 @@ interface GeolocationData {
   label: string;
   value: string;
   type: 'lat' | 'lng' | 'address';
+}
+
+interface TableItem {
+  name: string;
+  description?: string;
 }
 
 const props = defineProps<{
@@ -2156,8 +2278,15 @@ function initializeMap() {
             showArea: false,
             metric: true
           },
-          marker: false, // We already have a marker
-          circlemarker: false
+          marker: {
+            icon: L.divIcon({
+              className: 'custom-marker',
+              html: '<div style="background-color: #3388ff; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+              iconSize: [12, 12],
+              iconAnchor: [6, 6]
+            })
+          },
+          circlemarker: {}
         },
         edit: {
           featureGroup: drawnItems.value as any,
@@ -2290,6 +2419,34 @@ function addGeoJsonFeature(feature: any) {
       });
       
       drawnItems.value.addLayer(circle as any);
+    } else if (feature.geometry.type === 'Point' && feature.properties?.point_type === 'circlemarker') {
+      // Handle circlemarker points
+      const coordinates = feature.geometry.coordinates;
+      const radius = feature.properties.radius || 6; // Default radius for circlemarker
+      
+      const circleMarker = L.circleMarker([coordinates[1], coordinates[0]], {
+        radius: radius,
+        color: '#3388ff',
+        weight: 2,
+        fillColor: '#3388ff',
+        fillOpacity: 0.2
+      });
+      
+      drawnItems.value.addLayer(circleMarker as any);
+    } else if (feature.geometry.type === 'Point' && feature.properties?.point_type === 'marker') {
+      // Handle marker points
+      const coordinates = feature.geometry.coordinates;
+      
+      const marker = L.marker([coordinates[1], coordinates[0]], {
+        icon: L.divIcon({
+          className: 'custom-marker',
+          html: '<div style="background-color: #3388ff; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+          iconSize: [12, 12],
+          iconAnchor: [6, 6]
+        })
+      });
+      
+      drawnItems.value.addLayer(marker as any);
     } else {
       // Handle standard GeoJSON features
       const layer = L.geoJSON(feature);
@@ -2417,8 +2574,39 @@ function updateDrawnShapeValue() {
           coordinates: [latlng.lng, latlng.lat]
         }
       };
+    } else if ((layer as any).getLatLng && typeof (layer as any).getLatLng === 'function') {
+      // Handle markers and circlemarkers
+      const latlng = (layer as any).getLatLng();
+      const isCircleMarker = (layer as any).getRadius && (layer as any).getRadius() <= 10; // Circle markers typically have small radius
+      
+      if (isCircleMarker) {
+        const radius = (layer as any).getRadius();
+        return {
+          type: 'Feature',
+          properties: {
+            point_type: 'circlemarker',
+            radius: radius
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [latlng.lng, latlng.lat]
+          }
+        };
+      } else {
+        // Regular marker
+        return {
+          type: 'Feature',
+          properties: {
+            point_type: 'marker'
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [latlng.lng, latlng.lat]
+          }
+        };
+      }
     } else {
-      // Handle other layer types
+      // Handle other layer types (polygon, polyline, rectangle)
       const geoJson = (layer as any).toGeoJSON();
       return geoJson;
     }
@@ -2523,6 +2711,212 @@ const getLoginTypeDescription = () => {
     }
   }
   return 'user information';
+};
+
+const selectedTableItems = ref<TableItem[]>([]);
+const tableSearchQuery = ref('');
+const showTableDropdown = ref(false);
+const filteredTableItems = ref<TableItem[]>([]);
+const loadingTableItems = ref(false);
+const tableError = ref('');
+
+const searchTableItems = async () => {
+  loadingTableItems.value = true;
+  tableError.value = '';
+
+  try {
+    // If field.options contains a table name, fetch from ERPNext
+    console.log('Searching for table items:', props.field);
+    if (props.field.options) {
+      const response = await searchLink({
+        txt: tableSearchQuery.value || '', // Allow empty search to get all items
+        doctype: props.field.tableFields?.[0]?.options || props.field.options,
+        ignore_user_permissions: 0,
+        reference_doctype: props.field.parent || props.field.options,
+        page_length: 50 // Increased page length for better browsing
+      });
+      
+      console.log('Search response:', response);
+      
+      // Handle the response data properly
+      if (response && response.message) {
+        // Convert the response to the expected format
+        filteredTableItems.value = response.message.map((item: any) => ({
+          name: item.value || item.name || item,
+          description: item.description || item.label || ''
+        }));
+      } else {
+        filteredTableItems.value = [];
+      }
+    } else {
+      // Fallback to mock data
+      filteredTableItems.value = [
+        { name: 'Item 1', description: 'Description for Item 1' },
+        { name: 'Item 2', description: 'Description for Item 2' },
+        { name: 'Item 3', description: 'Description for Item 3' },
+        { name: 'Item 4', description: 'Description for Item 4' },
+        { name: 'Item 5', description: 'Description for Item 5' }
+      ].filter(item => 
+        !tableSearchQuery.value || 
+        item.name.toLowerCase().includes(tableSearchQuery.value.toLowerCase())
+      );
+    }
+  } catch (error) {
+    console.error('Error searching table items:', error);
+    tableError.value = 'Failed to load options';
+    filteredTableItems.value = [];
+  } finally {
+    loadingTableItems.value = false;
+  }
+};
+
+const selectTableItem = (item: TableItem) => {
+  // Check if item is already selected
+  if (!selectedTableItems.value.find(i => i.name === item.name)) {
+    selectedTableItems.value.push(item);
+    updateTableMultiSelectValue();
+  }
+  // Don't clear the search query immediately to allow multiple selections
+  // tableSearchQuery.value = '';
+  // showTableDropdown.value = false;
+};
+
+const removeTableItem = (item: TableItem) => {
+  selectedTableItems.value = selectedTableItems.value.filter(i => i.name !== item.name);
+  updateTableMultiSelectValue();
+};
+
+const updateTableMultiSelectValue = () => {
+  // For Table MultiSelect, save as child table with proper field structure
+  if (props.field.fieldtype === 'Table MultiSelect') {
+    // Create child table rows with the selected items
+    const formattedItems = selectedTableItems.value.map(item => {
+      // Create a row object with the doctype and the actual field data
+      const row: any = {
+        doctype: props.field.options || 'Table MultiSelect Row'
+      };
+      
+      // If the field has tableFields defined, use the first one as the main field
+      if (props.field.tableFields && props.field.tableFields.length > 0) {
+        const mainField = props.field.tableFields[0];
+        row[mainField.fieldname] = item.name;
+        
+        // Add other fields if they exist
+        if (item.description) {
+          const descField = props.field.tableFields.find(f => f.fieldtype === 'Text' || f.fieldtype === 'Small Text');
+          if (descField) {
+            row[descField.fieldname] = item.description;
+          }
+        }
+      } else {
+        // Fallback: use a generic field name
+        row.name = item.name;
+        if (item.description) {
+          row.description = item.description;
+        }
+      }
+      
+      return row;
+    });
+    
+    emit('update:modelValue', formattedItems);
+  } else {
+    // Fallback to comma-separated string for other field types
+    const value = selectedTableItems.value.map(item => item.name).join(', ');
+    emit('update:modelValue', value);
+  }
+};
+
+// Watch for external model value changes
+watch(() => props.modelValue, (newValue) => {
+  if (props.field.fieldtype === 'Table MultiSelect') {
+    if (Array.isArray(newValue)) {
+      // Handle array format (from ERPNext child table)
+      selectedTableItems.value = newValue.map(item => {
+        // Extract the main field value based on tableFields configuration
+        let name = '';
+        let description = '';
+        
+        if (props.field.tableFields && props.field.tableFields.length > 0) {
+          const mainField = props.field.tableFields[0];
+          name = item[mainField.fieldname] || item.name || item.value || '';
+          
+          // Try to find description field
+          const descField = props.field.tableFields.find(f => f.fieldtype === 'Text' || f.fieldtype === 'Small Text');
+          if (descField && item[descField.fieldname]) {
+            description = item[descField.fieldname];
+          }
+        } else {
+          // Fallback: use generic field names
+          name = item.name || item.value || '';
+          description = item.description || '';
+        }
+        
+        return { name, description };
+      });
+    } else if (typeof newValue === 'string' && newValue.trim()) {
+      // Handle comma-separated string format (fallback)
+      const itemNames = newValue.split(',').map(name => name.trim()).filter(Boolean);
+      selectedTableItems.value = itemNames.map(name => ({ name }));
+    } else {
+      selectedTableItems.value = [];
+    }
+  }
+}, { immediate: true });
+
+// Close dropdown when clicking outside
+const handleTableMultiSelectClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest(`#${props.field.fieldname}`)) {
+    showTableDropdown.value = false;
+  }
+};
+
+onMounted(() => {
+  if (props.field.fieldtype === 'Table MultiSelect') {
+    document.addEventListener('click', handleTableMultiSelectClickOutside);
+  }
+});
+
+onUnmounted(() => {
+  if (props.field.fieldtype === 'Table MultiSelect') {
+    document.removeEventListener('click', handleTableMultiSelectClickOutside);
+  }
+});
+
+const isItemSelected = (item: TableItem) => {
+  return selectedTableItems.value.some(selectedItem => selectedItem.name === item.name);
+};
+
+const handleSearchBlur = () => {
+  // Delay hiding the dropdown to allow for clicks on items
+  setTimeout(() => {
+    showTableDropdown.value = false;
+  }, 200);
+};
+
+const clearSearch = () => {
+  tableSearchQuery.value = '';
+  filteredTableItems.value = [];
+  showTableDropdown.value = false;
+};
+
+// Add keyboard navigation
+const handleSearchKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    showTableDropdown.value = false;
+  } else if (event.key === 'Enter' && filteredTableItems.value.length > 0) {
+    // Select the first item on Enter
+    selectTableItem(filteredTableItems.value[0]);
+  }
+};
+
+const handleSearchFocus = () => {
+  showTableDropdown.value = true;
+  // Load initial list if no search query and no items are loaded yet
+  if (!tableSearchQuery.value && filteredTableItems.value.length === 0) {
+    searchTableItems();
+  }
 };
 </script>
 

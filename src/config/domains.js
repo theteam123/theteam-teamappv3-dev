@@ -154,9 +154,9 @@ export const DOMAINS = {
 export const getDomainConfig = () => {
   let currentDomain = window.location.hostname;
   if (currentDomain.includes('localhost')) {
-    currentDomain = 'taktec';
     currentDomain = 'teamsite-sgcloud';
     currentDomain = 'theteamapp';
+    currentDomain = 'taktec';
   }
 
   // Find the matching domain configuration

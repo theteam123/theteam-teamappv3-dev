@@ -222,4 +222,37 @@ export const insertItem = async (doc) => {
   }
 };
 
+/**
+ * Search for links using frappe.desk.search.search_link method
+ * @param {Object} params - Object containing search parameters
+ * @param {string} params.txt - Search text
+ * @param {string} params.doctype - The doctype to search in
+ * @param {number} params.ignore_user_permissions - Whether to ignore user permissions (0 or 1)
+ * @param {string} params.reference_doctype - Reference doctype for the search
+ * @param {number} params.page_length - Number of results to return
+ * @returns {Promise<Object>} Object containing the search results
+ */
+export const searchLink = async (params = {}) => {
+  try {
+    const formData = new FormData();
+    formData.append('txt', params.txt || '');
+    formData.append('doctype', params.doctype || '');
+    formData.append('ignore_user_permissions', params.ignore_user_permissions || 0);
+    formData.append('reference_doctype', params.reference_doctype || '');
+    formData.append('page_length', params.page_length || 10);
+
+    const response = await erp.post('/api/method/frappe.desk.search.search_link', formData);
+
+    console.log('Search Link response:', {
+      params,
+      response: response.data
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error searching links:', error);
+    throw error;
+  }
+};
+
 

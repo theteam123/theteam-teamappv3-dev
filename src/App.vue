@@ -5,7 +5,7 @@
       <!-- Sidebar -->
       <aside 
         ref="sidebarRef"
-        class="fixed top-0 left-0 h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shadow-lg" style="z-index: 100;"
+        class="fixed top-0 left-0 h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shadow-lg" style="z-index: 1300;"
         :class="isSidebarCollapsed ? '-translate-x-full' : 'w-64'"
       >
         <!-- Logo -->
