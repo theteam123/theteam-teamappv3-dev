@@ -1607,17 +1607,24 @@ const applyDefaultStatusFilter = () => {
     const statusField = filteredFields.value.find(field => 
       field.fieldname === 'status' && field.fieldtype === 'Select'
     );
+    console.log('Status Field:', statusField);
     
     if (statusField) {
       // Check if "Completed" is available in the options
       const options = parseSelectOptions(statusField.options || '');
+      console.log(options.includes('Completed') || options.includes('Active'));
       
-      if (options.includes('Completed')) {
+      if (options.includes('Completed') || options.includes('Active')) {
         // Set to "Completed" if no status value exists or if it's empty
         const currentStatus = fieldSearches.value.status;
         if (!currentStatus || currentStatus.trim() === '') {
-          fieldSearches.value.status = 'Completed';
-          debouncedFieldSearches.value.status = 'Completed';
+          if (options.includes('Completed')) {
+            fieldSearches.value.status = 'Completed';
+            debouncedFieldSearches.value.status = 'Completed';
+          } else if (options.includes('Active')) {
+            fieldSearches.value.status = 'Active';
+            debouncedFieldSearches.value.status = 'Active';
+          }
         }
       }
     }

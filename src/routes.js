@@ -3,15 +3,11 @@ import Home from './pages/Home.vue'
 import Auth from './pages/Auth.vue'
 import Users from './pages/Users.vue'
 import Companies from './pages/Companies.vue'
-import Roles from './pages/Roles.vue'
 import Forms from './pages/Forms.vue'
 import PublicFormSubmit from './pages/PublicFormSubmit.vue'
-import Tags from './pages/Tags.vue'
 import Categories from './pages/Categories.vue'
 import Content from './pages/Content.vue'
 import Documents from './pages/Documents.vue'
-import EmployeeFeedbackRecords from './pages/EmployeeFeedbackRecords.vue'
-import Policies from './pages/Policies.vue'
 import Records from './pages/Records.vue'
 import Templates from './pages/Templates.vue'
 import Videos from './pages/Videos.vue'
@@ -60,12 +56,6 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/roles',
-    name: 'roles',
-    component: Roles,
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/documents',
     name: 'documents',
     component: Documents,
@@ -85,12 +75,6 @@ const routes = [
       requiresAuth: true,
       requiredRoles: ['Dizza', 'Admin', 'Manager']
     }
-  },
-  {
-    path: '/policies',
-    name: 'policies',
-    component: Policies,
-    meta: { requiresAuth: true }
   },
   {
     path: '/records',
@@ -205,12 +189,6 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/tags',
-    name: 'tags',
-    component: Tags,
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/categories',
     name: 'categories',
     component: Categories,
@@ -220,12 +198,6 @@ const routes = [
     path: '/content',
     name: 'content',
     component: Content,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/feedback-records',
-    name: 'feedback-records',
-    component: EmployeeFeedbackRecords,
     meta: { requiresAuth: true }
   },
   {
