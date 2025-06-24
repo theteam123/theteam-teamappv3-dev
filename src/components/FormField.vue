@@ -786,7 +786,23 @@
 
     <!-- HTML Display -->
     <template v-else-if="field.fieldtype === 'HTML'">
-      <div v-html="field.options" class="prose prose-sm max-w-none"></div>
+      <label class="block text-sm font-medium text-gray-700">
+        {{ formattedLabel }}
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
+      </label>
+      
+      <!-- PDF Viewer -->
+      <template v-if="field.label?.includes('[pdf-viewer]')">
+        <div v-if="pdfUrl" v-html="pdfViewerHtml" class="prose prose-sm max-w-none"></div>
+        <div v-else class="text-sm text-gray-500 italic">
+          No PDF URL found in field description
+        </div>
+      </template>
+      
+      <!-- Regular HTML Display -->
+      <template v-else>
+        <div v-html="field.options" class="prose prose-sm max-w-none"></div>
+      </template>
     </template>
 
     <!-- Multiple Upload Table -->
@@ -2918,6 +2934,39 @@ const handleSearchFocus = () => {
     searchTableItems();
   }
 };
+
+// PDF Viewer computed properties
+const pdfUrl = computed(() => {
+  if (props.field.fieldtype === 'HTML' && props.field.label?.includes('[pdf-viewer]')) {
+    // The description contains the field name, get the value of that field
+    const fieldName = props.field.description;
+    if (fieldName && props.formData) {
+      return props.formData[fieldName] || '';
+    }
+    return '';
+  }
+  return null;
+});
+
+const pdfViewerHtml = computed(() => {
+  if (!pdfUrl.value) return '';
+  
+  const pdfUrlValue = pdfUrl.value;
+  return `
+    <div style="margin-bottom: 8px;">
+      <a href="${pdfUrlValue}" target="_blank" 
+         style="display:inline-block; padding:4px 8px; font-size: 12px; background:#808080; color:#fff; border-radius:3px; text-decoration:none;">
+        Open PDF in New Tab
+      </a>
+    </div>
+    <div style="position: relative; width: 100%; padding-bottom: 50%; height: 0; overflow: hidden;">
+      <iframe src="${pdfUrlValue}" 
+              style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:1px solid #ccc;" 
+              frameborder="0" allowfullscreen>
+      </iframe>
+    </div>
+  `;
+});
 </script>
 
 <style>

@@ -107,7 +107,7 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
           currentSection.columnCount++;
           currentSection.columnLabels.push(field.label || '');
         }
-      } else if (!currentSection.hidden) {
+      } else {
         let table = docTypeTable?.value?.find(table => table.name === field.options);
         let tableFields = table?.fields;
         currentSection.fields.push({
