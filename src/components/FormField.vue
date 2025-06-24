@@ -745,7 +745,7 @@
         {{ formattedLabel }}
         <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
-      <div class="mt-1">
+      <div class="mt-1" :data-form-field="field.fieldname">
         <div class="border-2 border-gray-300 rounded-md p-4">
           <!-- Signature Area -->
           <div class="relative bg-white" ref="signaturePadContainer">

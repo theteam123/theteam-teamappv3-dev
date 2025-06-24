@@ -307,13 +307,55 @@ const fetchDocTypeAndDocument = async () => {
   }
 };
 
+const saveAllSignatures = () => {
+  // Find all signature fields and save their current state
+  const signatureFields = docType.value?.fields.filter(field => field.fieldtype === 'Signature') || [];
+  console.log('Found signature fields:', signatureFields);
+  
+  for (const field of signatureFields) {
+    // Find the FormField component for this signature field
+    const fieldElement = document.querySelector(`[data-form-field="${field.fieldname}"]`);
+    console.log(`Looking for signature field: ${field.fieldname}`, fieldElement);
+    
+    if (fieldElement) {
+      // Traverse up to find the Vue component
+      let currentElement = fieldElement as any;
+      while (currentElement) {
+        if (currentElement.__vueParentComponent?.exposed?.saveCurrentSignature) {
+          console.log(`Found signature component for ${field.fieldname}`);
+          const signatureData = currentElement.__vueParentComponent.exposed.saveCurrentSignature();
+          console.log(`Signature data for ${field.fieldname}:`, signatureData ? 'has data' : 'no data');
+          if (signatureData) {
+            formData.value[field.fieldname] = signatureData;
+            console.log(`Updated formData[${field.fieldname}] with signature`);
+          }
+          break;
+        }
+        currentElement = currentElement.parentElement;
+      }
+    }
+  }
+};
+
 const handleSubmit = async () => {
+  // Save all signature fields before checking for changes
+  saveAllSignatures();
+  
   // Check if there are any changes
+  console.log('formData.value', formData.value);
+  console.log('originalFormData.value', originalFormData.value);
+  
+  // Debug: Check which fields are different
+  const changedFields = Object.keys(formData.value).filter(key => {
+    return formData.value[key] !== originalFormData.value[key];
+  });
+  console.log('Changed fields:', changedFields);
+  
   if (isEqual(formData.value, originalFormData.value)) {
     // console.log('No changes detected');
     successStore.showSuccess('No changes to save');
     setTimeout(() => {
-      router.back();
+      // router.back();
     }, 1500);
     return;
   }
@@ -323,15 +365,6 @@ const handleSubmit = async () => {
   filesToDownload.value = [];
 
   try {
-    // Save all signature fields before submission
-    const formFieldRefs = document.querySelectorAll('[data-form-field]');
-    for (const fieldRef of formFieldRefs) {
-      const vueComponent = (fieldRef as any).__vueParentComponent?.exposed;
-      if (vueComponent && typeof vueComponent.saveCurrentSignature === 'function') {
-        vueComponent.saveCurrentSignature();
-      }
-    }
-
     const formDataToSubmit = { ...formData.value };
 
     // Find all image fields that need to be uploaded
