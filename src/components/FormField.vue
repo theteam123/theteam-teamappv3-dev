@@ -275,6 +275,100 @@
       </select>
     </template>
 
+    <!-- Dynamic Link Input -->
+    <template v-else-if="field.fieldtype === 'Dynamic Link'">
+      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+        {{ formattedLabel }}
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
+      </label>
+      <div class="mt-1 relative">
+        <input
+          :id="field.fieldname"
+          v-model="dynamicLinkSearchQuery"
+          @input="searchDynamicLinkDocuments"
+          @focus="handleDynamicLinkFocus"
+          @blur="handleDynamicLinkBlur"
+          @keydown="handleDynamicLinkKeydown"
+          type="text"
+          :placeholder="getDynamicLinkPlaceholder()"
+          :required="isFieldRequired"
+          :disabled="field.read_only === 1 || !getDynamicLinkDoctype()"
+          :readonly="field.read_only === 1"
+          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 pr-10"
+          :class="{
+            'bg-gray-50': field.read_only === 1 || !getDynamicLinkDoctype(),
+            'cursor-not-allowed': field.read_only === 1 || !getDynamicLinkDoctype()
+          }"
+        />
+        <!-- Clear search button -->
+        <button
+          v-if="dynamicLinkSearchQuery && !field.read_only"
+          @click="clearDynamicLinkSearch"
+          type="button"
+          class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      
+        <!-- Dropdown with search results -->
+        <div 
+          v-if="showDynamicLinkDropdown && !field.read_only && getDynamicLinkDoctype()"
+          class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+        >
+          <!-- Loading state in dropdown -->
+          <div v-if="loadingDynamicLinkDocuments" class="px-4 py-3 text-sm text-gray-500 text-center">
+            <div class="flex items-center justify-center">
+              <LoaderIcon class="h-4 w-4 mr-2 animate-spin" />
+              Searching...
+            </div>
+          </div>
+          
+          <!-- No doctype selected state -->
+          <div v-else-if="!getDynamicLinkDoctype()" class="px-4 py-3 text-sm text-gray-500 text-center">
+            Please select a document type first
+          </div>
+          
+          <!-- No results state -->
+          <div v-else-if="!loadingDynamicLinkDocuments && filteredDynamicLinkDocuments.length === 0 && dynamicLinkSearchQuery.trim() !== ''" class="px-4 py-3 text-sm text-gray-500 text-center">
+            No results found for "{{ dynamicLinkSearchQuery }}"
+          </div>
+          
+          <!-- Search results -->
+          <div v-else-if="filteredDynamicLinkDocuments.length > 0">
+            <div 
+              v-for="doc in filteredDynamicLinkDocuments" 
+              :key="doc.name"
+              @click="selectDynamicLinkDocument(doc)"
+              class="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="font-medium text-gray-900">{{ doc.name }}</div>
+                  <div v-if="doc.description" class="text-sm text-gray-500 mt-1">{{ doc.description }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Initial state when no search query and no items loaded -->
+          <div v-else-if="dynamicLinkSearchQuery.trim() === '' && !loadingDynamicLinkDocuments" class="px-4 py-3 text-sm text-gray-500 text-center">
+            Start typing to search {{ getDynamicLinkDoctype() }} documents
+          </div>
+        </div>
+      
+    </div>
+      
+      <!-- Help text -->
+      <p v-if="!getDynamicLinkDoctype()" class="mt-1 text-xs text-gray-500">
+        Select a document type in the "{{ getDynamicLinkFieldLabel() }}" field first
+      </p>
+      <p v-if="dynamicLinkError || errorStore.message" class="mt-1 text-sm text-red-600">
+        {{ dynamicLinkError || errorStore.message }}
+      </p>
+    </template>
+
     <!-- Check Input -->
     <template v-else-if="field.fieldtype === 'Check'">
       <div class="flex items-center">
@@ -1141,6 +1235,7 @@
             Start typing to search or browse available options
           </div>
         </div>
+        
       </div>
     </div>
   </template>
@@ -1259,6 +1354,11 @@ interface GeolocationData {
 }
 
 interface TableItem {
+  name: string;
+  description?: string;
+}
+
+interface DynamicLinkDocument {
   name: string;
   description?: string;
 }
@@ -2967,6 +3067,151 @@ const pdfViewerHtml = computed(() => {
     </div>
   `;
 });
+
+const dynamicLinkDoctypes = ref<string[]>([]);
+const dynamicLinkSearchQuery = ref('');
+const showDynamicLinkDropdown = ref(false);
+const filteredDynamicLinkDocuments = ref<DynamicLinkDocument[]>([]);
+const loadingDynamicLinkDocuments = ref(false);
+const dynamicLinkError = ref('');
+
+// Get the doctype from the referenced Link field
+const getDynamicLinkDoctype = (): string | null => {
+  if (!props.field.options || !props.formData) {
+    return null;
+  }
+  
+  // The options field contains the name of the Link field that specifies the doctype
+  const linkFieldName = props.field.options.trim();
+  const selectedDoctype = props.formData[linkFieldName];
+  
+  return selectedDoctype || null;
+};
+
+// Get the label of the Link field for help text
+const getDynamicLinkFieldLabel = (): string => {
+  if (!props.field.options) {
+    return 'Document Type';
+  }
+  
+  const linkFieldName = props.field.options.trim();
+  // Try to find the field label from the form data or use the fieldname
+  return linkFieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+// Get placeholder text based on selected doctype
+const getDynamicLinkPlaceholder = (): string => {
+  const doctype = getDynamicLinkDoctype();
+  if (doctype) {
+    return `Search ${doctype} documents...`;
+  }
+  return 'Select document type first';
+};
+
+const searchDynamicLinkDocuments = async () => {
+  const doctype = getDynamicLinkDoctype();
+  if (!doctype) return;
+  
+  loadingDynamicLinkDocuments.value = true;
+  dynamicLinkError.value = '';
+
+  try {
+    const response = await searchLink({
+      txt: dynamicLinkSearchQuery.value || '',
+      doctype: doctype,
+      ignore_user_permissions: 0,
+      reference_doctype: props.field.parent || doctype,
+      page_length: 50
+    });
+    
+    console.log('Dynamic Link search response:', response);
+    
+    if (response && response.message) {
+      filteredDynamicLinkDocuments.value = response.message.map((item: any) => ({
+        name: item.value || item.name || item,
+        description: item.description || item.label || ''
+      }));
+    } else {
+      filteredDynamicLinkDocuments.value = [];
+    }
+  } catch (error) {
+    console.error('Error searching dynamic link documents:', error);
+    errorStore.setError('Failed to load options for Dynamic Link field.' + error);
+    dynamicLinkError.value = 'Failed to load options';
+    filteredDynamicLinkDocuments.value = [];
+  } finally {
+    loadingDynamicLinkDocuments.value = false;
+  }
+};
+
+const selectDynamicLinkDocument = (doc: DynamicLinkDocument) => {
+  dynamicLinkSearchQuery.value = doc.name;
+  showDynamicLinkDropdown.value = false;
+  
+  // For Dynamic Link, we store just the document name
+  // The doctype is already stored in the referenced Link field
+  emit('update:modelValue', doc.name);
+};
+
+const handleDynamicLinkBlur = () => {
+  setTimeout(() => {
+    showDynamicLinkDropdown.value = false;
+    errorStore.clearError();
+  }, 200);
+};
+
+const clearDynamicLinkSearch = () => {
+  dynamicLinkSearchQuery.value = '';
+  filteredDynamicLinkDocuments.value = [];
+  showDynamicLinkDropdown.value = false;
+  dynamicLinkError.value = '';
+  errorStore.clearError();
+  emit('update:modelValue', '');
+};
+
+const handleDynamicLinkKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    showDynamicLinkDropdown.value = false;
+  } else if (event.key === 'Enter' && filteredDynamicLinkDocuments.value.length > 0) {
+    selectDynamicLinkDocument(filteredDynamicLinkDocuments.value[0]);
+  }
+};
+
+const handleDynamicLinkFocus = () => {
+  const doctype = getDynamicLinkDoctype();
+  if (doctype) {
+    showDynamicLinkDropdown.value = true;
+    if (!dynamicLinkSearchQuery.value && filteredDynamicLinkDocuments.value.length === 0) {
+      searchDynamicLinkDocuments();
+    }
+  }
+};
+
+// Watch for changes in the referenced Link field to clear the Dynamic Link value
+watch(() => {
+  if (props.formData && props.field.options) {
+    const linkFieldName = props.field.options.trim();
+    return props.formData[linkFieldName];
+  }
+  return null;
+}, (newDoctype, oldDoctype) => {
+  if (newDoctype !== oldDoctype) {
+    // Clear the dynamic link value when the doctype changes
+    dynamicLinkSearchQuery.value = '';
+    filteredDynamicLinkDocuments.value = [];
+    showDynamicLinkDropdown.value = false;
+    emit('update:modelValue', '');
+  }
+});
+
+// Watch for model value changes to populate the search field
+watch(() => props.modelValue, (newValue) => {
+  if (props.field.fieldtype === 'Dynamic Link' && newValue) {
+    if (typeof newValue === 'string') {
+      dynamicLinkSearchQuery.value = newValue;
+    }
+  }
+}, { immediate: true });
 </script>
 
 <style>

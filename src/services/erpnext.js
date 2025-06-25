@@ -108,6 +108,10 @@ erp.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401 || error.response?.status === 403) {
+      console.log('Error response:', error.response);
+      if (error.response?.data?._error_message) {
+        throw new Error(error.response?.data?._error_message);
+      }
       // Only redirect if not already on auth page
       if (!window.location.pathname.includes('/auth')) {
         // localStorage.removeItem('oauth_token');
