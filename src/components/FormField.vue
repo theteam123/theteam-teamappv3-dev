@@ -1290,7 +1290,7 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 // Explicitly import Draw control
 import 'leaflet-draw/dist/leaflet.draw.js';
 
-import { getFormList, uploadFile, getDocTypes } from '../services/erpnext';
+import { getFormList, uploadFile } from '../services/erpnext';
 import { searchLink } from '../services/deskApi';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 import { useErrorStore } from '../stores/error';
@@ -1638,9 +1638,7 @@ function handleClickOutside(event: MouseEvent) {
 const fetchLinkOptions = async () => {
   if (props.field.fieldtype === 'Link' && props.field.options) {
     try {
-      // Use getDocTypes instead of getFormList
-      const response = await getDocTypes(1, 100, '', '', 'modified', 'desc');
-      // getDocTypes returns an object with a data property (array of doctypes)
+      const response = await getFormList(props.field.options);
       linkOptions.value = response.data || [];
     } catch (error) {
       console.error('Error fetching link options:', error);
