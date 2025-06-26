@@ -206,7 +206,12 @@
 
     <!-- DocType Count -->
     <div class="mb-4 text-sm text-gray-600">
-      Showing {{ filteredDocuments.length }} of {{ totalItems }} submissions
+      <template v-if="debouncedSearchQuery && debouncedSearchQuery.length >= MIN_SEARCH_LENGTH">
+        Showing {{ filteredDocuments.length }} of {{ totalItems }} submissions (client-side filtered)
+      </template>
+      <template v-else>
+        Showing {{ filteredDocuments.length }} of {{ totalItems }} submissions
+      </template>
     </div>
 
     <!-- Loading State -->
@@ -721,43 +726,34 @@ const actionFields = computed(() => {
 
 // Computed
 const filteredDocuments = computed(() => {
+  // Start with the documents from server
   let filtered = [...documents.value];
-
-  // Global search using debounced value
+  
+  // Apply client-side global search if there's a search query
   if (debouncedSearchQuery.value && debouncedSearchQuery.value.length >= MIN_SEARCH_LENGTH) {
     const query = debouncedSearchQuery.value.toLowerCase();
+    
+    // Get all available filter fields for client-side search
+    const searchableFields = filteredFields.value
+      .filter(field => field.fieldtype !== 'Select')
+      .map(field => field.fieldname);
+    
+    // Add common fields that might exist in the documents
+    const commonFields = ['name', 'title', 'subject', 'description', 'notes', 'comments'];
+    const allSearchFields = [...new Set([...searchableFields, ...commonFields])];
+    
+    console.log('Client-side global search fields:', allSearchFields);
+    
     filtered = filtered.filter(doc => {
-      return Object.values(doc).some(value => 
-        String(value).toLowerCase().includes(query)
-      );
+      // Search across all available fields
+      return allSearchFields.some(field => {
+        const value = doc[field];
+        return value && String(value).toLowerCase().includes(query);
+      });
     });
   }
-
-  // Field-specific searches using debounced values
-  Object.entries(debouncedFieldSearches.value).forEach(([fieldname, searchValue]) => {
-    if (searchValue && searchValue.trim()) {
-      filtered = filtered.filter(doc => {
-        const fieldValue = doc[fieldname];
-        if (!fieldValue) return false;
-        
-        // Find the field definition to check if it's a Select field
-        const field = filteredFields.value.find(f => f.fieldname === fieldname);
-        
-        // For Select fields, use exact matching
-        if (field?.fieldtype === 'Select') {
-          return String(fieldValue).trim() === searchValue.trim();
-        }
-        
-        // For other fields, use partial matching with minimum length check
-        if (searchValue.length >= MIN_SEARCH_LENGTH) {
-          return String(fieldValue).toLowerCase().includes(searchValue.toLowerCase());
-        }
-        
-        return false;
-      });
-    }
-  });
-
+  
+  // Apply sorting
   filtered.sort((a, b) => {
     const aValue = a[sortBy.value];
     const bValue = b[sortBy.value];
@@ -1082,24 +1078,59 @@ const fetchDocuments = async (page = 1) => {
   error.value = null;
   
   try {
-    // Get total count first
+    // Build filters for server-side filtering
+    const filters: any[] = [];
+    
+    // Add global search filter
+    if (debouncedSearchQuery.value && debouncedSearchQuery.value.length >= MIN_SEARCH_LENGTH) {
+      // Client-side global search: Don't add server filters, we'll filter client-side
+      console.log('Using client-side global search');
+      // We'll handle this in the computed property
+    }
+    
+    // Add field-specific filters
+    Object.entries(debouncedFieldSearches.value).forEach(([fieldname, searchValue]) => {
+      if (searchValue && searchValue.trim()) {
+        const field = filteredFields.value.find(f => f.fieldname === fieldname);
+        
+        if (field?.fieldtype === 'Select') {
+          // For Select fields, use exact matching
+          filters.push([fieldname, '=', searchValue.trim()]);
+        } else if (searchValue.length >= MIN_SEARCH_LENGTH) {
+          // For other fields, use partial matching
+          filters.push([fieldname, 'like', `%${searchValue}%`]);
+        }
+      }
+    });
+    
+    // Note: Owner filter is automatically added by getFormList function when ifOwner permission is true
+    // So we don't need to add it here
+    
+    console.log('Server-side filters:', filters);
+    
+    // Get total count with filters
     const countResponse = await getFormList(route.params.id as string, {
       fields: ['count(name) as total_count'],
+      filters: filters,
       limit: 1
     });
     
+    console.log('Count response:', countResponse);
     totalItems.value = countResponse.data[0]?.total_count || 0;
     totalPages.value = Math.ceil(totalItems.value / pageSize.value);
+    console.log('Total items:', totalItems.value, 'Total pages:', totalPages.value);
 
-    // Then get paginated data with specific fields
+    // Then get paginated data with filters
     const response = await getFormList(route.params.id as string, {
-      limit: pageSize.value,
+      limit: debouncedSearchQuery.value && debouncedSearchQuery.value.length >= MIN_SEARCH_LENGTH ? 100 : pageSize.value, // Fetch more for global search
       offset: (page - 1) * pageSize.value,
       order_by: `${sortBy.value} ${sortDirection.value}`,
-      fields: ['name', 'owner', 'creation', 'modified', 'docstatus']
+      fields: ['name', 'owner', 'creation', 'modified', 'docstatus'],
+      filters: filters
     });
 
-    console.log('Response:', response);
+    console.log('Documents response:', response);
+    console.log('Documents count:', response.data?.length || 0);
     
     // Fetch full data for each document in the current page
     const fullDocuments = await Promise.all(
@@ -1114,13 +1145,15 @@ const fetchDocuments = async (page = 1) => {
       })
     );
     
-    // Filter documents based on owner permission
-    const filteredDocuments = ifOwnerPermission.value ?
-      fullDocuments.filter(doc => doc.owner === authStore.user?.email) :
-      fullDocuments;
-    
-    documents.value = filteredDocuments;
+    documents.value = fullDocuments;
     currentPage.value = page;
+    
+    // Update count for client-side global search
+    if (debouncedSearchQuery.value && debouncedSearchQuery.value.length >= MIN_SEARCH_LENGTH) {
+      // For client-side search, we need to fetch all documents to get accurate count
+      // This is a limitation of client-side search
+      console.log('Client-side global search active - filtering will be done client-side');
+    }
   } catch (err: any) {
     error.value = err.message;
   } finally {
@@ -1150,12 +1183,15 @@ const sortByColumn = (column: string) => {
 
 // Watch for search changes
 watch(searchQuery, (newValue) => {
+  console.log('Search query changed:', newValue);
+  
   if (searchTimeout) {
     clearTimeout(searchTimeout);
   }
   
   // If search is completely cleared, trigger immediate search to show all results
   if (!newValue) {
+    console.log('Search cleared, triggering immediate search');
     debouncedSearchQuery.value = newValue;
     currentPage.value = 1;
     fetchDocuments(1);
@@ -1165,13 +1201,16 @@ watch(searchQuery, (newValue) => {
   
   // If search is too short, don't search at all
   if (newValue.length < MIN_SEARCH_LENGTH) {
+    console.log('Search too short, updating URL only');
     debouncedSearchQuery.value = newValue;
     updateURLWithSearchParams();
     return;
   }
   
   // Debounce search for valid queries (3+ characters)
+  console.log('Debouncing search for valid query');
   searchTimeout = setTimeout(() => {
+    console.log('Executing debounced search');
     debouncedSearchQuery.value = newValue;
     currentPage.value = 1;
     fetchDocuments(1);
@@ -1209,15 +1248,19 @@ watch(showFilters, () => {
 
 // Add watch for field searches
 watch(fieldSearches, (newValue) => {
+  console.log('Field searches changed:', newValue);
+  
   if (fieldSearchTimeout) {
     clearTimeout(fieldSearchTimeout);
   }
   
   // Check if any field has a value
   const hasAnyValue = Object.values(newValue).some(value => value && value.trim());
+  console.log('Has any value:', hasAnyValue);
   
   // If no fields have any value, trigger immediate search to show all results
   if (!hasAnyValue) {
+    console.log('No field values, triggering immediate search');
     debouncedFieldSearches.value = { ...newValue };
     currentPage.value = 1;
     fetchDocuments(1);
@@ -1231,8 +1274,11 @@ watch(fieldSearches, (newValue) => {
     return field?.fieldtype === 'Select' && value && value.trim();
   });
   
+  console.log('Has select field changes:', hasSelectFieldChanges);
+  
   // If there are Select field changes, trigger immediate search
   if (hasSelectFieldChanges) {
+    console.log('Select field changes detected, triggering immediate search');
     debouncedFieldSearches.value = { ...newValue };
     currentPage.value = 1;
     fetchDocuments(1);
@@ -1246,15 +1292,20 @@ watch(fieldSearches, (newValue) => {
     return field?.fieldtype !== 'Select' && value && value.length >= MIN_SEARCH_LENGTH;
   });
   
+  console.log('Has valid text search:', hasValidTextSearch);
+  
   // If no valid text searches (all are too short), don't search at all
   if (!hasValidTextSearch) {
+    console.log('No valid text searches, updating URL only');
     debouncedFieldSearches.value = { ...newValue };
     updateURLWithSearchParams();
     return;
   }
   
   // Debounce search for text field queries only
+  console.log('Debouncing search for text field queries');
   fieldSearchTimeout = setTimeout(() => {
+    console.log('Executing debounced search');
     debouncedFieldSearches.value = { ...newValue };
     currentPage.value = 1;
     fetchDocuments(1);
@@ -1621,15 +1672,28 @@ const applyDefaultStatusFilter = () => {
           if (options.includes('Completed')) {
             fieldSearches.value.status = 'Completed';
             debouncedFieldSearches.value.status = 'Completed';
+            return true; // Indicate that a default filter was applied
           } else if (options.includes('Active')) {
             fieldSearches.value.status = 'Active';
             debouncedFieldSearches.value.status = 'Active';
+            return true; // Indicate that a default filter was applied
           }
         }
       }
     }
   }
+  return false; // No default filter was applied
 };
+
+// Add this computed property after the filteredDocuments computed
+const displayCount = computed(() => {
+  if (debouncedSearchQuery.value && debouncedSearchQuery.value.length >= MIN_SEARCH_LENGTH) {
+    // For client-side search, use the filtered documents count
+    return filteredDocuments.value.length;
+  }
+  // For server-side search, use the total items count
+  return totalItems.value;
+});
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
@@ -1688,13 +1752,15 @@ onMounted(async () => {
   loadSearchParamsFromURL();
   
   // Set default status filter to "Completed" if status field exists and no status in URL
-  applyDefaultStatusFilter();
+  const defaultFilterApplied = applyDefaultStatusFilter();
   
   // Show filters if there are URL parameters
   if (hasURLSearchParams()) {
     showFilters.value = true;
   }
   
+  // If a default filter was applied, we need to fetch documents with that filter
+  // Otherwise, just fetch documents normally
   await fetchDocuments();
 });
 </script> 
