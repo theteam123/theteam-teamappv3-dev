@@ -203,7 +203,7 @@ import {
 } from 'lucide-vue-next';
 import SuccessMessage from '../components/SuccessMessage.vue';
 import { addWatermark } from '../utils/imageUtils';
-import { initializeGeolocationFields, GeolocationData, initializeWatermarkFields, WatermarkConfig } from '../utils/formUtils';
+import { initializeGeolocationFields, GeolocationData, initializeWatermarkFields, WatermarkConfig, parseDurationToSeconds, formatSecondsToDuration } from '../utils/formUtils';
 import { downloadWatermarkedFiles } from '../utils/imageUtils';
 
 interface DocTypeField {
@@ -272,10 +272,6 @@ const fetchDocTypeAndDocument = async () => {
     }
     // const docTypeResponse = await getFormData('DocType', route.params.id as string);
     
-    // if (!docTypeResponse.data) {
-    //   throw new Error('No DocType data received');
-    // }
-
     // const fields = docTypeResponse.data.fields || [];
     const docTypeData = response.docs[0];
     docTypeTable.value = response.docs.filter(doc => doc.istable === 1);
@@ -293,8 +289,20 @@ const fetchDocTypeAndDocument = async () => {
     if (documentResponse.data) {
       console.log('Document response:', documentResponse.data);
       console.log('Document response:', documentResponse.data.test_geolocation_field);
-      formData.value = JSON.parse(JSON.stringify(documentResponse.data));
-      originalFormData.value = JSON.parse(JSON.stringify(documentResponse.data));
+      // Convert Duration fields from seconds to string for editing
+      const docData = JSON.parse(JSON.stringify(documentResponse.data));
+      if (docType.value?.fields) {
+        docType.value.fields.forEach(field => {
+          if (field.fieldtype === 'Duration') {
+            const val = docData[field.fieldname];
+            if (typeof val === 'number' && !isNaN(val)) {
+              docData[field.fieldname] = formatSecondsToDuration(val);
+            }
+          }
+        });
+      }
+      formData.value = docData;
+      originalFormData.value = JSON.parse(JSON.stringify(docData));
       
       // Initialize geolocation fields with the current form data
       geoLocationFields.value = initializeGeolocationFields(docType.value.fields, formData.value);
@@ -362,6 +370,18 @@ const handleSubmit = async () => {
 
   try {
     const formDataToSubmit = { ...formData.value };
+
+    // Fix: Set empty string duration fields to null, and convert duration strings to seconds
+    docType.value?.fields.forEach(field => {
+      if (field.fieldtype === 'Duration') {
+        const val = formDataToSubmit[field.fieldname];
+        if (val === '') {
+          formDataToSubmit[field.fieldname] = null;
+        } else if (typeof val === 'string') {
+          formDataToSubmit[field.fieldname] = parseDurationToSeconds(val);
+        }
+      }
+    });
 
     // Find all image fields that need to be uploaded
     const imageFields = docType.value?.fields.filter(

@@ -205,6 +205,7 @@ import { addWatermark } from '../utils/imageUtils';
 import { initializeGeolocationFields, GeolocationData } from '../utils/formUtils';
 import { initializeWatermarkFields, WatermarkConfig } from '../utils/formUtils';
 import { downloadWatermarkedFiles } from '../utils/imageUtils';
+import { parseDurationToSeconds } from '../utils/formUtils';
 
 interface DocTypeField {
   fieldname: string;
@@ -319,7 +320,19 @@ const handleSubmit = async () => {
     }
 
     const formDataToSubmit = { ...formData.value };
-    
+
+    // Fix: Set empty string duration fields to null, and convert duration strings to seconds
+    docType.value?.fields.forEach(field => {
+      if (field.fieldtype === 'Duration') {
+        const val = formDataToSubmit[field.fieldname];
+        if (val === '') {
+          formDataToSubmit[field.fieldname] = null;
+        } else if (typeof val === 'string') {
+          formDataToSubmit[field.fieldname] = parseDurationToSeconds(val);
+        }
+      }
+    });
+
     // Find all image fields that need to be uploaded
     const imageFields = docType.value?.fields.filter(
       field => (field.fieldtype === 'Attach Image' || field.fieldtype === 'Attach') && 

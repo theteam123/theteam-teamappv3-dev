@@ -164,4 +164,34 @@ export const createDebouncedSearch = (
       searchFunc();
     }, wait);
   };
-}; 
+};
+
+// Converts a duration string like '1d 2h 3m 4s' to seconds (number)
+export function parseDurationToSeconds(str: string): number | null {
+  if (!str) return null;
+  let total = 0;
+  const regex = /(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/;
+  const match = str.match(regex);
+  if (match) {
+    total += (parseInt(match[1] || '0', 10)) * 86400; // days
+    total += (parseInt(match[2] || '0', 10)) * 3600;  // hours
+    total += (parseInt(match[3] || '0', 10)) * 60;    // minutes
+    total += (parseInt(match[4] || '0', 10));         // seconds
+  }
+  return total || null;
+}
+
+// Converts seconds (number) to a duration string like '1d 2h 3m 4s'
+export function formatSecondsToDuration(seconds: number | null | undefined): string {
+  if (seconds === null || seconds === undefined || isNaN(Number(seconds))) return '';
+  let s = Math.floor(Number(seconds));
+  const days = Math.floor(s / 86400); s %= 86400;
+  const hours = Math.floor(s / 3600); s %= 3600;
+  const minutes = Math.floor(s / 60); s %= 60;
+  const parts: string[] = [];
+  if (days) parts.push(`${days}d`);
+  if (hours) parts.push(`${hours}h`);
+  if (minutes) parts.push(`${minutes}m`);
+  if (s) parts.push(`${s}s`);
+  return parts.join(' ') || '0s';
+} 
