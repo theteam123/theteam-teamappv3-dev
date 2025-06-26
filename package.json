@@ -19,6 +19,7 @@
     "axios": "^1.9.0",
     "date-fns": "^3.3.1",
     "js-cookie": "^3.0.5",
+    "jsbarcode": "^3.12.1",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "lodash": "^4.17.21",

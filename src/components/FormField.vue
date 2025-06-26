@@ -1245,6 +1245,33 @@
     </div>
   </template>
 
+  <!-- Barcode Input -->
+  <template v-else-if="field.fieldtype === 'Barcode'">
+    <div class="w-full lg:w-1/2">
+      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+        {{ formattedLabel }}
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
+      </label>
+      <input
+        :id="field.fieldname"
+        :value="modelValue"
+        @input="handleBarcodeInput"
+        type="text"
+        :required="isFieldRequired"
+        :disabled="field.read_only === 1"
+        :readonly="field.read_only === 1"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+        :class="{
+          'bg-gray-50': field.read_only === 1,
+          'cursor-not-allowed': field.read_only === 1
+        }"
+      />
+      <div class="mt-2">
+        <svg ref="barcodeSvg" />
+      </div>
+    </div>
+  </template>
+
   </div>
 
   <!-- Delete Confirmation Modal -->
@@ -1307,6 +1334,7 @@ import { useAuthStore } from '../stores/auth';
 import { getCurrentDateFormatted, getCurrentTimeFormatted, getCurrentDateTimeFormatted, toAppTimezoneISO } from '../utils/timezone';
 import { getErrorsAsJson } from '../utils/errorCapture';
 import FormField from './FormField.vue';
+import JsBarcode from 'jsbarcode';
 
 interface TableField {
   fieldname: string;
@@ -3261,6 +3289,41 @@ const getStarValue = (star: number, event: MouseEvent) => {
     return star;
   }
 };
+
+const barcodeSvg = ref<SVGSVGElement | null>(null);
+
+const handleBarcodeInput = (event: Event) => {
+  const value = (event.target as HTMLInputElement).value;
+  handleValueUpdate(value);
+  renderBarcode(value);
+};
+
+const renderBarcode = (value: string) => {
+  if (barcodeSvg.value) {
+    try {
+      JsBarcode(barcodeSvg.value, value || ' ', {
+        format: 'CODE128',
+        lineColor: '#222',
+        width: 2,
+        height: 60,
+        displayValue: true,
+      });
+    } catch (e) {
+      // If invalid, clear barcode
+      barcodeSvg.value.innerHTML = '';
+    }
+  }
+};
+
+watch(() => props.modelValue, (val) => {
+  renderBarcode(val);
+});
+
+onMounted(() => {
+  if (props.field.fieldtype === 'Barcode') {
+    renderBarcode(props.modelValue);
+  }
+});
 </script>
 
 <style>
