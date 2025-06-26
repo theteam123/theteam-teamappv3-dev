@@ -316,6 +316,7 @@ const saveAllSignatures = () => {
     // Find the FormField component for this signature field
     const fieldElement = document.querySelector(`[data-form-field="${field.fieldname}"]`);
     console.log(`Looking for signature field: ${field.fieldname}`, fieldElement);
+    console.log('fieldElement', fieldElement);
     
     if (fieldElement) {
       // Traverse up to find the Vue component
