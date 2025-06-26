@@ -16,6 +16,7 @@
     "@types/leaflet-draw": "^1.0.12",
     "@types/lodash": "^4.17.17",
     "@types/lodash-es": "^4.17.12",
+    "ace-builds": "^1.43.0",
     "axios": "^1.9.0",
     "date-fns": "^3.3.1",
     "js-cookie": "^3.0.5",
@@ -30,6 +31,7 @@
     "vue": "^3.4.21",
     "vue-router": "^4.5.1",
     "vue-tel-input": "^6.0.5",
+    "vue3-ace-editor": "^2.2.4",
     "zod": "^3.22.4"
   },
   "devDependencies": {

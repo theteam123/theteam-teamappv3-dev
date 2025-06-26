@@ -1272,6 +1272,24 @@
     </div>
   </template>
 
+  <!-- Code Input -->
+  <template v-else-if="field.fieldtype === 'Code'">
+    <div class="w-full lg:w-1/2">
+      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+        {{ formattedLabel }}
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
+      </label>
+      <VAceEditor
+        v-model:value="codeValue"
+        :lang="aceLanguageMode"
+        :theme="'chrome'"
+        :readonly="field.read_only === 1"
+        style="width: 100%; min-height: 180px; border-radius: 0.375rem; border: 1px solid #d1d5db; font-size: 1rem; margin-top: 0.5rem;"
+        :options="{ useWorker: false, tabSize: 2, showPrintMargin: false }"
+      />
+    </div>
+  </template>
+
   </div>
 
   <!-- Delete Confirmation Modal -->
@@ -1335,6 +1353,15 @@ import { getCurrentDateFormatted, getCurrentTimeFormatted, getCurrentDateTimeFor
 import { getErrorsAsJson } from '../utils/errorCapture';
 import FormField from './FormField.vue';
 import JsBarcode from 'jsbarcode';
+import { VAceEditor } from 'vue3-ace-editor';
+import 'ace-builds/src-noconflict/ace';
+import 'ace-builds/src-noconflict/theme-chrome';
+import 'ace-builds/src-noconflict/mode-javascript';
+import 'ace-builds/src-noconflict/mode-json';
+import 'ace-builds/src-noconflict/mode-python';
+import 'ace-builds/src-noconflict/mode-html';
+import 'ace-builds/src-noconflict/mode-css';
+import 'ace-builds/src-noconflict/mode-markdown';
 
 interface TableField {
   fieldname: string;
@@ -3323,6 +3350,26 @@ onMounted(() => {
   if (props.field.fieldtype === 'Barcode') {
     renderBarcode(props.modelValue);
   }
+});
+
+const codeValue = ref(props.modelValue || '');
+
+const aceLanguageMode = computed(() => {
+  const opt = (props.field.options || '').toLowerCase();
+  if (opt.includes('json')) return 'json';
+  if (opt.includes('python')) return 'python';
+  if (opt.includes('html')) return 'html';
+  if (opt.includes('css')) return 'css';
+  if (opt.includes('markdown')) return 'markdown';
+  return 'javascript';
+});
+
+watch(() => props.modelValue, (val) => {
+  if (val !== codeValue.value) codeValue.value = val;
+});
+
+watch(codeValue, (val) => {
+  if (val !== props.modelValue) emit('update:modelValue', val);
 });
 </script>
 
