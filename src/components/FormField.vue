@@ -12,85 +12,65 @@
 
     <!-- Text Input -->
     <template v-else-if="field.fieldtype === 'Data'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <div class="relative mt-1">
-        <input
-          :id="field.fieldname"
-          :value="modelValue"
-          @input="!isGeolocationField && handleValueUpdate(($event.target as HTMLInputElement).value)"
-          type="text"
-          :required="isFieldRequired"
-          :disabled="isGettingLocation || isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
-          :readonly="isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
-          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-          :class="{ 
-            'pr-10': isGeolocationField,
-            'bg-gray-50': isGeolocationField || field.read_only === 1 || shouldAutoFillUserData,
-            'cursor-not-allowed': isGeolocationField || field.read_only === 1 || shouldAutoFillUserData
-          }"
-          :placeholder="isGeolocationField ? 'Click the location icon to get current location' : ''"
-        />
-        <div v-if="isGeolocationField" class="absolute inset-y-0 right-0 flex items-center pr-3">
-          <button
-            v-if="!isGettingLocation"
-            @click="getCurrentLocation"
-            type="button"
-            class="text-gray-400 hover:text-gray-500"
-            title="Get current location"
-          >
-            <MapPinIcon class="h-5 w-5" />
-          </button>
-          <LoaderIcon v-else class="h-5 w-5 animate-spin text-gray-400" />
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <div class="relative mt-1">
+          <input
+            :id="field.fieldname"
+            :value="modelValue"
+            @input="!isGeolocationField && handleValueUpdate(($event.target as HTMLInputElement).value)"
+            type="text"
+            :required="isFieldRequired"
+            :disabled="isGettingLocation || isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
+            :readonly="isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            :class="{ 
+              'pr-10': isGeolocationField,
+              'bg-gray-50': isGeolocationField || field.read_only === 1 || shouldAutoFillUserData,
+              'cursor-not-allowed': isGeolocationField || field.read_only === 1 || shouldAutoFillUserData
+            }"
+            :placeholder="isGeolocationField ? 'Click the location icon to get current location' : ''"
+          />
+          <div v-if="isGeolocationField" class="absolute inset-y-0 right-0 flex items-center pr-3">
+            <button
+              v-if="!isGettingLocation"
+              @click="getCurrentLocation"
+              type="button"
+              class="text-gray-400 hover:text-gray-500"
+              title="Get current location"
+            >
+              <MapPinIcon class="h-5 w-5" />
+            </button>
+            <LoaderIcon v-else class="h-5 w-5 animate-spin text-gray-400" />
+          </div>
         </div>
+        <p v-if="locationError" class="mt-1 text-sm text-red-600">{{ locationError }}</p>
+        <p v-else-if="isGeolocationField" class="mt-1 text-xs text-gray-500">
+          {{ geolocationFieldType === 'lat' ? 'Latitude' : 
+             geolocationFieldType === 'lng' ? 'Longitude' : 
+             'Address' }} will be automatically populated. Click the location icon to update the current location.
+        </p>
+        <p v-else-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
+          This field will be automatically populated with your {{ getLoginTypeDescription() }}.
+        </p>
       </div>
-      <p v-if="locationError" class="mt-1 text-sm text-red-600">{{ locationError }}</p>
-      <p v-else-if="isGeolocationField" class="mt-1 text-xs text-gray-500">
-        {{ geolocationFieldType === 'lat' ? 'Latitude' : 
-           geolocationFieldType === 'lng' ? 'Longitude' : 
-           'Address' }} will be automatically populated. Click the location icon to update the current location.
-      </p>
-      <p v-else-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
-        This field will be automatically populated with your {{ getLoginTypeDescription() }}.
-      </p>
     </template>
 
     <!-- Number Input -->
     <template v-else-if="field.fieldtype === 'Int' || field.fieldtype === 'Float'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <input
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
-        type="number"
-        :required="isFieldRequired"
-        :disabled="field.read_only === 1"
-        :readonly="field.read_only === 1"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
-        }"
-      />
-    </template>
-
-    <!-- Date Input -->
-    <template v-else-if="field.fieldtype === 'Date'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <div class="relative">
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
         <input
           :id="field.fieldname"
           :value="modelValue"
           @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
-          type="date"
+          type="number"
           :required="isFieldRequired"
           :disabled="field.read_only === 1"
           :readonly="field.read_only === 1"
@@ -100,22 +80,73 @@
             'cursor-not-allowed': field.read_only === 1
           }"
         />
+      </div>
+    </template>
 
+    <!-- Date Input -->
+    <template v-else-if="field.fieldtype === 'Date'">
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <input
+            :id="field.fieldname"
+            :value="modelValue"
+            @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
+            type="date"
+            :required="isFieldRequired"
+            :disabled="field.read_only === 1"
+            :readonly="field.read_only === 1"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            :class="{
+              'bg-gray-50': field.read_only === 1,
+              'cursor-not-allowed': field.read_only === 1
+            }"
+          />
+        </div>
       </div>
     </template>
 
     <!-- Datetime Input -->
     <template v-else-if="field.fieldtype === 'Datetime'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <div class="relative">
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <input
+            :id="field.fieldname"
+            :value="modelValue"
+            @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
+            type="datetime-local"
+            :required="isFieldRequired"
+            :disabled="field.read_only === 1"
+            :readonly="field.read_only === 1"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            :class="{
+              'bg-gray-50': field.read_only === 1,
+              'cursor-not-allowed': field.read_only === 1
+            }"
+          />
+        </div>
+      </div>
+    </template>
+
+    <!-- Time Input -->
+    <template v-else-if="field.fieldtype === 'Time'">
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
         <input
           :id="field.fieldname"
           :value="modelValue"
           @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
-          type="datetime-local"
+          type="time"
           :required="isFieldRequired"
           :disabled="field.read_only === 1"
           :readonly="field.read_only === 1"
@@ -125,74 +156,53 @@
             'cursor-not-allowed': field.read_only === 1
           }"
         />
-
       </div>
-    </template>
-
-    <!-- Time Input -->
-    <template v-else-if="field.fieldtype === 'Time'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <input
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
-        type="time"
-        :required="isFieldRequired"
-        :disabled="field.read_only === 1"
-        :readonly="field.read_only === 1"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
-        }"
-      />
     </template>
 
     <!-- Duration Input -->
     <template v-else-if="field.fieldtype === 'Duration'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <div class="relative mt-1" ref="durationWrapperRef">
-        <input
-          :id="field.fieldname"
-          :value="durationString"
-          @focus="handleDurationFocus"
-          @input="onDurationInput($event)"
-          type="text"
-          :required="isFieldRequired"
-          :disabled="field.read_only === 1"
-          :readonly="field.read_only === 1"
-          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-          :class="{
-            'bg-gray-50': field.read_only === 1,
-            'cursor-not-allowed': field.read_only === 1
-          }"
-          autocomplete="off"
-        />
-        <div
-          v-if="showDurationPopup && !field.read_only"
-          class="absolute z-10 mt-2 w-max bg-white border border-gray-200 rounded-md shadow-lg p-4 flex space-x-4"
-        >
-          <div class="flex flex-col items-center">
-            <input type="number" min="0" v-model.number="durationParts.days" @input="onDurationPartChange" class="w-14 text-center border rounded p-1" />
-            <span class="text-xs mt-1">days</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <input type="number" min="0" max="23" v-model.number="durationParts.hours" @input="onDurationPartChange" class="w-14 text-center border rounded p-1" />
-            <span class="text-xs mt-1">hours</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <input type="number" min="0" max="59" v-model.number="durationParts.minutes" @input="onDurationPartChange" class="w-14 text-center border rounded p-1" />
-            <span class="text-xs mt-1">minutes</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <input type="number" min="0" max="59" v-model.number="durationParts.seconds" @input="onDurationPartChange" class="w-14 text-center border rounded p-1" />
-            <span class="text-xs mt-1">seconds</span>
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <div class="relative mt-1" ref="durationWrapperRef">
+          <input
+            :id="field.fieldname"
+            :value="durationString"
+            @focus="handleDurationFocus"
+            @input="onDurationInput($event)"
+            type="text"
+            :required="isFieldRequired"
+            :disabled="field.read_only === 1"
+            :readonly="field.read_only === 1"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            :class="{
+              'bg-gray-50': field.read_only === 1,
+              'cursor-not-allowed': field.read_only === 1
+            }"
+            autocomplete="off"
+          />
+          <div
+            v-if="showDurationPopup && !field.read_only"
+            class="absolute z-10 mt-2 w-max bg-white border border-gray-200 rounded-md shadow-lg p-4 flex space-x-4"
+          >
+            <div class="flex flex-col items-center">
+              <input type="number" min="0" v-model.number="durationParts.days" @input="onDurationPartChange" class="w-14 text-center border rounded p-1" />
+              <span class="text-xs mt-1">days</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <input type="number" min="0" max="23" v-model.number="durationParts.hours" @input="onDurationPartChange" class="w-14 text-center border rounded p-1" />
+              <span class="text-xs mt-1">hours</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <input type="number" min="0" max="59" v-model.number="durationParts.minutes" @input="onDurationPartChange" class="w-14 text-center border rounded p-1" />
+              <span class="text-xs mt-1">minutes</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <input type="number" min="0" max="59" v-model.number="durationParts.seconds" @input="onDurationPartChange" class="w-14 text-center border rounded p-1" />
+              <span class="text-xs mt-1">seconds</span>
+            </div>
           </div>
         </div>
       </div>
@@ -200,36 +210,65 @@
 
     <!-- Select Input -->
     <template v-else-if="field.fieldtype === 'Select'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <!-- Radio Button Group -->
-      <template v-if="field.label?.includes('[radio]')">
-        <div class="mt-2 flex flex-wrap gap-4">
-          <div v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" class="flex items-center">
-            <input
-              :id="`${field.fieldname}-${option}`"
-              :name="field.fieldname"
-              :value="option"
-              :checked="modelValue === option"
-              @change="handleValueUpdate(option)"
-              type="radio"
-              :required="isFieldRequired"
-              :disabled="field.read_only === 1"
-              class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
-              :class="{
-                'cursor-not-allowed': field.read_only === 1
-              }"
-            />
-            <label :for="`${field.fieldname}-${option}`" class="ml-2 block text-sm text-gray-700">
-              {{ option }}
-            </label>
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <!-- Radio Button Group -->
+        <template v-if="field.label?.includes('[radio]')">
+          <div class="mt-2 flex flex-wrap gap-4">
+            <div v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" class="flex items-center">
+              <input
+                :id="`${field.fieldname}-${option}`"
+                :name="field.fieldname"
+                :value="option"
+                :checked="modelValue === option"
+                @change="handleValueUpdate(option)"
+                type="radio"
+                :required="isFieldRequired"
+                :disabled="field.read_only === 1"
+                class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                :class="{
+                  'cursor-not-allowed': field.read_only === 1
+                }"
+              />
+              <label :for="`${field.fieldname}-${option}`" class="ml-2 block text-sm text-gray-700">
+                {{ option }}
+              </label>
+            </div>
           </div>
-        </div>
-      </template>
-      <!-- Regular Select Dropdown -->
-      <template v-else>
+        </template>
+        <!-- Regular Select Dropdown -->
+        <template v-else>
+          <select
+            :id="field.fieldname"
+            :value="modelValue"
+            @input="handleValueUpdate(($event.target as HTMLSelectElement).value)"
+            :required="isFieldRequired"
+            :disabled="field.read_only === 1"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            :class="{
+              'bg-gray-50': field.read_only === 1,
+              'cursor-not-allowed': field.read_only === 1
+            }"
+          >
+            <option value="">Select an option</option>
+            <option v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" :value="option">
+              {{ option }}
+            </option>
+          </select>
+        </template>
+      </div>
+    </template>
+
+    <!-- Link Input -->
+    <template v-else-if="field.fieldtype === 'Link'">
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
         <select
           :id="field.fieldname"
           :value="modelValue"
@@ -242,131 +281,107 @@
             'cursor-not-allowed': field.read_only === 1
           }"
         >
-          <option value="">Select an option</option>
-          <option v-for="option in field.options?.split('\n').filter(Boolean)" :key="option" :value="option">
-            {{ option }}
+          <option value="">Select {{ formattedLabel }}</option>
+          <option v-for="option in linkOptions" :key="option.name" :value="option.name">
+            {{ option.name }}
           </option>
         </select>
-      </template>
-    </template>
-
-    <!-- Link Input -->
-    <template v-else-if="field.fieldtype === 'Link'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <select
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="handleValueUpdate(($event.target as HTMLSelectElement).value)"
-        :required="isFieldRequired"
-        :disabled="field.read_only === 1"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
-        }"
-      >
-        <option value="">Select {{ formattedLabel }}</option>
-        <option v-for="option in linkOptions" :key="option.name" :value="option.name">
-          {{ option.name }}
-        </option>
-      </select>
+      </div>
     </template>
 
     <!-- Dynamic Link Input -->
     <template v-else-if="field.fieldtype === 'Dynamic Link'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <div class="mt-1 relative">
-        <input
-          :id="field.fieldname"
-          v-model="dynamicLinkSearchQuery"
-          @input="searchDynamicLinkDocuments"
-          @focus="handleDynamicLinkFocus"
-          @blur="handleDynamicLinkBlur"
-          @keydown="handleDynamicLinkKeydown"
-          type="text"
-          :placeholder="getDynamicLinkPlaceholder()"
-          :required="isFieldRequired"
-          :disabled="field.read_only === 1 || !getDynamicLinkDoctype()"
-          :readonly="field.read_only === 1"
-          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 pr-10"
-          :class="{
-            'bg-gray-50': field.read_only === 1 || !getDynamicLinkDoctype(),
-            'cursor-not-allowed': field.read_only === 1 || !getDynamicLinkDoctype()
-          }"
-        />
-        <!-- Clear search button -->
-        <button
-          v-if="dynamicLinkSearchQuery && !field.read_only"
-          @click="clearDynamicLinkSearch"
-          type="button"
-          class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
-        >
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      
-        <!-- Dropdown with search results -->
-        <div 
-          v-if="showDynamicLinkDropdown && !field.read_only && getDynamicLinkDoctype()"
-          class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
-        >
-          <!-- Loading state in dropdown -->
-          <div v-if="loadingDynamicLinkDocuments" class="px-4 py-3 text-sm text-gray-500 text-center">
-            <div class="flex items-center justify-center">
-              <LoaderIcon class="h-4 w-4 mr-2 animate-spin" />
-              Searching...
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <div class="mt-1 relative">
+          <input
+            :id="field.fieldname"
+            v-model="dynamicLinkSearchQuery"
+            @input="searchDynamicLinkDocuments"
+            @focus="handleDynamicLinkFocus"
+            @blur="handleDynamicLinkBlur"
+            @keydown="handleDynamicLinkKeydown"
+            type="text"
+            :placeholder="getDynamicLinkPlaceholder()"
+            :required="isFieldRequired"
+            :disabled="field.read_only === 1 || !getDynamicLinkDoctype()"
+            :readonly="field.read_only === 1"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 pr-10"
+            :class="{
+              'bg-gray-50': field.read_only === 1 || !getDynamicLinkDoctype(),
+              'cursor-not-allowed': field.read_only === 1 || !getDynamicLinkDoctype()
+            }"
+          />
+          <!-- Clear search button -->
+          <button
+            v-if="dynamicLinkSearchQuery && !field.read_only"
+            @click="clearDynamicLinkSearch"
+            type="button"
+            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        
+          <!-- Dropdown with search results -->
+          <div 
+            v-if="showDynamicLinkDropdown && !field.read_only && getDynamicLinkDoctype()"
+            class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+          >
+            <!-- Loading state in dropdown -->
+            <div v-if="loadingDynamicLinkDocuments" class="px-4 py-3 text-sm text-gray-500 text-center">
+              <div class="flex items-center justify-center">
+                <LoaderIcon class="h-4 w-4 mr-2 animate-spin" />
+                Searching...
+              </div>
             </div>
-          </div>
-          
-          <!-- No doctype selected state -->
-          <div v-else-if="!getDynamicLinkDoctype()" class="px-4 py-3 text-sm text-gray-500 text-center">
-            Please select a document type first
-          </div>
-          
-          <!-- No results state -->
-          <div v-else-if="!loadingDynamicLinkDocuments && filteredDynamicLinkDocuments.length === 0 && dynamicLinkSearchQuery.trim() !== ''" class="px-4 py-3 text-sm text-gray-500 text-center">
-            No results found for "{{ dynamicLinkSearchQuery }}"
-          </div>
-          
-          <!-- Search results -->
-          <div v-else-if="filteredDynamicLinkDocuments.length > 0">
-            <div 
-              v-for="doc in filteredDynamicLinkDocuments" 
-              :key="doc.name"
-              @click="selectDynamicLinkDocument(doc)"
-              class="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex-1">
-                  <div class="font-medium text-gray-900">{{ doc.name }}</div>
-                  <div v-if="doc.description" class="text-sm text-gray-500 mt-1">{{ doc.description }}</div>
+            
+            <!-- No doctype selected state -->
+            <div v-else-if="!getDynamicLinkDoctype()" class="px-4 py-3 text-sm text-gray-500 text-center">
+              Please select a document type first
+            </div>
+            
+            <!-- No results state -->
+            <div v-else-if="!loadingDynamicLinkDocuments && filteredDynamicLinkDocuments.length === 0 && dynamicLinkSearchQuery.trim() !== ''" class="px-4 py-3 text-sm text-gray-500 text-center">
+              No results found for "{{ dynamicLinkSearchQuery }}"
+            </div>
+            
+            <!-- Search results -->
+            <div v-else-if="filteredDynamicLinkDocuments.length > 0">
+              <div 
+                v-for="doc in filteredDynamicLinkDocuments" 
+                :key="doc.name"
+                @click="selectDynamicLinkDocument(doc)"
+                class="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex-1">
+                    <div class="font-medium text-gray-900">{{ doc.name }}</div>
+                    <div v-if="doc.description" class="text-sm text-gray-500 mt-1">{{ doc.description }}</div>
+                  </div>
                 </div>
               </div>
             </div>
+            
+            <!-- Initial state when no search query and no items loaded -->
+            <div v-else-if="dynamicLinkSearchQuery.trim() === '' && !loadingDynamicLinkDocuments" class="px-4 py-3 text-sm text-gray-500 text-center">
+              Start typing to search {{ getDynamicLinkDoctype() }} documents
+            </div>
           </div>
-          
-          <!-- Initial state when no search query and no items loaded -->
-          <div v-else-if="dynamicLinkSearchQuery.trim() === '' && !loadingDynamicLinkDocuments" class="px-4 py-3 text-sm text-gray-500 text-center">
-            Start typing to search {{ getDynamicLinkDoctype() }} documents
-          </div>
-        </div>
-      
-    </div>
-      
-      <!-- Help text -->
-      <p v-if="!getDynamicLinkDoctype()" class="mt-1 text-xs text-gray-500">
-        Select a document type in the "{{ getDynamicLinkFieldLabel() }}" field first
-      </p>
-      <p v-if="dynamicLinkError || errorStore.message" class="mt-1 text-sm text-red-600">
-        {{ dynamicLinkError || errorStore.message }}
-      </p>
+        
+      </div>
+        <!-- Help text -->
+        <p v-if="!getDynamicLinkDoctype()" class="mt-1 text-xs text-gray-500">
+          Select a document type in the "{{ getDynamicLinkFieldLabel() }}" field first
+        </p>
+        <p v-if="dynamicLinkError || errorStore.message" class="mt-1 text-sm text-red-600">
+          {{ dynamicLinkError || errorStore.message }}
+        </p>
+      </div>
     </template>
 
     <!-- Check Input -->
@@ -689,36 +704,38 @@
 
     <!-- Color Input -->
     <template v-else-if="field.fieldtype === 'Color'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <div class="mt-1 flex items-center space-x-2">
-        <input
-          :id="field.fieldname"
-          :value="modelValue"
-          @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
-          type="color"
-          :required="isFieldRequired"
-          :disabled="field.read_only === 1"
-          class="h-8 w-8 rounded-md border-gray-300 p-1"
-          :class="{
-            'cursor-not-allowed opacity-60': field.read_only === 1
-          }"
-        />
-        <input
-          :value="modelValue"
-          @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
-          type="text"
-          :required="isFieldRequired"
-          :disabled="field.read_only === 1"
-          :readonly="field.read_only === 1"
-          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-          :class="{
-            'bg-gray-50': field.read_only === 1,
-            'cursor-not-allowed': field.read_only === 1
-          }"
-        />
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <div class="mt-1 flex items-center space-x-2">
+          <input
+            :id="field.fieldname"
+            :value="modelValue"
+            @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
+            type="color"
+            :required="isFieldRequired"
+            :disabled="field.read_only === 1"
+            class="h-8 w-8 rounded-md border-gray-300 p-1"
+            :class="{
+              'cursor-not-allowed opacity-60': field.read_only === 1
+            }"
+          />
+          <input
+            :value="modelValue"
+            @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
+            type="text"
+            :required="isFieldRequired"
+            :disabled="field.read_only === 1"
+            :readonly="field.read_only === 1"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            :class="{
+              'bg-gray-50': field.read_only === 1,
+              'cursor-not-allowed': field.read_only === 1
+            }"
+          />
+        </div>
       </div>
     </template>
 
@@ -787,24 +804,26 @@
 
     <!-- Password Input -->
     <template v-else-if="field.fieldtype === 'Password'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <input
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
-        type="password"
-        :required="isFieldRequired"
-        :disabled="field.read_only === 1"
-        :readonly="field.read_only === 1"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
-        }"
-      />
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <input
+          :id="field.fieldname"
+          :value="modelValue"
+          @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
+          type="password"
+          :required="isFieldRequired"
+          :disabled="field.read_only === 1"
+          :readonly="field.read_only === 1"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1,
+            'cursor-not-allowed': field.read_only === 1
+          }"
+        />
+      </div>
     </template>
 
     <!-- Rating Input -->
@@ -815,22 +834,40 @@
       </label>
       <div class="mt-1 flex items-center space-x-1">
         <button
-          v-for="rating in 5"
-          :key="rating"
-          @click="!field.read_only && handleValueUpdate(rating)"
+          v-for="star in 5"
+          :key="star"
+          type="button"
+          @click="!field.read_only && handleRatingClick(getStarValue(star, $event))"
           :disabled="field.read_only === 1"
-          class="text-gray-300 hover:text-yellow-400 focus:outline-none"
-          :class="{ 
-            'text-yellow-400': modelValue >= rating,
-            'cursor-not-allowed': field.read_only === 1,
-            'hover:text-gray-300': field.read_only === 1
+          class="focus:outline-none"
+          :class="{
+            'cursor-not-allowed': field.read_only === 1
           }"
+          style="background: none; border: none; padding: 0; position: relative; width: 2rem; height: 2rem;"
         >
-          <svg class="h-8 w-8" fill="currentColor" viewBox="0 0 20 20">
+          <!-- Full Star -->
+          <svg v-if="getRatingStars() >= star" class="h-8 w-8 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+          <!-- Half Star -->
+          <svg v-else-if="getRatingStars() >= star - 0.5" class="h-8 w-8 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <defs>
+              <linearGradient :id="'half-gradient-' + star" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="50%" stop-color="#facc15" />
+                <stop offset="50%" stop-color="#d1d5db" />
+              </linearGradient>
+            </defs>
+            <path :fill="'url(#half-gradient-' + star + ')'" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+          <!-- Empty Star -->
+          <svg v-else class="h-8 w-8 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
         </button>
       </div>
+      <p v-if="modelValue !== null && modelValue !== undefined" class="mt-1 text-xs text-gray-500">
+        Rating: {{ modelValue }} ({{ getRatingStars() }} stars)
+      </p>
     </template>
 
     <!-- Signature Input -->
@@ -1089,153 +1126,121 @@
     </div>
   </template>
 
-  <!-- Geolocation Input -->
-  <template v-else-if="field.fieldtype === 'Geolocation'">
-    <label class="block text-sm font-medium text-gray-700">
-      {{ formattedLabel }}
-      <span v-if="isFieldRequired" class="text-red-500">*</span>
-    </label>
-    <div class="mt-1 relative">
-      <div 
-        :id="`map-${field.fieldname}`" 
-        class="h-96 w-full rounded-md border border-gray-300"
-      ></div>
-
-      <div class="mt-2 flex space-x-2">
-        <button
-          v-if="!field.read_only"
-          @click="getGeolocation"
-          type="button"
-          class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-        >
-          <MapPinIcon class="h-4 w-4 mr-2" />
-          Use Current Location
-        </button>
-        <button
-          v-if="!field.read_only"
-          @click="clearDrawing"
-          type="button"
-          class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-        >
-          Clear Drawing
-        </button>
-      </div>
-    </div>
-  </template>
-
   <!-- Table MultiSelect Input -->
   <template v-else-if="field.fieldtype === 'Table MultiSelect'">
-    <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-      {{ formattedLabel }}
-      <span v-if="isFieldRequired" class="text-red-500">*</span>
-    </label>
-    <div class="mt-1 relative">
-      <!-- Selected Items Display -->
-      <div v-if="selectedTableItems.length > 0" class="mb-3">
-        <div class="flex flex-wrap gap-2">
-          <div 
-            v-for="item in selectedTableItems" 
-            :key="item.name"
-            class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 border border-green-200"
-          >
-            <span class="mr-2">{{ item.name }}</span>
-            <button
-              v-if="!field.read_only"
-              @click="removeTableItem(item)"
-              type="button"
-              class="text-green-600 hover:text-green-800"
+    <div class="w-full lg:w-1/2">
+      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+        {{ formattedLabel }}
+        <span v-if="isFieldRequired" class="text-red-500">*</span>
+      </label>
+      <div class="mt-1 relative">
+        <!-- Selected Items Display -->
+        <div v-if="selectedTableItems.length > 0" class="mb-3">
+          <div class="flex flex-wrap gap-2">
+            <div 
+              v-for="item in selectedTableItems" 
+              :key="item.name"
+              class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 border border-green-200"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span class="mr-2">{{ item.name }}</span>
+              <button
+                v-if="!field.read_only"
+                @click="removeTableItem(item)"
+                type="button"
+                class="text-green-600 hover:text-green-800"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search and Select Interface -->
+        <div class="relative">
+          <div class="relative">
+            <input
+              :id="field.fieldname"
+              v-model="tableSearchQuery"
+              @input="searchTableItems"
+              @focus="handleSearchFocus"
+              @blur="handleSearchBlur"
+              @keydown="handleSearchKeydown"
+              type="text"
+              :placeholder="`Search ${formattedLabel}...`"
+              :disabled="field.read_only === 1"
+              :readonly="field.read_only === 1"
+              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 pr-10"
+              :class="{
+                'bg-gray-50': field.read_only === 1,
+                'cursor-not-allowed': field.read_only === 1
+              }"
+            />
+            <!-- Clear search button -->
+            <button
+              v-if="tableSearchQuery && !field.read_only"
+              @click="clearSearch"
+              type="button"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </button>
           </div>
-        </div>
-      </div>
-
-      <!-- Search and Select Interface -->
-      <div class="relative">
-        <div class="relative">
-          <input
-            :id="field.fieldname"
-            v-model="tableSearchQuery"
-            @input="searchTableItems"
-            @focus="handleSearchFocus"
-            @blur="handleSearchBlur"
-            @keydown="handleSearchKeydown"
-            type="text"
-            :placeholder="`Search ${formattedLabel}...`"
-            :disabled="field.read_only === 1"
-            :readonly="field.read_only === 1"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 pr-10"
-            :class="{
-              'bg-gray-50': field.read_only === 1,
-              'cursor-not-allowed': field.read_only === 1
-            }"
-          />
-          <!-- Clear search button -->
-          <button
-            v-if="tableSearchQuery && !field.read_only"
-            @click="clearSearch"
-            type="button"
-            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+          
+          <!-- Dropdown with search results -->
+          <div 
+            v-if="showTableDropdown && !field.read_only"
+            class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
           >
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        
-        <!-- Dropdown with search results -->
-        <div 
-          v-if="showTableDropdown && !field.read_only"
-          class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
-        >
-          <!-- Loading state in dropdown -->
-          <div v-if="loadingTableItems" class="px-4 py-3 text-sm text-gray-500 text-center">
-            <div class="flex items-center justify-center">
-              <LoaderIcon class="h-4 w-4 mr-2 animate-spin" />
-              Searching...
+            <!-- Loading state in dropdown -->
+            <div v-if="loadingTableItems" class="px-4 py-3 text-sm text-gray-500 text-center">
+              <div class="flex items-center justify-center">
+                <LoaderIcon class="h-4 w-4 mr-2 animate-spin" />
+                Searching...
+              </div>
             </div>
-          </div>
-          
-          <!-- No results state -->
-          <div v-else-if="!loadingTableItems && filteredTableItems.length === 0 && tableSearchQuery.trim() !== ''" class="px-4 py-3 text-sm text-gray-500 text-center">
-            No results found for "{{ tableSearchQuery }}"
-          </div>
-          
-          <!-- Search results -->
-          <div v-else-if="filteredTableItems.length > 0">
-            <div 
-              v-for="item in filteredTableItems" 
-              :key="item.name"
-              @click="selectTableItem(item)"
-              class="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
-              :class="{
-                'bg-green-50 hover:bg-green-100': isItemSelected(item)
-              }"
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex-1">
-                  <div class="font-medium text-gray-900">{{ item.name }}</div>
-                  <div v-if="item.description" class="text-sm text-gray-500 mt-1">{{ item.description }}</div>
-                </div>
-                <!-- Checkmark for selected items -->
-                <div v-if="isItemSelected(item)" class="ml-2">
-                  <svg class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
+            
+            <!-- No results state -->
+            <div v-else-if="!loadingTableItems && filteredTableItems.length === 0 && tableSearchQuery.trim() !== ''" class="px-4 py-3 text-sm text-gray-500 text-center">
+              No results found for "{{ tableSearchQuery }}"
+            </div>
+            
+            <!-- Search results -->
+            <div v-else-if="filteredTableItems.length > 0">
+              <div 
+                v-for="item in filteredTableItems" 
+                :key="item.name"
+                @click="selectTableItem(item)"
+                class="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
+                :class="{
+                  'bg-green-50 hover:bg-green-100': isItemSelected(item)
+                }"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex-1">
+                    <div class="font-medium text-gray-900">{{ item.name }}</div>
+                    <div v-if="item.description" class="text-sm text-gray-500 mt-1">{{ item.description }}</div>
+                  </div>
+                  <!-- Checkmark for selected items -->
+                  <div v-if="isItemSelected(item)" class="ml-2">
+                    <svg class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
+            
+            <!-- Initial state when no search query and no items loaded -->
+            <div v-else-if="tableSearchQuery.trim() === '' && !loadingTableItems" class="px-4 py-3 text-sm text-gray-500 text-center">
+              Start typing to search or browse available options
+            </div>
           </div>
           
-          <!-- Initial state when no search query and no items loaded -->
-          <div v-else-if="tableSearchQuery.trim() === '' && !loadingTableItems" class="px-4 py-3 text-sm text-gray-500 text-center">
-            Start typing to search or browse available options
-          </div>
         </div>
-        
       </div>
     </div>
   </template>
@@ -3212,6 +3217,50 @@ watch(() => props.modelValue, (newValue) => {
     }
   }
 }, { immediate: true });
+
+// Add these helper functions for rating conversion
+const getRatingStars = () => {
+  if (props.modelValue === null || props.modelValue === undefined || props.modelValue === '') {
+    return 0;
+  }
+  // Convert ERP rating (0.0-1.0) to stars (0-5)
+  // 0.0 = 0 stars, 0.1 = 0.5 stars, 0.2 = 1 star, 0.3 = 1.5 stars, etc.
+  const rating = parseFloat(props.modelValue);
+  if (isNaN(rating)) return 0;
+  return rating * 5; // This will give us the exact star value including decimals
+};
+
+const handleRatingClick = (starValue: number) => {
+  // Convert star value (0.5, 1, 1.5, 2, 2.5, etc.) to ERP rating (0.1, 0.2, 0.3, 0.4, 0.5, etc.)
+  // 0.5 stars = 0.1, 1 star = 0.2, 1.5 stars = 0.3, 2 stars = 0.4, 2.5 stars = 0.5, etc.
+  const rating = starValue * 0.2;
+  emit('update:modelValue', rating);
+  if (props.formData) {
+    props.formData[props.field.fieldname] = rating;
+    evaluateFieldDependency(props.field, props.formData);
+  }
+};
+
+const handleStarHover = (star: number) => {
+  // Optional: Add hover effects if needed
+  // This can be used for preview effects
+};
+
+const handleStarLeave = () => {
+  // Optional: Remove hover effects if needed
+  // This can be used for preview effects
+};
+
+// Helper to get the value for a star (full or half) based on mouse position
+const getStarValue = (star: number, event: MouseEvent) => {
+  const { left, width } = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  const x = event.clientX - left;
+  if (x < width / 2) {
+    return star - 0.5;
+  } else {
+    return star;
+  }
+};
 </script>
 
 <style>
