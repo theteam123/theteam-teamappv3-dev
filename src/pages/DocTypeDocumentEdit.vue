@@ -322,6 +322,7 @@ const saveAllSignatures = () => {
       // Traverse up to find the Vue component
       let currentElement = fieldElement as any;
       while (currentElement) {
+        console.log('test 1', currentElement.__vueParentComponent?.exposed?.saveCurrentSignature);
         if (currentElement.__vueParentComponent?.exposed?.saveCurrentSignature) {
           console.log(`Found signature component for ${field.fieldname}`);
           const signatureData = currentElement.__vueParentComponent.exposed.saveCurrentSignature();
