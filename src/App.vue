@@ -393,6 +393,7 @@
                           <FormField
                             v-for="field in section.fields"
                             :key="field.fieldname"
+                            :ref="(el) => { if (el) supportFormFieldRefs[field.fieldname] = el }"
                             :field="field"
                             v-model="supportFormData[field.fieldname]"
                             :formData="supportFormData"
@@ -441,6 +442,7 @@
                         <FormField
                           v-for="field in section.fields"
                           :key="field.fieldname"
+                          :ref="(el) => { if (el) supportFormFieldRefs[field.fieldname] = el }"
                           :field="field"
                           v-model="supportFormData[field.fieldname]"
                           :formData="supportFormData"
@@ -668,6 +670,9 @@ const supportError = ref<string | null>(null);
 const showSupportSuccessModal = ref(false);
 const currentSupportTab = ref<string>('');
 
+// Add refs to store FormField component references for support form
+const supportFormFieldRefs = ref<Record<string, any>>({});
+
 const documentItems = computed(() => {
   const items = getDocumentItems();
   // Map string icon names to actual icon components
@@ -859,12 +864,12 @@ const handleSupportSubmit = async () => {
   supportError.value = null;
 
   try {
-    // Save all signature fields before submission
-    const formFieldRefs = document.querySelectorAll('[data-form-field]');
-    for (const fieldRef of formFieldRefs) {
-      const vueComponent = (fieldRef as any).__vueParentComponent?.exposed;
-      if (vueComponent && typeof vueComponent.saveCurrentSignature === 'function') {
-        vueComponent.saveCurrentSignature();
+    // Save all signature fields before submission using refs
+    const signatureFields = supportForm.value?.fields.filter(field => field.fieldtype === 'Signature') || [];
+    for (const field of signatureFields) {
+      const fieldRef = supportFormFieldRefs.value[field.fieldname];
+      if (fieldRef && typeof fieldRef.saveCurrentSignature === 'function') {
+        fieldRef.saveCurrentSignature();
       }
     }
 

@@ -102,6 +102,7 @@
                     <FormField
                       v-for="field in section.fields"
                       :key="field.fieldname"
+                      :ref="(el) => { if (el) formFieldRefs[field.fieldname] = el }"
                       :field="field"
                       v-model="formData[field.fieldname]"
                       :formData="formData"
@@ -150,6 +151,7 @@
                   <FormField
                     v-for="field in section.fields"
                     :key="field.fieldname"
+                    :ref="(el) => { if (el) formFieldRefs[field.fieldname] = el }"
                     :field="field"
                     v-model="formData[field.fieldname]"
                     :formData="formData"
@@ -236,6 +238,9 @@ const watermarkConfigs = ref<WatermarkConfig[]>([]);
 const filesToDownload = ref<Array<{ file: File; fieldname: string }>>([]);
 const currentTab = ref<string>('');
 
+// Add refs to store FormField component references
+const formFieldRefs = ref<Record<string, any>>({});
+
 const { processedSections } = useFormSections(
   computed(() => docType.value?.fields),
   computed(() => formData.value),
@@ -304,12 +309,12 @@ const handleSubmit = async () => {
   filesToDownload.value = [];
 
   try {
-    // Save all signature fields before submission
-    const formFieldRefs = document.querySelectorAll('[data-form-field]');
-    for (const fieldRef of formFieldRefs) {
-      const vueComponent = (fieldRef as any).__vueParentComponent?.exposed;
-      if (vueComponent && typeof vueComponent.saveCurrentSignature === 'function') {
-        vueComponent.saveCurrentSignature();
+    // Save all signature fields before submission using refs
+    const signatureFields = docType.value?.fields.filter(field => field.fieldtype === 'Signature') || [];
+    for (const field of signatureFields) {
+      const fieldRef = formFieldRefs.value[field.fieldname];
+      if (fieldRef && typeof fieldRef.saveCurrentSignature === 'function') {
+        fieldRef.saveCurrentSignature();
       }
     }
 

@@ -100,6 +100,7 @@
                     <FormField
                       v-for="field in section.fields"
                       :key="field.fieldname"
+                      :ref="(el) => { if (el) formFieldRefs[field.fieldname] = el }"
                       :field="field"
                       v-model="formData[field.fieldname]"
                       :formData="formData"
@@ -149,6 +150,7 @@
                   <FormField
                     v-for="field in section.fields"
                     :key="field.fieldname"
+                    :ref="(el) => { if (el) formFieldRefs[field.fieldname] = el }"
                     :field="field"
                     v-model="formData[field.fieldname]"
                     :formData="formData"
@@ -240,6 +242,9 @@ const filesToDownload = ref<Array<{ file: File; fieldname: string }>>([]);
 const currentTab = ref<string>('');
 const docTypeTable = ref<DocTypeField[]>([]);
 
+// Add refs to store FormField component references
+const formFieldRefs = ref<Record<string, any>>({});
+
 const { processedSections } = useFormSections(
   computed(() => docType.value?.fields),
   computed(() => formData.value),
@@ -308,33 +313,22 @@ const fetchDocTypeAndDocument = async () => {
 };
 
 const saveAllSignatures = () => {
-  // Find all signature fields and save their current state
+  // Find all signature fields and save their current state using refs
   const signatureFields = docType.value?.fields.filter(field => field.fieldtype === 'Signature') || [];
   console.log('Found signature fields:', signatureFields);
   
   for (const field of signatureFields) {
-    // Find the FormField component for this signature field
-    const fieldElement = document.querySelector(`[data-form-field="${field.fieldname}"]`);
-    console.log(`Looking for signature field: ${field.fieldname}`, fieldElement);
-    console.log('fieldElement', fieldElement);
-    
-    if (fieldElement) {
-      // Traverse up to find the Vue component
-      let currentElement = fieldElement as any;
-      while (currentElement) {
-        console.log('test 1', currentElement.__vueParentComponent?.exposed?.saveCurrentSignature);
-        if (currentElement.__vueParentComponent?.exposed?.saveCurrentSignature) {
-          console.log(`Found signature component for ${field.fieldname}`);
-          const signatureData = currentElement.__vueParentComponent.exposed.saveCurrentSignature();
-          console.log(`Signature data for ${field.fieldname}:`, signatureData ? 'has data' : 'no data');
-          if (signatureData) {
-            formData.value[field.fieldname] = signatureData;
-            console.log(`Updated formData[${field.fieldname}] with signature`);
-          }
-          break;
-        }
-        currentElement = currentElement.parentElement;
+    const fieldRef = formFieldRefs.value[field.fieldname];
+    if (fieldRef && typeof fieldRef.saveCurrentSignature === 'function') {
+      console.log(`Found signature component for ${field.fieldname}`);
+      const signatureData = fieldRef.saveCurrentSignature();
+      console.log(`Signature data for ${field.fieldname}:`, signatureData ? 'has data' : 'no data');
+      if (signatureData) {
+        formData.value[field.fieldname] = signatureData;
+        console.log(`Updated formData[${field.fieldname}] with signature`);
       }
+    } else {
+      console.log(`No signature component found for ${field.fieldname}`);
     }
   }
 };

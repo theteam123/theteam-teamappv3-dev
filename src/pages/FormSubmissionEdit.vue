@@ -47,6 +47,7 @@
               <FormField
                 v-for="field in section.fields"
                 :key="field.fieldname"
+                :ref="(el) => { if (el) formFieldRefs[field.fieldname] = el }"
                 :field="field"
                 v-model="formData[field.fieldname]"
               />
@@ -121,6 +122,9 @@ const formData = ref<Record<string, any>>({});
 const loading = ref(false);
 const error = ref('');
 
+// Add refs to store FormField component references
+const formFieldRefs = ref<Record<string, any>>({});
+
 const { processedSections } = useFormSections(computed(() => form.value?.fields));
 
 const fetchFormAndSubmission = async () => {
@@ -178,12 +182,12 @@ const saveEdit = async () => {
   error.value = '';
   
   try {
-    // Save all signature fields before submission
-    const formFieldRefs = document.querySelectorAll('[data-form-field]');
-    for (const fieldRef of formFieldRefs) {
-      const vueComponent = (fieldRef as any).__vueParentComponent?.exposed;
-      if (vueComponent && typeof vueComponent.saveCurrentSignature === 'function') {
-        vueComponent.saveCurrentSignature();
+    // Save all signature fields before submission using refs
+    const signatureFields = form.value?.fields.filter(field => field.fieldtype === 'Signature') || [];
+    for (const field of signatureFields) {
+      const fieldRef = formFieldRefs.value[field.fieldname];
+      if (fieldRef && typeof fieldRef.saveCurrentSignature === 'function') {
+        fieldRef.saveCurrentSignature();
       }
     }
 
