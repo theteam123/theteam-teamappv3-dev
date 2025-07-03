@@ -115,6 +115,21 @@ The form should have multiple sections and be optimized for mobile devices."
         </div>
       </div>
 
+      <!-- ERP Save Success Message -->
+      <div v-if="erpSaveSuccess" class="bg-green-50 border border-green-200 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-green-800">✅ Saved to ERP Successfully!</h3>
+        <p class="text-sm text-green-700" v-html="erpSaveSuccess"></p>
+      </div>
+
+      <!-- ERP Save Error Message -->
+      <div v-if="erpSaveError" class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-red-800">❌ Failed to Save to ERP</h3>
+        <p class="text-sm text-red-700" v-html="erpSaveError"></p>
+        <button @click="erpSaveError = ''" class="mt-2 text-xs text-red-600 underline">
+          Dismiss
+        </button>
+      </div>
+
       <!-- Download Options -->
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-semibold mb-4">📥 Download Generated Files</h3>
@@ -157,9 +172,22 @@ The form should have multiple sections and be optimized for mobile devices."
           </button>
         </div>
         
-        <!-- Download All Button -->
-        <div class="flex justify-center">
-          <button @click="downloadAllFiles" class="btn-primary flex items-center justify-center px-6 py-2">
+        <!-- Save to ERP and Download All Buttons -->
+        <div class="flex justify-center space-x-4">
+          <button 
+            @click="saveDocTypeToErp" 
+            :disabled="savingToErp || !generatedOutput?.mainDocType"
+            class="btn-primary flex items-center justify-center px-6 py-2"
+          >
+            <span v-if="savingToErp">
+              <LoaderIcon class="w-4 h-4 animate-spin mr-2" />
+              Saving to ERP...
+            </span>
+            <span v-else>
+              💾 Save Doctype to ERP
+            </span>
+          </button>
+          <button @click="downloadAllFiles" class="btn-secondary flex items-center justify-center px-6 py-2">
             📦 Download All Files
           </button>
         </div>
@@ -288,12 +316,76 @@ The form should have multiple sections and be optimized for mobile devices."
         </div>
       </div>
     </div>
+
+    <!-- Module Selection Modal -->
+    <div v-if="showModuleSelectionModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h3 class="text-lg font-medium text-gray-900">Select Module</h3>
+          <button @click="showModuleSelectionModal = false" class="text-gray-400 hover:text-gray-500">
+            <XIcon class="w-6 h-6" />
+          </button>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="px-6 py-4">
+          <div v-if="loadingModules" class="flex justify-center py-8">
+            <LoaderIcon class="w-8 h-8 animate-spin text-green-600" />
+          </div>
+          <div v-else>
+            <p class="text-sm text-gray-600 mb-4">
+              Choose which module this DocType should belong to. This affects organization and permissions.
+            </p>
+            
+            <div class="space-y-2 max-h-60 overflow-y-auto">
+              <label 
+                v-for="module in availableModules" 
+                :key="module.value"
+                class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                :class="{ 'border-green-500 bg-green-50': selectedModule === module.value }"
+              >
+                <input 
+                  type="radio" 
+                  :value="module.value" 
+                  v-model="selectedModule" 
+                  class="text-green-600 focus:ring-green-500"
+                >
+                <div class="ml-3">
+                  <div class="text-sm font-medium text-gray-900">{{ module.value }}</div>
+                  <div v-if="module.description" class="text-xs text-gray-500">{{ module.description }}</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+          <button
+            @click="showModuleSelectionModal = false"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            @click="proceedWithModuleSave"
+            :disabled="!selectedModule || loadingModules"
+            class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md disabled:opacity-50"
+          >
+            Save to {{ selectedModule }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { LoaderIcon } from 'lucide-vue-next';
+import { LoaderIcon, XIcon } from 'lucide-vue-next';
+import { createDocType } from '../services/erpnext.js';
+import { getModules } from '../services/deskApi.js';
 
 interface GeneratedOutput {
   mainDocType: any;
@@ -310,12 +402,24 @@ interface GeneratedOutput {
   };
 }
 
+interface Module {
+  value: string;
+  description?: string;
+}
+
 const generating = ref(false);
 const generatedOutput = ref<GeneratedOutput | null>(null);
 const activeTab = ref('doctype');
 const apiKey = ref(localStorage.getItem('claude_api_key') || '');
 const requirements = ref('');
 const error = ref('');
+const savingToErp = ref(false);
+const erpSaveSuccess = ref('');
+const erpSaveError = ref('');
+const showModuleSelectionModal = ref(false);
+const availableModules = ref<Module[]>([]);
+const selectedModule = ref('Custom');
+const loadingModules = ref(false);
 
 // Save API key to localStorage when it changes
 const saveApiKey = () => {
@@ -642,6 +746,8 @@ const resetGenerator = () => {
   generatedOutput.value = null;
   error.value = '';
   requirements.value = '';
+  erpSaveSuccess.value = '';
+  erpSaveError.value = '';
   // Keep API key for convenience
 };
 
@@ -655,6 +761,233 @@ const getQualityBadgeColor = (quality: string) => {
 
 const formatTimestamp = (timestamp: string) => {
   return new Date(timestamp).toLocaleString();
+};
+
+const validateAndFixDocType = (docType: any) => {
+  if (!docType) return null;
+
+  // Create a clean DocType structure for ERPNext
+  const cleanDocType: any = {
+    // Basic DocType information
+    doctype: "DocType",
+    name: docType.name,
+    module: docType.module || "Custom",
+    custom: 1,
+    
+    // Document behavior settings
+    is_submittable: docType.is_submittable || 0,
+    engine: "InnoDB",
+    track_changes: 1,
+    allow_rename: 1,
+    
+    // Description
+    description: docType.description || `${docType.name} management system`,
+    
+    // Fields array
+    fields: [],
+    
+    // Permissions array
+    permissions: []
+  };
+
+  // Only add optional fields if they have meaningful values
+  if (docType.title_field && docType.title_field.trim()) {
+    cleanDocType.title_field = docType.title_field.trim();
+  }
+  
+  if (docType.search_fields && docType.search_fields.trim()) {
+    cleanDocType.search_fields = docType.search_fields.trim();
+  }
+
+  // Autoname configuration removed - ERPNext will handle naming automatically
+
+  // Process fields
+  if (docType.fields && Array.isArray(docType.fields)) {
+    cleanDocType.fields = docType.fields.map((field: any, index: number) => {
+      // Create clean field object with only necessary properties
+      const cleanField: any = {
+        fieldname: field.fieldname,
+        label: field.label,
+        fieldtype: field.fieldtype,
+        idx: index + 1
+      };
+
+      // Add optional properties only if they have meaningful values
+      if (field.reqd && field.reqd !== 0) cleanField.reqd = 1;
+      if (field.unique && field.unique !== 0) cleanField.unique = 1;
+      if (field.hidden && field.hidden !== 0) cleanField.hidden = 1;
+      if (field.read_only && field.read_only !== 0) cleanField.read_only = 1;
+      if (field.in_list_view && field.in_list_view !== 0) cleanField.in_list_view = 1;
+      if (field.in_standard_filter && field.in_standard_filter !== 0) cleanField.in_standard_filter = 1;
+      if (field.search_index && field.search_index !== 0) cleanField.search_index = 1;
+      if (field.translatable && field.translatable !== 0) cleanField.translatable = 1;
+      if (field.collapsible && field.collapsible !== 0) cleanField.collapsible = 1;
+      
+      // Handle field-specific properties
+      if (field.options && field.options.trim()) {
+        if (field.fieldtype === 'Select' && Array.isArray(field.options)) {
+          cleanField.options = field.options.join('\n');
+        } else {
+          cleanField.options = field.options;
+        }
+      }
+      
+      if (field.default && field.default.trim()) {
+        cleanField.default = field.default;
+      }
+      
+      if (field.description && field.description.trim()) {
+        cleanField.description = field.description;
+      }
+      
+      if (field.depends_on && field.depends_on.trim()) {
+        cleanField.depends_on = field.depends_on;
+      }
+
+      return cleanField;
+    });
+  }
+
+  // Set up permissions
+  cleanDocType.permissions = [
+    {
+      role: "System Manager",
+      read: 1,
+      write: 1,
+      create: 1,
+      delete: 1,
+      export: 1
+    },
+    {
+      role: "All",
+      read: 1,
+      write: 1,
+      create: 1
+    }
+  ];
+
+  // Handle additional permissions from original DocType
+  if (docType.permissions && Array.isArray(docType.permissions)) {
+    docType.permissions.forEach((perm: any) => {
+      if (perm.role && perm.role !== "System Manager" && perm.role !== "All") {
+        cleanDocType.permissions.push({
+          role: perm.role,
+          read: perm.read || 0,
+          write: perm.write || 0,
+          create: perm.create || 0,
+          delete: perm.delete || 0,
+          submit: perm.submit || 0,
+          cancel: perm.cancel || 0,
+          amend: perm.amend || 0,
+          export: perm.export || 0
+        });
+      }
+    });
+  }
+
+  return cleanDocType;
+};
+
+const fetchModules = async () => {
+  loadingModules.value = true;
+  try {
+    const response = await getModules();
+    if (response?.message && Array.isArray(response.message)) {
+      // Add Custom as the first option
+      availableModules.value = [
+        { value: 'Custom', description: 'Custom module for user-created DocTypes' },
+        ...response.message.map((module: any) => ({
+          value: module.value || module.name || module,
+          description: module.description || ''
+        }))
+      ];
+    } else {
+      // Fallback if API doesn't return expected format
+      availableModules.value = [
+        { value: 'Custom', description: 'Custom module for user-created DocTypes' },
+        { value: 'Core', description: 'Core system module' },
+        { value: 'Setup', description: 'Setup and configuration module' }
+      ];
+    }
+  } catch (error) {
+    console.error('Failed to fetch modules:', error);
+    // Fallback modules
+    availableModules.value = [
+      { value: 'Custom', description: 'Custom module for user-created DocTypes' },
+      { value: 'Core', description: 'Core system module' },
+      { value: 'Setup', description: 'Setup and configuration module' }
+    ];
+  } finally {
+    loadingModules.value = false;
+  }
+};
+
+const proceedWithModuleSave = async () => {
+  showModuleSelectionModal.value = false;
+  await actualSaveToErp();
+};
+
+const saveDocTypeToErp = async () => {
+  if (!generatedOutput.value?.mainDocType) {
+    erpSaveError.value = 'No DocType available to save';
+    return;
+  }
+
+  // Show module selection modal
+  showModuleSelectionModal.value = true;
+  await fetchModules();
+};
+
+const actualSaveToErp = async () => {
+  if (!generatedOutput.value?.mainDocType) {
+    erpSaveError.value = 'No DocType available to save';
+    return;
+  }
+
+  savingToErp.value = true;
+  erpSaveError.value = '';
+  erpSaveSuccess.value = '';
+  
+  try {
+    // Validate and fix the DocType before sending to ERP
+    const fixedDocType = validateAndFixDocType(generatedOutput.value.mainDocType);
+    
+    if (!fixedDocType) {
+      throw new Error('Failed to validate DocType structure');
+    }
+
+    // Update the module with selected module
+    fixedDocType.module = selectedModule.value;
+
+    console.log('Sending fixed DocType to ERP:', fixedDocType);
+    
+    const response = await createDocType(fixedDocType);
+    
+    erpSaveSuccess.value = `Successfully saved "${fixedDocType.name}" to "${selectedModule.value}" module!`;
+    
+    // Auto-clear success message after 5 seconds
+    setTimeout(() => {
+      erpSaveSuccess.value = '';
+    }, 5000);
+    
+  } catch (err: any) {
+    console.error('Failed to save DocType to ERP:', err);
+    
+    // Handle specific error types
+    if (err.message?.includes('DuplicateEntryError') || err.message?.includes('already exists')) {
+      erpSaveError.value = `DocType "${generatedOutput.value.mainDocType.name}" already exists in your ERP system. Please use a different name or delete the existing DocType first.`;
+    } else if (err.message?.includes('PermissionError') || err.message?.includes('403')) {
+      erpSaveError.value = 'You do not have permission to create DocTypes. Please contact your system administrator.';
+    } else if (err.message?.includes('ValidationError')) {
+      erpSaveError.value = `Validation Error: ${err.message}. Please check the DocType structure and try again.`;
+    } else if (err.message?.includes('TypeError') || err.message?.includes('NoneType')) {
+      erpSaveError.value = 'DocType structure issue detected. The generated DocType has been automatically fixed. Please try saving again.';
+    } else {
+      erpSaveError.value = err.message || 'Failed to save DocType to ERP system. Please try again.';
+    }
+  } finally {
+    savingToErp.value = false;
+  }
 };
 </script>
 

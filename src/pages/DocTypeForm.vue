@@ -41,6 +41,14 @@
         <div class="space-y-8">
           <!-- Tabs -->
           <div v-if="processedSections.hasTabs" class="border-b border-gray-200">
+            <!-- Tab Progress Indicator -->
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-medium text-gray-900">Form Progress</h3>
+              <span class="text-sm text-gray-500">
+                Step {{ currentTabIndex + 1 }} of {{ processedSections.tabs.length }}
+              </span>
+            </div>
+            
             <nav class="-mb-px flex space-x-8" aria-label="Tabs">
               <button
                 v-for="tab in processedSections.tabs"
@@ -163,7 +171,8 @@
           </template>
         </div>
 
-        <div class="mt-6 flex justify-end gap-3">
+        <div class="mt-6 flex justify-between">
+          <!-- Left side - Cancel button -->
           <button
             type="button"
             @click="router.back()"
@@ -171,13 +180,54 @@
           >
             Cancel
           </button>
-          <button
-            type="submit"
-            :disabled="submitting"
-            class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md disabled:opacity-50"
-          >
-            {{ submitting ? 'Submitting...' : 'Submit' }}
-          </button>
+
+          <!-- Right side - Navigation and Submit buttons -->
+          <div class="flex gap-3">
+            <!-- Tab Navigation Buttons -->
+            <template v-if="processedSections.hasTabs">
+              <!-- Previous Button -->
+              <button
+                type="button"
+                @click="goToPreviousTab"
+                :disabled="!canGoPrevious"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <ChevronLeftIcon class="w-4 h-4" />
+                Previous
+              </button>
+              
+              <!-- Next Button -->
+              <button
+                v-if="canGoNext"
+                type="button"
+                @click="goToNextTab"
+                class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md flex items-center gap-2"
+              >
+                Next
+                <ChevronRightIcon class="w-4 h-4" />
+              </button>
+              
+              <!-- Submit Button (only on last tab) -->
+              <button
+                v-if="isLastTab"
+                type="submit"
+                :disabled="submitting"
+                class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md disabled:opacity-50"
+              >
+                {{ submitting ? 'Submitting...' : 'Submit' }}
+              </button>
+            </template>
+            
+            <!-- Submit Button (for non-tabbed forms) -->
+            <button
+              v-else
+              type="submit"
+              :disabled="submitting"
+              class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md disabled:opacity-50"
+            >
+              {{ submitting ? 'Submitting...' : 'Submit' }}
+            </button>
+          </div>
         </div>
       </div>
     </form>
@@ -195,7 +245,9 @@ import { getCurrentToken } from '../services/oauth';
 import {
   FileIcon,
   LoaderIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from 'lucide-vue-next';
 import FormField from '../components/FormField.vue';
 import { useFormSections } from '../composables/useFormSections';
@@ -256,6 +308,28 @@ const hasPrefilledFields = computed(() => {
   return Array.from(urlParams.keys()).some(key => 
     docType.value?.fields.some(field => field.fieldname === key)
   );
+});
+
+// Add computed properties for tab navigation
+const currentTabIndex = computed(() => {
+  if (!processedSections.value.hasTabs) return -1;
+  return processedSections.value.tabs.findIndex(tab => tab.id === currentTab.value);
+});
+
+const isFirstTab = computed(() => {
+  return currentTabIndex.value === 0;
+});
+
+const isLastTab = computed(() => {
+  return currentTabIndex.value === processedSections.value.tabs.length - 1;
+});
+
+const canGoNext = computed(() => {
+  return processedSections.value.hasTabs && !isLastTab.value;
+});
+
+const canGoPrevious = computed(() => {
+  return processedSections.value.hasTabs && !isFirstTab.value;
 });
 
 const fetchDocType = async () => {
@@ -508,6 +582,21 @@ const clearURLParameters = () => {
 // Add browser navigation handling
 const handleBrowserNavigation = () => {
   loadFormDataFromURL();
+};
+
+// Add navigation methods
+const goToNextTab = () => {
+  if (canGoNext.value) {
+    const nextIndex = currentTabIndex.value + 1;
+    currentTab.value = processedSections.value.tabs[nextIndex].id;
+  }
+};
+
+const goToPreviousTab = () => {
+  if (canGoPrevious.value) {
+    const prevIndex = currentTabIndex.value - 1;
+    currentTab.value = processedSections.value.tabs[prevIndex].id;
+  }
 };
 
 onMounted(async () => {
