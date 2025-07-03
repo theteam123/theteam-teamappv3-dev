@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" vite build",
+    "build:dev": "cross-env NODE_OPTIONS=\"--max-old-space-size=2048\" vite build --mode development",
+    "build:low-mem": "cross-env NODE_OPTIONS=\"--max-old-space-size=1024\" vite build --no-minify",
     "preview": "vite preview",
     "server": "node server.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
@@ -17,7 +19,8 @@
     "proxy:logs": "pm2 logs teamapp-proxy",
     "deploy": "bash deploy-update.sh",
     "deploy:api": "bash deploy-api-only.sh",
-    "deploy:setup": "bash setup-production.sh"
+    "deploy:setup": "bash setup-production.sh",
+    "build:help": "bash build-troubleshoot.sh"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
@@ -52,6 +55,7 @@
     "@vitejs/plugin-vue": "^5.0.5",
     "autoprefixer": "^10.4.19",
     "concurrently": "^9.2.0",
+    "cross-env": "^7.0.3",
     "pm2": "^5.3.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
