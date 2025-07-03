@@ -1,9 +1,9 @@
-# Production Deployment Guide - Binarylane Server
+# Production Deployment Guide - Binarylane Server (Nginx)
 
 ## Overview
 
 This guide covers deploying the TeamApp v3 with:
-- **Vue.js Frontend**: Served by Apache (separate deployment)
+- **Vue.js Frontend**: Served by Nginx (separate deployment)
 - **Node.js API Server**: Handles Claude AI API requests only (no static files)
 - **PM2**: Process management for the Node.js API server
 
@@ -11,7 +11,7 @@ This guide covers deploying the TeamApp v3 with:
 
 ### 1. System Requirements
 - Node.js 18+ installed
-- Apache web server running
+- Nginx web server running
 - PM2 process manager
 
 ### 2. Install Dependencies on Server
@@ -36,7 +36,7 @@ pm2 --version
 
 ```bash
 # Navigate to your project directory
-cd /path/to/your/project
+cd /opt/vueapp/theteam-teamappv3-dev
 
 # Install dependencies
 npm install
@@ -44,44 +44,54 @@ npm install
 # Note: No build step needed - this is a pure API server
 ```
 
-### Step 2: Set Up Apache Virtual Host
+### Step 2: Set Up Nginx Virtual Host
 
-Update your Apache configuration to proxy API requests to the Node.js server:
+Update your Nginx configuration to proxy API requests to the Node.js server:
 
-```apache
-<VirtualHost *:80>
-    ServerName teamsite.theteam.net.au
-    DocumentRoot /path/to/your/vue-app/dist
+```nginx
+server {
+    listen 80;
+    server_name teamsite.theteam.net.au;
     
-    # Serve static Vue.js files (from your separate Vue.js deployment)
-    <Directory "/path/to/your/vue-app/dist">
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-        
-        # Handle Vue.js client-side routing
-        RewriteEngine On
-        RewriteBase /
-        RewriteRule ^index\.html$ - [L]
-        RewriteCond %{REQUEST_FILENAME} !-f
-        RewriteCond %{REQUEST_FILENAME} !-d
-        RewriteRule . /index.html [L]
-    </Directory>
+    # Root directory for your Vue.js app
+    root /path/to/your/vue-app/dist;
+    index index.html;
+    
+    # Handle Vue.js client-side routing
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
     
     # Proxy API requests to Node.js API server
-    ProxyPreserveHost On
-    ProxyPass /api/ http://localhost:3002/api/
-    ProxyPassReverse /api/ http://localhost:3002/api/
+    location /api/ {
+        proxy_pass http://localhost:3002;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 86400;
+    }
     
-    # Enable mod_rewrite and mod_proxy
-    # Make sure these modules are enabled:
-    # sudo a2enmod rewrite
-    # sudo a2enmod proxy
-    # sudo a2enmod proxy_http
+    # Optional: Add gzip compression for better performance
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
     
-    ErrorLog ${APACHE_LOG_DIR}/teamapp_error.log
-    CustomLog ${APACHE_LOG_DIR}/teamapp_access.log combined
-</VirtualHost>
+    # Optional: Set cache headers for static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Logs
+    access_log /var/log/nginx/teamapp_access.log;
+    error_log /var/log/nginx/teamapp_error.log;
+}
 ```
 
 ### Step 3: Create Required Directories
@@ -96,15 +106,17 @@ chmod 755 logs
 
 ### Step 4: Configure Environment Variables
 
-Create or update the `ecosystem.config.js` file with your domain:
+Your `ecosystem.config.cjs` file is already configured with the correct domain:
 
 ```javascript
 env: {
   NODE_ENV: 'production',
   PORT: 3002,
-  FRONTEND_URL: 'https://teamsite.theteam.net.au' // Update this to your domain
+  FRONTEND_URL: 'https://teamsite.theteam.net.au'
 },
 ```
+
+The API server is located at: `/opt/vueapp/theteam-teamappv3-dev`
 
 ### Step 5: Start the Node.js Server
 
@@ -140,7 +152,7 @@ pm2 startup
    curl http://localhost:3002/health
    ```
 
-2. **Test through Apache:**
+2. **Test through Nginx:**
    ```bash
    curl http://your-domain.com/api/health
    ```
@@ -182,8 +194,8 @@ npm install
 npm run proxy:restart
 
 # Note: For Vue.js app updates, deploy separately to your Vue.js directory
-# and restart Apache if needed:
-# sudo systemctl restart apache2
+# and restart Nginx if needed:
+# sudo systemctl restart nginx
 ```
 
 ## Monitoring
@@ -201,17 +213,17 @@ pm2 monit
 pm2 logs teamapp-proxy --lines 100
 ```
 
-### Check Apache Status
+### Check Nginx Status
 
 ```bash
-# Check Apache status
-sudo systemctl status apache2
+# Check Nginx status
+sudo systemctl status nginx
 
-# Check Apache error logs
-sudo tail -f /var/log/apache2/teamapp_error.log
+# Check Nginx error logs
+sudo tail -f /var/log/nginx/teamapp_error.log
 
-# Check Apache access logs
-sudo tail -f /var/log/apache2/teamapp_access.log
+# Check Nginx access logs
+sudo tail -f /var/log/nginx/teamapp_access.log
 ```
 
 ## Troubleshooting
@@ -225,13 +237,16 @@ sudo tail -f /var/log/apache2/teamapp_access.log
    sudo kill -9 [PID]
    ```
 
-2. **Apache proxy not working:**
+2. **Nginx proxy not working:**
    ```bash
-   # Enable required modules
-   sudo a2enmod proxy
-   sudo a2enmod proxy_http
-   sudo a2enmod rewrite
-   sudo systemctl restart apache2
+   # Check Nginx configuration
+   sudo nginx -t
+   
+   # Restart Nginx if config is valid
+   sudo systemctl restart nginx
+   
+   # Check if Nginx is running
+   sudo systemctl status nginx
    ```
 
 3. **PM2 process not staying alive:**
@@ -240,19 +255,19 @@ sudo tail -f /var/log/apache2/teamapp_access.log
    pm2 logs teamapp-proxy
    
    # Check if Node.js has all required dependencies
-   cd /path/to/your/project
+   cd /opt/vueapp/theteam-teamappv3-dev
    npm install
    ```
 
 4. **CORS issues:**
    - Ensure `FRONTEND_URL` in `ecosystem.config.js` matches your domain
-   - Check that Apache is properly proxying requests
+   - Check that Nginx is properly proxying requests
 
 ### Log Locations
 
-- **PM2 Logs**: `./logs/` directory in your project
-- **Apache Error Log**: `/var/log/apache2/teamapp_error.log`
-- **Apache Access Log**: `/var/log/apache2/teamapp_access.log`
+- **PM2 Logs**: `/opt/vueapp/theteam-teamappv3-dev/logs/` directory
+- **Nginx Error Log**: `/var/log/nginx/teamapp_error.log`
+- **Nginx Access Log**: `/var/log/nginx/teamapp_access.log`
 
 ## Security Considerations
 
@@ -277,9 +292,9 @@ sudo tail -f /var/log/apache2/teamapp_access.log
 1. **PM2 Cluster Mode:**
    - For high traffic, consider increasing `instances` in `ecosystem.config.js`
 
-2. **Apache Optimization:**
-   - Enable gzip compression
-   - Configure proper caching headers for static assets
+2. **Nginx Optimization:**
+   - Enable gzip compression (included in config above)
+   - Configure proper caching headers for static assets (included in config above)
 
 3. **Monitoring:**
    - Set up monitoring with PM2 Plus or similar tools

@@ -3,6 +3,7 @@ module.exports = {
     {
       name: 'teamapp-proxy',
       script: 'server.js',
+      cwd: '/opt/vueapp/theteam-teamappv3-dev',
       instances: 1,
       exec_mode: 'cluster',
       env: {
@@ -16,9 +17,9 @@ module.exports = {
         FRONTEND_URL: 'https://teamsite.theteam.net.au'
       },
       // Logging
-      log_file: './logs/proxy-server.log',
-      error_file: './logs/proxy-server-error.log',
-      out_file: './logs/proxy-server-out.log',
+      log_file: '/opt/vueapp/theteam-teamappv3-dev/logs/proxy-server.log',
+      error_file: '/opt/vueapp/theteam-teamappv3-dev/logs/proxy-server-error.log',
+      out_file: '/opt/vueapp/theteam-teamappv3-dev/logs/proxy-server-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       
       // Auto-restart configuration
