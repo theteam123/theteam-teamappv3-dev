@@ -47,15 +47,23 @@ echo "✅ Dependencies installed successfully"
 echo "🔄 Starting server..."
 npm run proxy:prod
 
-# Wait a moment for the server to start
-sleep 2
+# Wait a moment for PM2 to start
+sleep 3
 
 # Check if the server is running
 if pm2 list | grep -q "teamapp-proxy"; then
     echo "✅ Server started successfully"
 else
     echo "❌ Failed to start server"
-    exit 1
+    echo "Trying alternative approach..."
+    pm2 start server.js --name teamapp-proxy --env production
+    sleep 2
+    if pm2 list | grep -q "teamapp-proxy"; then
+        echo "✅ Server started with alternative method"
+    else
+        echo "❌ Failed to start server with all methods"
+        exit 1
+    fi
 fi
 
 # Test the health endpoint
