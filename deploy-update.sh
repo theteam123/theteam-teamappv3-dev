@@ -64,21 +64,11 @@ npm install || {
 }
 
 # Build VueJS project
-echo "🏗️  Building VueJS project..."
-# Make server build script executable
-chmod +x server-build.sh
-
-# Use server-optimized build
-if bash server-build.sh; then
-    echo "✅ Server-optimized build completed"
-elif npm run build:low-mem; then
-    echo "✅ Low-memory build completed"
-elif NODE_OPTIONS='--max-old-space-size=256' npx vite build --no-minify; then
-    echo "✅ Minimal build completed"
-else
-    echo "❌ All build attempts failed!"
-    exit 1
-fi
+echo "Building VueJS project..."
+npm run build || {
+  echo "Build failed!"
+  exit 1
+}
 
 # Deploy built files to Nginx directory
 echo "🚀 Deploying to /var/www/teamsite..."
