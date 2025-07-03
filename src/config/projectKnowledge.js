@@ -2,6 +2,7 @@
  * Project Knowledge Configuration
  * Contains the comprehensive DocType generation knowledge base
  * Used by the enhanced Claude AI service for context
+ * 
  */
 
 export const projectKnowledge = `
