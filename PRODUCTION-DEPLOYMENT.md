@@ -3,9 +3,10 @@
 ## Overview
 
 This guide covers deploying the TeamApp v3 with:
-- **Vue.js Frontend**: Served by Nginx (separate deployment)
-- **Node.js API Server**: Handles Claude AI API requests only (no static files)
+- **Vue.js Frontend**: Built and deployed to `/var/www/teamsite` (served by Nginx)
+- **Node.js API Server**: Handles Claude AI API requests on port 3002
 - **PM2**: Process management for the Node.js API server
+- **Smart Deployment**: Automated scripts with git conflict handling
 
 ## Prerequisites
 
@@ -181,8 +182,43 @@ npm run proxy:logs
 pm2 status teamapp-proxy
 ```
 
-### Update/Redeploy API Server
+### Deployment Options
 
+#### Full Deployment (Frontend + API):
+```bash
+# Recommended: Full deployment with build
+./deploy-update.sh
+
+# Or using npm script
+npm run deploy
+```
+
+**What it does:**
+- Pulls latest changes with conflict handling
+- Installs dependencies
+- Builds Vue.js frontend (`npm run build`)
+- Deploys built files to `/var/www/teamsite`
+- Sets proper file permissions
+- Restarts API server
+- Tests both frontend and API
+
+#### API-Only Deployment:
+```bash
+# When you only changed API server code (no frontend changes)
+./deploy-api-only.sh
+
+# Or using npm script
+npm run deploy:api
+```
+
+**What it does:**
+- Pulls latest changes with conflict handling
+- Installs dependencies (only if package.json changed)
+- Restarts API server
+- Tests API server
+- Skips frontend build and deployment
+
+#### Manual Deployment (if needed):
 ```bash
 # 1. Pull latest changes
 git pull origin main
@@ -190,12 +226,15 @@ git pull origin main
 # 2. Install any new dependencies
 npm install
 
-# 3. Restart API server
-npm run proxy:restart
+# 3. Build frontend (if changed)
+npm run build
 
-# Note: For Vue.js app updates, deploy separately to your Vue.js directory
-# and restart Nginx if needed:
-# sudo systemctl restart nginx
+# 4. Deploy frontend (if changed)
+sudo rsync -av --delete dist/ /var/www/teamsite/
+sudo chown -R www-data:www-data /var/www/teamsite
+
+# 5. Restart API server
+npm run proxy:restart
 ```
 
 ## Monitoring

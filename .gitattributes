@@ -2,6 +2,8 @@
 *.sh text eol=lf
 setup-production.sh text eol=lf
 deploy-update.sh text eol=lf
+deploy-api-only.sh text eol=lf
+fix-git-conflicts.sh text eol=lf
 
 # Ensure line endings are correct for different file types
 *.js text eol=lf

@@ -16,6 +16,7 @@
     "proxy:restart": "pm2 restart teamapp-proxy",
     "proxy:logs": "pm2 logs teamapp-proxy",
     "deploy": "bash deploy-update.sh",
+    "deploy:api": "bash deploy-api-only.sh",
     "deploy:setup": "bash setup-production.sh"
   },
   "dependencies": {

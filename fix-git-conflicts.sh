@@ -20,16 +20,18 @@ git commit -m "Production deployment configuration
 echo "🔐 Setting execute permissions..."
 chmod +x setup-production.sh
 chmod +x deploy-update.sh
+chmod +x deploy-api-only.sh
 chmod +x fix-git-conflicts.sh
 
 # Update git to track execute permissions
 echo "📝 Updating git file permissions..."
 git update-index --chmod=+x setup-production.sh
 git update-index --chmod=+x deploy-update.sh
+git update-index --chmod=+x deploy-api-only.sh
 git update-index --chmod=+x fix-git-conflicts.sh
 
 # Commit permission changes if any
-git add setup-production.sh deploy-update.sh fix-git-conflicts.sh .gitattributes
+git add setup-production.sh deploy-update.sh deploy-api-only.sh fix-git-conflicts.sh .gitattributes
 git commit -m "Fix file permissions for shell scripts" || echo "No permission changes to commit"
 
 echo ""
