@@ -600,6 +600,7 @@ import {
   LoaderIcon,
   MicIcon,
   UserIcon,
+  FileCodeIcon,
   Building2Icon as BuildingOfficeIcon // Alias for BuildingOfficeIcon
 } from 'lucide-vue-next';
 
@@ -700,7 +701,8 @@ const iconMap = {
   'ShieldIcon': ShieldIcon,
   'FileEditIcon': FileEditIcon,
   'TagIcon': TagIcon,
-  'FolderIcon': FolderIcon
+  'FolderIcon': FolderIcon,
+  'FileCodeIcon': FileCodeIcon
 };
 
 const filteredDocumentItems = computed(() => {

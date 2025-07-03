@@ -8,10 +8,10 @@ export const SHARED_NAVIGATION = [
     requiredRoles: ['Dizza'] 
   },
   { 
-    name: 'DocType Generator', 
+    name: 'AI DocType Generator', 
     path: '/doctype-generator', 
     icon: 'FileCodeIcon', 
-    description: 'Generate DocType JSON files and HTML mockups', 
+    description: 'Generate DocType JSON files and HTML mockups with Claude AI', 
     requiredRoles: ['System Manager', 'Admin', 'Developer'] 
   }
 

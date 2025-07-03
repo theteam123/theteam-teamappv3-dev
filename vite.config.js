@@ -14,6 +14,13 @@ export default defineConfig({
       cert: fs.readFileSync('./localhost.pem'),
     },
     port: 3000, // or any port you prefer
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   build: {
     // Generate manifest.json in outDir
