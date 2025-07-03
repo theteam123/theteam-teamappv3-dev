@@ -1,0 +1,526 @@
+This tool creates comprehensive Frappe DocType JSON files optimized for modern web applications and mobile interfaces, along with working HTML mockups that demonstrate the user interface and functionality using the exact TheTeam App v3 design system. It generates complete DocType structures with proper field definitions, relationships, and metadata that integrate seamlessly with TheTeam App v3 and other Vue.js front-end applications.
+
+## Key Capabilities
+
+### DocType Generation
+- Generates main DocTypes with complex field structures including child tables, conditional fields, and automated calculations
+- Creates child DocTypes for table relationships with proper field mappings
+- Implements all supported field types optimized for web/mobile interfaces:
+  - **Basic**: Data, Int/Float, Date/Datetime/Time, Duration, Select, Link, Check, Text variants
+  - **Advanced**: Dynamic Link (v15+ standards), Table, Geolocation, Table MultiSelect, Multiple Upload
+  - **Rich Media**: Attach/Attach Image, Signature, Text Editor, Color, Rating
+  - **Specialized**: Currency, Phone, Password, JSON, HTML with PDF support
+- Handles permissions, naming rules, and DocType metadata
+- Supports conditional field visibility with proper dependency configuration
+- Creates mobile-friendly forms with camera integration and geolocation support
+- Implements Dynamic Link fields following ERPNext v15+ standards for two-step selection
+
+### HTML Mockup Generation
+- Creates fully functional HTML mockups that demonstrate the DocType's user interface
+- Implements responsive design optimized for both desktop and mobile devices
+- Uses the exact TheTeam App v3 design system specifications
+- Includes interactive JavaScript functionality for:
+  - Form validation and field dependencies
+  - Dynamic field visibility based on conditions
+  - Child table operations (add, edit, delete rows)
+  - File upload previews and camera integration simulation
+  - Geolocation field interactions with map interfaces
+  - Dynamic Link field cascading behavior
+- Styles mockups with modern CSS frameworks (Tailwind CSS)
+- Provides realistic data examples and field interactions
+- Demonstrates mobile-specific features like touch interfaces and camera access
+- Shows conditional field behavior and validation states
+
+## Dynamic Link Implementation
+
+Dynamic Link fields require a companion Link field that specifies the document type:
+```json
+// Link field (specifies doctype)
+{"fieldname": "reference_doctype", "fieldtype": "Link", "options": "DocType"}
+// Dynamic Link field (references the Link field)
+{"fieldname": "reference_document", "fieldtype": "Dynamic Link", "options": "reference_doctype"}
+```
+
+## Mobile & Web Optimization
+
+- Touch-friendly field types with appropriate input methods
+- Geolocation fields for GPS-based location capture
+- Camera integration for image fields
+- Responsive form layouts
+- Offline-capable field configurations
+- Progressive Web App (PWA) compatible designs
+
+## TheTeam App v3 Design System
+
+### Reference Sources
+- **GitHub Repository**: https://github.com/theteam123/theteam-teamappv3-dev/tree/main
+- **Live Implementation**: Use the exact specifications below for consistent styling
+
+### Core Design Principles
+- Clean, minimal, professional interface design
+- Mobile-first responsive approach
+- Consistent spacing and typography
+- Subtle shadows and modern borders
+- Professional business application aesthetic
+
+### Color Palette (Exact Hex Codes)
+
+#### Primary Colors
+- **Primary Green**: `#22c55e` (main brand color for buttons, focus states, accents)
+- **Primary Green Hover**: `#16a34a` (hover state for primary buttons)
+- **Primary Green Light**: `#dcfce7` (light background for success states)
+- **Primary Green Focus Ring**: `rgba(34, 197, 94, 0.1)` (focus ring background)
+
+#### Secondary Colors
+- **White**: `#ffffff` (main background, card backgrounds)
+- **Gray 50**: `#f9fafb` (page background)
+- **Gray 100**: `#f3f4f6` (light backgrounds, disabled states)
+- **Gray 200**: `#e5e7eb` (borders, dividers)
+- **Gray 300**: `#d1d5db` (input borders)
+- **Gray 400**: `#9ca3af` (placeholder text)
+- **Gray 500**: `#6b7280` (secondary text)
+- **Gray 600**: `#4b5563` (primary text)
+- **Gray 700**: `#374151` (headings)
+- **Gray 800**: `#1f2937` (dark text)
+- **Gray 900**: `#111827` (darkest text)
+
+#### Status Colors
+- **Success Green**: `#10b981` (success messages, positive states)
+- **Warning Yellow**: `#f59e0b` (warning states, pending)
+- **Error Red**: `#ef4444` (error states, validation errors)
+- **Info Blue**: `#3b82f6` (informational states)
+
+#### Logo Colors
+- **Logo Dark Blue**: `#1e293b` (main "theteam" text)
+- **Logo Teal**: `#14b8a6` (accent "m" in logo)
+
+### Typography System
+
+#### Font Family
+```css
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+```
+
+#### Font Weights
+- **Light**: 300 (subtle text, large headings)
+- **Regular**: 400 (body text, labels)
+- **Medium**: 500 (form labels, secondary headings)
+- **Semibold**: 600 (primary headings, buttons)
+- **Bold**: 700 (emphasis, important headings)
+
+#### Font Sizes
+- **xs**: 12px (small labels, helper text)
+- **sm**: 14px (body text, form inputs)
+- **base**: 16px (default text size)
+- **lg**: 18px (large body text)
+- **xl**: 20px (small headings)
+- **2xl**: 24px (section headings)
+- **3xl**: 30px (page titles)
+
+### Component Library
+
+#### Buttons
+
+**Primary Button**
+```css
+.btn-primary {
+    background-color: #22c55e;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.btn-primary:hover {
+    background-color: #16a34a;
+}
+```
+
+**Secondary Button**
+```css
+.btn-secondary {
+    background-color: #f3f4f6;
+    color: #374151;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    border: 1px solid #d1d5db;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-secondary:hover {
+    background-color: #e5e7eb;
+}
+```
+
+#### Form Elements
+
+**Text Input**
+```css
+.form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-input:focus {
+    outline: none;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+```
+
+**Select Dropdown**
+```css
+.form-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 8px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 40px;
+}
+```
+
+**Textarea**
+```css
+.form-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 80px;
+}
+```
+
+#### Status Badges
+```css
+.badge-success {
+    background-color: #dcfce7;
+    color: #166534;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.badge-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+.badge-error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+```
+
+#### Cards and Containers
+```css
+.card {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+```
+
+#### Tables
+```css
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table th {
+    background-color: #f9fafb;
+    padding: 12px;
+    text-align: left;
+    font-weight: 500;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+.table td {
+    padding: 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+.table tr:hover {
+    background-color: #f9fafb;
+}
+```
+
+### Layout Structure
+
+#### Header Navigation
+```html
+<header class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-40">
+    <div class="flex items-center px-4 py-3">
+        <button class="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <!-- Hamburger menu icon -->
+        </button>
+        <div class="flex-1 flex justify-center">
+            <img src="https://i.ibb.co/v42vBNsJ/TeamLogo.png" alt="TheTeam" class="theteam-logo">
+        </div>
+        <button class="btn-primary">Support</button>
+    </div>
+</header>
+```
+
+#### Logo Specifications
+```css
+.theteam-logo {
+    height: 40px;
+    width: auto;
+    max-width: none;
+    object-fit: contain;
+}
+.theteam-logo-footer {
+    height: 16px;
+    width: auto;
+    display: inline;
+}
+```
+
+**Logo Source**: https://ibb.co/Xxmk4nyz
+**Direct Image URL**: `https://i.ibb.co/v42vBNsJ/TeamLogo.png` (911×191 pixels)
+
+*Note: Always fetch the logo from the ImgBB page (https://ibb.co/Xxmk4nyz) and extract the direct image URL for use in HTML. The direct URL may change, so always verify the current direct link from the ImgBB page.*
+
+#### Footer
+```html
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3">
+    <div class="text-center text-sm text-gray-500">
+        Powered by <img src="https://i.ibb.co/v42vBNsJ/TeamLogo.png" alt="TheTeam" class="theteam-logo-footer">
+    </div>
+</footer>
+```
+
+*Note: Logo URL should be fetched from https://ibb.co/Xxmk4nyz and the direct image URL extracted for use.*
+
+#### Main Content Area
+```html
+<main class="pt-16 pb-20">
+    <div class="max-w-4xl mx-auto p-6">
+        <!-- Content goes here -->
+    </div>
+</main>
+```
+
+### Interactive Elements
+
+#### Modal/Popup System
+```css
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+```
+
+#### Child Table Features
+- "Add Row" buttons in primary green
+- Clean table layout with proper spacing
+- "No rows added yet" placeholder text
+- Modal popups for row editing
+- Remove row functionality with confirmation
+
+### Responsive Design
+
+#### Breakpoints
+- **Mobile**: < 768px
+- **Tablet**: 768px - 1024px
+- **Desktop**: > 1024px
+
+#### Mobile Optimizations
+- Touch-friendly button sizes (minimum 44px)
+- Responsive navigation with hamburger menu
+- Stacked form layouts on mobile
+- Optimized table scrolling
+
+### Technical Implementation
+
+#### Required Dependencies
+```html
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Inter Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+```
+
+#### JavaScript Functionality Requirements
+- Form validation with visual feedback
+- Child table row management (add/edit/delete)
+- Modal system for popups
+- Responsive navigation toggle
+- Dynamic field visibility
+- Form submission handling
+- Auto-updating timestamps
+
+### Implementation Checklist
+
+When creating HTML mockups, ensure:
+
+1. **Color Scheme**
+   - [ ] Primary green (#22c55e) used for buttons and accents
+   - [ ] Proper gray scale for text and borders
+   - [ ] Status colors for badges and states
+
+2. **Typography**
+   - [ ] Inter font family loaded and applied
+   - [ ] Proper font weights and sizes
+   - [ ] Consistent text hierarchy
+
+3. **Layout**
+   - [ ] Fixed header with centered logo
+   - [ ] Proper main content padding (pt-16 pb-20)
+   - [ ] Fixed footer with "Powered by theteam"
+
+4. **Components**
+   - [ ] Primary and secondary buttons styled correctly
+   - [ ] Form inputs with green focus states
+   - [ ] Dropdowns with arrow indicators
+   - [ ] Tables with hover effects
+   - [ ] Status badges with appropriate colors
+
+5. **Interactive Features**
+   - [ ] Child table "Add Row" functionality
+   - [ ] Modal system for editing
+   - [ ] Form validation
+   - [ ] Responsive navigation
+
+6. **Logo Implementation**
+   - [ ] Correct logo URL: https://i.ibb.co/v42vBNsJ/TeamLogo.png
+   - [ ] Proper sizing (40px header, 16px footer)
+   - [ ] Centered alignment in header
+   - [ ] Logo fetched from ImgBB source: https://ibb.co/Xxmk4nyz
+
+### Logo Implementation Process
+
+When implementing the logo in HTML mockups:
+
+1. **Access the ImgBB page**: https://ibb.co/Xxmk4nyz
+2. **Extract the direct image URL** from the page (currently: https://i.ibb.co/v42vBNsJ/TeamLogo.png)
+3. **Verify the image dimensions** (should be 911×191 pixels for full logo)
+4. **Use the direct URL** in HTML img src attributes
+5. **Apply proper CSS classes** (.theteam-logo for header, .theteam-logo-footer for footer)
+6. **Ensure proper centering** in header using flexbox layout
+
+7. **Responsive Design**
+   - [ ] Mobile-friendly layouts
+   - [ ] Touch-friendly interactions
+   - [ ] Proper breakpoint handling
+
+### Code Examples
+
+#### Complete HTML Template Structure
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Title - TheTeam App v3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom CSS classes here */
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-40">
+        <!-- Header content -->
+    </header>
+    
+    <!-- Main Content -->
+    <main class="pt-16 pb-20">
+        <div class="max-w-4xl mx-auto p-6">
+            <!-- Form content -->
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3">
+        <!-- Footer content -->
+    </footer>
+    
+    <!-- Modals -->
+    <!-- Modal content -->
+    
+    <script>
+        // JavaScript functionality
+    </script>
+</body>
+</html>
+```
+
+## Output Format
+
+The tool generates two main deliverables:
+
+1. **DocType JSON Files**: Complete JSON files ready for import into Frappe/ERPNext with all necessary field definitions, options, dependencies, and metadata properly structured for modern web/mobile applications.
+
+2. **HTML Mockup**: A fully functional HTML prototype that uses the exact TheTeam App v3 design system specifications outlined above.
+
+## Reference Documentation
+
+- **GitHub Repository**: https://github.com/theteam123/theteam-teamappv3-dev/tree/main
+- **Frappe Documentation**: https://docs.frappe.io/erpnext/user/manual/en/introduction
+- **Framework Documentation**: https://docs.frappe.io/framework/user/en/introduction
+
+## Usage Instructions
+
+Describe your business requirements including:
+
+1. **Main Purpose**: Business objective and primary use case of the DocType
+2. **Form Structure**: Required sections, field groupings, and layout preferences
+3. **Field Requirements**: Specific field types, validations, and relationships needed (consider mobile/web usage)
+4. **Child Tables**: Structure and fields for any child table relationships
+5. **Dynamic Links**: Specify doctype reference fields and cascading behavior
+6. **Geolocation**: GPS requirements and mapping needs
+7. **File Management**: Upload requirements, image processing, and file types
+8. **Status Tracking**: Workflow states and automation requirements
+9. **Permissions**: User access levels and role-based restrictions
+10. **Mobile Features**: Camera integration, GPS, offline functionality, and touch interactions
+11. **UI Preferences**: Layout style, color scheme, and branding requirements (will use TheTeam App v3 by default)
+12. **Validation Rules**: Business logic and data validation requirements
+
+## Deliverables
+
+For each request, the tool will provide:
+
+1. **Main DocType JSON**: Complete DocType definition with all fields, metadata, and configurations
+2. **Child DocType JSON(s)**: If applicable, separate JSON files for child table DocTypes
+3. **HTML Mockup**: Interactive prototype demonstrating the complete user interface and functionality using exact TheTeam App v3 design system
+4. **Implementation Notes**: Guidance on deployment, customization, and integration with TheTeam App v3
+
+The generated files are production-ready and optimized for modern ERPNext implementations with full mobile and web compatibility, following the exact TheTeam App v3 design specifications for consistent branding and user experience.

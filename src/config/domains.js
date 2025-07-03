@@ -1,18 +1,18 @@
 // Shared navigation items available across all domains
 export const SHARED_NAVIGATION = [
-  // { 
-  //   name: 'Documents',
-  //   path: '/documents',
-  //   icon: 'FileTextIcon',
-  //   description: 'Manage and organize your company documents',
-  //   requiredRoles: ['System Manager', 'Taktec User', 'Technician'] 
-  // },
   { 
     name: 'Voice Assistant', 
     path: '/voice-assistant', 
     icon: 'MicIcon', 
     description: 'AI Voice Assistant', 
     requiredRoles: ['Dizza'] 
+  },
+  { 
+    name: 'DocType Generator', 
+    path: '/doctype-generator', 
+    icon: 'FileCodeIcon', 
+    description: 'Generate DocType JSON files and HTML mockups', 
+    requiredRoles: ['System Manager', 'Admin', 'Developer'] 
   }
 
 ];
@@ -155,8 +155,8 @@ export const getDomainConfig = () => {
   let currentDomain = window.location.hostname;
   if (currentDomain.includes('localhost')) {
     currentDomain = 'teamsite-sgcloud';
-    currentDomain = 'taktec';
     currentDomain = 'theteamapp';
+    currentDomain = 'taktec';
   }
 
   // Find the matching domain configuration

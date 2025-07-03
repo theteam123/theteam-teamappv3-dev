@@ -1,21 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from './pages/Home.vue'
 import Auth from './pages/Auth.vue'
-import Users from './pages/Users.vue'
-import Companies from './pages/Companies.vue'
 import Forms from './pages/Forms.vue'
 import PublicFormSubmit from './pages/PublicFormSubmit.vue'
-import Categories from './pages/Categories.vue'
-import Content from './pages/Content.vue'
 import Documents from './pages/Documents.vue'
-import Records from './pages/Records.vue'
-import Templates from './pages/Templates.vue'
-import Videos from './pages/Videos.vue'
 import DocType from './pages/DocType.vue'
 import DocTypeSubmissions from './pages/DocTypeSubmissions.vue'
 import DocTypeForm from './pages/DocTypeForm.vue'
 import DocTypeDocumentEdit from './pages/DocTypeDocumentEdit.vue'
 import DocTypeImages from './pages/DocTypeImages.vue'
+import DocTypeGenerator from './pages/DocTypeGenerator.vue'
 import VoiceAssistant from './views/VoiceAssistant.vue'
 import ApiTester from './pages/ApiTester.vue'
 import { useAuthStore } from './stores/auth'
@@ -44,18 +38,6 @@ const routes = [
     }
   },
   {
-    path: '/users',
-    name: 'users',
-    component: Users,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/companies',
-    name: 'companies',
-    component: Companies,
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/documents',
     name: 'documents',
     component: Documents,
@@ -75,24 +57,6 @@ const routes = [
       requiresAuth: true,
       requiredRoles: ['Dizza', 'Admin', 'Manager']
     }
-  },
-  {
-    path: '/records',
-    name: 'records',
-    component: Records,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/templates',
-    name: 'templates',
-    component: Templates,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/videos',
-    name: 'videos',
-    component: Videos,
-    meta: { requiresAuth: true }
   },
   {
     path: '/documents',
@@ -189,24 +153,21 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/categories',
-    name: 'categories',
-    component: Categories,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/content',
-    name: 'content',
-    component: Content,
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/api-tester',
     name: 'api-tester',
     component: ApiTester,
     meta: { 
       requiresAuth: true,
       requiredRoles: ['Admin', 'Developer','System Manager', 'Taktec User', 'Taktec Admin']
+    }
+  },
+  {
+    path: '/doctype-generator',
+    name: 'doctype-generator',
+    component: DocTypeGenerator,
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['System Manager', 'Admin', 'Developer']
     }
   },
   {
@@ -249,7 +210,6 @@ router.beforeEach(async (to, from, next) => {
     // Check if user is authenticated
     if (!authStore.isAuthenticated) {
       const message = 'Please log in to access this page';
-      console.log(message);
       errorStore.$patch({ message, type: 'error' });
       next({ name: 'auth' });
       return;
@@ -263,7 +223,6 @@ router.beforeEach(async (to, from, next) => {
       
       if (!hasRequiredRole) {
         const message = 'Access denied: You do not have the required permissions to view this page';
-        console.log(message);
         errorStore.$patch({ message, type: 'error' });
         next({ name: 'home' });
         return;

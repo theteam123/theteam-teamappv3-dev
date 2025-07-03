@@ -209,7 +209,7 @@
     </template>
 
     <!-- Select Input -->
-    <template v-else-if="field.fieldtype === 'Select'">
+    <template v-else-if="field.fieldtype === 'Select' && field.fieldname !== 'naming_series'">
       <div class="w-full lg:w-1/2">
         <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
           {{ formattedLabel }}
