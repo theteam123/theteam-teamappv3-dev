@@ -14,7 +14,9 @@
     "proxy:prod": "pm2 start ecosystem.config.cjs --env production",
     "proxy:stop": "pm2 stop teamapp-proxy",
     "proxy:restart": "pm2 restart teamapp-proxy",
-    "proxy:logs": "pm2 logs teamapp-proxy"
+    "proxy:logs": "pm2 logs teamapp-proxy",
+    "deploy": "bash deploy-update.sh",
+    "deploy:setup": "bash setup-production.sh"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",

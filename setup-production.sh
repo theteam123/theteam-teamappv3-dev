@@ -7,6 +7,17 @@ set -e
 
 echo "🚀 Starting TeamApp v3 Production Setup..."
 
+# Pull latest changes from repository
+echo "📥 Pulling latest changes from repository..."
+if git pull origin main; then
+    echo "✅ Repository updated successfully"
+else
+    echo "⚠️  Git pull failed or no changes to pull"
+fi
+
+# Make script executable (in case permissions were lost)
+chmod +x setup-production.sh
+
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
     echo "❌ Node.js is not installed. Please install Node.js 18+ first."
