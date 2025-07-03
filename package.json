@@ -9,7 +9,12 @@
     "preview": "vite preview",
     "server": "node server.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
-    "start": "npm run build && npm run server"
+    "start": "npm run server",
+    "proxy": "node server.js",
+    "proxy:prod": "pm2 start ecosystem.config.js --env production",
+    "proxy:stop": "pm2 stop teamapp-proxy",
+    "proxy:restart": "pm2 restart teamapp-proxy",
+    "proxy:logs": "pm2 logs teamapp-proxy"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
@@ -44,6 +49,7 @@
     "@vitejs/plugin-vue": "^5.0.5",
     "autoprefixer": "^10.4.19",
     "concurrently": "^9.2.0",
+    "pm2": "^5.3.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.2.2",
