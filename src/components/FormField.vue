@@ -56,6 +56,9 @@
         <p v-else-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
           This field will be automatically populated with your {{ getLoginTypeDescription() }}.
         </p>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -80,6 +83,9 @@
             'cursor-not-allowed': field.read_only === 1
           }"
         />
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -106,6 +112,9 @@
             }"
           />
         </div>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -132,6 +141,9 @@
             }"
           />
         </div>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -156,6 +168,9 @@
             'cursor-not-allowed': field.read_only === 1
           }"
         />
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -205,6 +220,9 @@
             </div>
           </div>
         </div>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -259,6 +277,9 @@
             </option>
           </select>
         </template>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -286,6 +307,9 @@
             {{ option.name }}
           </option>
         </select>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -381,6 +405,9 @@
         <p v-if="dynamicLinkError || errorStore.message" class="mt-1 text-sm text-red-600">
           {{ dynamicLinkError || errorStore.message }}
         </p>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -403,53 +430,66 @@
           {{ formattedLabel }}
         </label>
       </div>
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </template>
 
     <!-- Small Text Input -->
     <template v-else-if="field.fieldtype === 'Small Text'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <textarea
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
-        rows="5"
-        :required="isFieldRequired"
-        :disabled="field.read_only === 1"
-        :readonly="field.read_only === 1"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
-        }"
-      ></textarea>
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <textarea
+          :id="field.fieldname"
+          :value="modelValue"
+          @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
+          rows="5"
+          :required="isFieldRequired"
+          :disabled="field.read_only === 1"
+          :readonly="field.read_only === 1"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1,
+            'cursor-not-allowed': field.read_only === 1
+          }"
+        ></textarea>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
+      </div>
     </template>
 
     <!-- Text Input -->
     <template v-else-if="field.fieldtype === 'Text'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
-        {{ formattedLabel }}
-        <span v-if="isFieldRequired" class="text-red-500">*</span>
-      </label>
-      <textarea
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
-        rows="4"
-        :required="isFieldRequired"
-        :disabled="field.read_only === 1 || shouldAutoFillUserData"
-        :readonly="field.read_only === 1 || shouldAutoFillUserData"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': field.read_only === 1 || shouldAutoFillUserData,
-          'cursor-not-allowed': field.read_only === 1 || shouldAutoFillUserData
-        }"
-      ></textarea>
-      <p v-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
-        This field will be automatically populated with your {{ getLoginTypeDescription() }}.
-      </p>
+      <div class="w-full lg:w-1/2">
+        <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+          {{ formattedLabel }}
+          <span v-if="isFieldRequired" class="text-red-500">*</span>
+        </label>
+        <textarea
+          :id="field.fieldname"
+          :value="modelValue"
+          @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
+          rows="4"
+          :required="isFieldRequired"
+          :disabled="field.read_only === 1 || shouldAutoFillUserData"
+          :readonly="field.read_only === 1 || shouldAutoFillUserData"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': field.read_only === 1 || shouldAutoFillUserData,
+            'cursor-not-allowed': field.read_only === 1 || shouldAutoFillUserData
+          }"
+        ></textarea>
+        <p v-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
+          This field will be automatically populated with your {{ getLoginTypeDescription() }}.
+        </p>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
+      </div>
     </template>
 
     <!-- Long Text Input -->
@@ -472,6 +512,9 @@
           'cursor-not-allowed': field.read_only === 1
         }"
       ></textarea>
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </template>
 
     <!-- JSON Input -->
@@ -507,6 +550,9 @@
             Format JSON
           </button>
         </div>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -533,6 +579,9 @@
             }"
           ></textarea>
         </div>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -601,6 +650,9 @@
           </button>
         </div>
       </div>
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </template>
 
     <!-- Image Upload -->
@@ -700,6 +752,9 @@
           <span class="ml-2 text-sm text-gray-600">Download a copy of watermarked image</span>
         </label>
       </div>
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </template>
 
     <!-- Color Input -->
@@ -736,6 +791,9 @@
             }"
           />
         </div>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -764,6 +822,9 @@
             'cursor-not-allowed': field.read_only === 1
           }"
         />
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -800,6 +861,9 @@
         :enabledFlags="true"
         :preferredCountries="['US', 'GB', 'CA']"
       />
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </template>
 
     <!-- Password Input -->
@@ -823,6 +887,9 @@
             'cursor-not-allowed': field.read_only === 1
           }"
         />
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -868,6 +935,9 @@
       <p v-if="modelValue !== null && modelValue !== undefined" class="mt-1 text-xs text-gray-500">
         Rating: {{ modelValue }} ({{ getRatingStars() }} stars)
       </p>
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </template>
 
     <!-- Signature Input -->
@@ -912,6 +982,9 @@
             </div>
           </div>
         </div>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -934,6 +1007,9 @@
       <template v-else>
         <div v-html="field.options" class="prose prose-sm max-w-none"></div>
       </template>
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </template>
 
     <!-- Multiple Upload Table -->
@@ -993,6 +1069,9 @@
             </div>
           </div>
         </div>
+        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+          {{ field.description }}
+        </p>
       </div>
     </template>
 
@@ -1123,6 +1202,9 @@
           <p class="text-sm text-gray-500">No table fields defined</p>
         </div>
       </div>
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </div>
   </template>
 
@@ -1242,6 +1324,9 @@
           
         </div>
       </div>
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </div>
   </template>
 
@@ -1269,6 +1354,9 @@
       <div class="mt-2">
         <svg ref="barcodeSvg" />
       </div>
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </div>
   </template>
 
@@ -1287,6 +1375,9 @@
         style="width: 100%; min-height: 180px; border-radius: 0.375rem; border: 1px solid #d1d5db; font-size: 1rem; margin-top: 0.5rem;"
         :options="{ useWorker: false, tabSize: 2, showPrintMargin: false }"
       />
+      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        {{ field.description }}
+      </p>
     </div>
   </template>
 

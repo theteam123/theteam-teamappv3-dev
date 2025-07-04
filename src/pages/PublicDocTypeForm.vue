@@ -8,15 +8,13 @@
 
       <!-- Center Logo -->
       <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-        <router-link to="/">
-          <img 
-            :src="logo" 
-            alt="Team App Logo" 
-            class="h-8"
-            @error="console.error('Logo failed to load:', logo)"
-            @load="console.log('Logo loaded:', logo)"
-          />
-        </router-link>
+        <img 
+        :src="logo" 
+        alt="Team App Logo" 
+        class="h-8"
+        @error="console.error('Logo failed to load:', logo)"
+        @load="console.log('Logo loaded:', logo)"
+        />
       </div>
 
     </div>
@@ -262,7 +260,7 @@
                   v-else
                   type="submit"
                   :disabled="submitting"
-                  class="px-6 py-2 text-sm font-medium text-white btn-primary rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  class="px-6 py-2 text-sm font-medium text-white btn-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <svg v-if="submitting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -630,25 +628,7 @@ onMounted(async () => {
   // No authentication required for public form
   loading.value = true;
   
-  // Debug components and logo
-  console.log('PublicDocTypeForm mounted');
-  console.log('Logo:', logo.value);
-  console.log('MenuIcon:', MenuIcon);
-  console.log('HelpCircleIcon:', HelpCircleIcon);
-  
   await fetchDocType();
   loading.value = false;
 });
 </script>
-
-<style scoped>
-.btn-primary {
-  background-color: #10b981;
-  border-color: #10b981;
-}
-
-.btn-primary:hover {
-  background-color: #059669;
-  border-color: #059669;
-}
-</style> 
