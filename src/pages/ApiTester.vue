@@ -79,21 +79,50 @@
 
         <!-- Request Body -->
         <div v-if="['POST', 'PUT', 'PATCH'].includes(request.method)">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Request Body</label>
-          <div v-for="(field, index) in bodyFields" :key="index" class="flex gap-4 mb-2">
-            <input type="text" v-model="field.key" placeholder="Key" 
-                   class="w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="text" v-model="field.value" placeholder="Value" 
-                   class="w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button type="button" @click="removeBodyField(index)" 
-                    class="px-3 py-2 text-red-600 hover:text-red-800">
-              <i class="fas fa-times"></i>
+          <div class="flex items-center justify-between mb-4">
+            <label class="block text-sm font-medium text-gray-700">Request Body</label>
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center">
+                <input type="radio" v-model="bodyType" value="form" id="useFormFields" 
+                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                <label for="useFormFields" class="ml-2 text-sm text-gray-600">Form Fields</label>
+              </div>
+              <div class="flex items-center">
+                <input type="radio" v-model="bodyType" value="json" id="useRawJSON" 
+                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                <label for="useRawJSON" class="ml-2 text-sm text-gray-600">Raw JSON</label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Form Fields Mode -->
+          <div v-if="bodyType === 'form'">
+            <div v-for="(field, index) in bodyFields" :key="index" class="flex gap-4 mb-2">
+              <input type="text" v-model="field.key" placeholder="Key" 
+                     class="w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <input type="text" v-model="field.value" placeholder="Value" 
+                     class="w-1/2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <button type="button" @click="removeBodyField(index)" 
+                      class="px-3 py-2 text-red-600 hover:text-red-800">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <button type="button" @click="addBodyField" 
+                    class="mt-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-800">
+              + Add Field
             </button>
           </div>
-          <button type="button" @click="addBodyField" 
-                  class="mt-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-800">
-            + Add Field
-          </button>
+          
+          <!-- Raw JSON Mode -->
+          <div v-if="bodyType === 'json'">
+            <textarea v-model="rawJsonBody" 
+                      placeholder='{\n  "key": "value",\n  "array": [1, 2, 3],\n  "nested": {\n    "property": "value"\n  }\n}'
+                      class="w-full h-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                      rows="10"></textarea>
+            <div class="mt-2 text-sm text-gray-600">
+              Enter valid JSON data that will be sent as the request body
+            </div>
+          </div>
         </div>
 
         <!-- Submit Button -->
@@ -155,7 +184,9 @@ const isLoading = ref(false)
 const authType = ref('oauth')
 const apiKey = ref('')
 const apiSecret = ref('')
-const bodyFields = ref([{ key: '', value: '' }]);
+const bodyFields = ref([{ key: '', value: '' }])
+const bodyType = ref('form')
+const rawJsonBody = ref('')
 
 // Set default API URL if empty
 const apiUrl = getErpNextApiUrl()
@@ -181,12 +212,12 @@ const removeHeader = (index) => {
 }
 
 const addBodyField = () => {
-  bodyFields.value.push({ key: '', value: '' });
-};
+  bodyFields.value.push({ key: '', value: '' })
+}
 
 const removeBodyField = (index) => {
-  bodyFields.value.splice(index, 1);
-};
+  bodyFields.value.splice(index, 1)
+}
 
 const sendRequest = async () => {
   error.value = null;
@@ -234,25 +265,39 @@ const sendRequest = async () => {
 
     // Add body for POST/PUT/PATCH requests
     if (['POST', 'PUT', 'PATCH'].includes(request.value.method)) {
-      // Convert body fields to JSON object
-      const bodyObject = bodyFields.value.reduce((acc, field) => {
-        if (field.key) {
+      headers['Content-Type'] = 'application/json';
+      
+      if (bodyType.value === 'json') {
+        // Use raw JSON body
+        if (rawJsonBody.value.trim()) {
           try {
-            // Try to parse the value as JSON if it looks like an object or array
-            if (field.value.startsWith('{') || field.value.startsWith('[')) {
-              acc[field.key] = JSON.parse(field.value);
-            } else {
-              acc[field.key] = field.value;
-            }
+            // Validate JSON syntax
+            JSON.parse(rawJsonBody.value);
+            options.body = rawJsonBody.value;
           } catch (e) {
-            acc[field.key] = field.value;
+            throw new Error('Invalid JSON syntax in request body: ' + e.message);
           }
         }
-        return acc;
-      }, {});
+      } else {
+        // Use form fields converted to JSON object
+        const bodyObject = bodyFields.value.reduce((acc, field) => {
+          if (field.key) {
+            try {
+              // Try to parse the value as JSON if it looks like an object or array
+              if (field.value.startsWith('{') || field.value.startsWith('[')) {
+                acc[field.key] = JSON.parse(field.value);
+              } else {
+                acc[field.key] = field.value;
+              }
+            } catch (e) {
+              acc[field.key] = field.value;
+            }
+          }
+          return acc;
+        }, {});
 
-      options.body = JSON.stringify(bodyObject);
-      headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(bodyObject);
+      }
     }
 
     const startTime = performance.now()

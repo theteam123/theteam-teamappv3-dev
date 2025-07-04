@@ -10,20 +10,22 @@
       <h2 class="text-lg font-semibold mb-4">Business Requirements</h2>
       
       <div class="space-y-6">
-        <!-- Claude AI API Key -->
-        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 class="text-sm font-medium text-yellow-800 mb-2">Claude AI API Key Required</h3>
-          <p class="text-sm text-yellow-700 mb-3">
-            You need a Claude AI API key to generate DocTypes. Get one from 
-            <a href="https://console.anthropic.com/" target="_blank" class="text-yellow-800 underline">Anthropic Console</a>
+        <!-- Claude AI Status -->
+        <div :class="getClaudeApiKey() ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'" class="rounded-lg p-4">
+          <h3 :class="getClaudeApiKey() ? 'text-green-800' : 'text-red-800'" class="text-sm font-medium mb-2">
+            {{ getClaudeApiKey() ? '✅ Claude AI Ready' : '❌ Claude AI Not Configured' }}
+          </h3>
+          <p :class="getClaudeApiKey() ? 'text-green-700' : 'text-red-700'" class="text-sm">
+            <span v-if="getClaudeApiKey()">
+              Claude AI is configured and ready to generate DocTypes using your environment API key.
+            </span>
+            <span v-else>
+              Claude API key not found. Please add <code class="bg-gray-100 px-1 rounded">VITE_CLAUDE_API_KEY</code> to your .env file.
+              <br><br>
+              <strong>Note:</strong> If you added <code class="bg-gray-100 px-1 rounded">CLAUDE_API_KEY</code> to your .env file, 
+              please rename it to <code class="bg-gray-100 px-1 rounded">VITE_CLAUDE_API_KEY</code> (Vite requires the VITE_ prefix for frontend access).
+            </span>
           </p>
-          <input 
-            v-model="apiKey" 
-            @blur="saveApiKey"
-            type="password" 
-            placeholder="Enter your Claude AI API key"
-            class="form-input w-full"
-          >
         </div>
 
         <!-- Requirements Text -->
@@ -75,7 +77,7 @@ The form should have multiple sections and be optimized for mobile devices."
         <div class="text-center">
           <button 
             @click="generateDocType" 
-            :disabled="generating || !requirements.trim() || !apiKey.trim()" 
+            :disabled="generating || !requirements.trim() || !getClaudeApiKey()" 
             class="btn-primary text-lg px-8 py-3"
           >
             <span v-if="generating">
@@ -410,7 +412,6 @@ interface Module {
 const generating = ref(false);
 const generatedOutput = ref<GeneratedOutput | null>(null);
 const activeTab = ref('doctype');
-const apiKey = ref(localStorage.getItem('claude_api_key') || '');
 const requirements = ref('');
 const error = ref('');
 const savingToErp = ref(false);
@@ -421,11 +422,9 @@ const availableModules = ref<Module[]>([]);
 const selectedModule = ref('Custom');
 const loadingModules = ref(false);
 
-// Save API key to localStorage when it changes
-const saveApiKey = () => {
-  if (apiKey.value.trim()) {
-    localStorage.setItem('claude_api_key', apiKey.value);
-  }
+// Get Claude API key from environment variable
+const getClaudeApiKey = () => {
+  return (import.meta as any).env.VITE_CLAUDE_API_KEY;
 };
 
 const previewTabs = [
@@ -617,7 +616,11 @@ const generateDocType = async () => {
   try {
     // Import and use Enhanced Claude AI service
     const { generateDocType } = await import('../services/claudeAI.js');
-    const output = await generateDocType(apiKey.value, requirements.value);
+    const claudeApiKey = getClaudeApiKey();
+    if (!claudeApiKey) {
+      throw new Error('Claude API key is not configured in environment variables');
+    }
+    const output = await generateDocType(claudeApiKey, requirements.value);
     
     // Handle enhanced response structure
     generatedOutput.value = {
@@ -764,127 +767,64 @@ const formatTimestamp = (timestamp: string) => {
 };
 
 const validateAndFixDocType = (docType: any) => {
-  if (!docType) return null;
+  if (!docType) {
+    console.error('validateAndFixDocType: No docType provided');
+    return null;
+  }
 
-  // Create a clean DocType structure for ERPNext
+  // Use either 'doctype' or 'name' field as the name (Claude uses 'doctype', API expects 'name')
+  const docTypeName = docType.doctype || docType.name;
+  
+  // Ensure we have a valid name field
+  if (!docTypeName || !docTypeName.trim()) {
+    console.error('validateAndFixDocType: DocType name is missing or empty', docType);
+    return null;
+  }
+
+  // Start with the original docType object to preserve all attributes
   const cleanDocType: any = {
-    // Basic DocType information
-    doctype: "DocType",
-    name: docType.name,
-    module: docType.module || "Custom",
-    custom: 1,
-    
-    // Document behavior settings
-    is_submittable: docType.is_submittable || 0,
-    engine: "InnoDB",
-    track_changes: 1,
-    allow_rename: 1,
-    
-    // Description
-    description: docType.description || `${docType.name} management system`,
-    
-    // Fields array
-    fields: [],
-    
-    // Permissions array
-    permissions: []
+    ...docType, // Copy all original attributes
+    name: docTypeName.trim(), // Fix the name field
+    module: docType.module || "Custom", // Ensure module is set
+    custom: 1, // Ensure it's marked as custom
+    istable: docType.istable !== undefined ? docType.istable : 0, // Preserve istable if exists, default to 0
+    allow_import: 1 // Enable import functionality
   };
 
-  // Only add optional fields if they have meaningful values
-  if (docType.title_field && docType.title_field.trim()) {
-    cleanDocType.title_field = docType.title_field.trim();
-  }
-  
-  if (docType.search_fields && docType.search_fields.trim()) {
-    cleanDocType.search_fields = docType.search_fields.trim();
+  // Remove the 'doctype' field if it exists (since we're using 'name' instead)
+  if (cleanDocType.doctype) {
+    delete cleanDocType.doctype;
   }
 
-  // Autoname configuration removed - ERPNext will handle naming automatically
+  console.log('validateAndFixDocType: Creating clean DocType', {
+    originalDoctype: docType.doctype,
+    originalName: docType.name,
+    cleanName: cleanDocType.name,
+    module: cleanDocType.module,
+    preservedAttributes: Object.keys(cleanDocType).filter(key => !['name', 'module', 'custom', 'istable'].includes(key))
+  });
 
-  // Process fields
+  // Process fields - preserve all original field attributes
   if (docType.fields && Array.isArray(docType.fields)) {
-    cleanDocType.fields = docType.fields.map((field: any, index: number) => {
-      // Create clean field object with only necessary properties
+    cleanDocType.fields = docType.fields.map((field: any) => {
+      // Start with the original field object to preserve all attributes
       const cleanField: any = {
-        fieldname: field.fieldname,
-        label: field.label,
+        ...field, // Copy all original field attributes
+        fieldname: field.fieldname, // Ensure essential properties are present
         fieldtype: field.fieldtype,
-        idx: index + 1
+        label: field.label
       };
 
-      // Add optional properties only if they have meaningful values
-      if (field.reqd && field.reqd !== 0) cleanField.reqd = 1;
-      if (field.unique && field.unique !== 0) cleanField.unique = 1;
-      if (field.hidden && field.hidden !== 0) cleanField.hidden = 1;
-      if (field.read_only && field.read_only !== 0) cleanField.read_only = 1;
-      if (field.in_list_view && field.in_list_view !== 0) cleanField.in_list_view = 1;
-      if (field.in_standard_filter && field.in_standard_filter !== 0) cleanField.in_standard_filter = 1;
-      if (field.search_index && field.search_index !== 0) cleanField.search_index = 1;
-      if (field.translatable && field.translatable !== 0) cleanField.translatable = 1;
-      if (field.collapsible && field.collapsible !== 0) cleanField.collapsible = 1;
-      
-      // Handle field-specific properties
-      if (field.options && field.options.trim()) {
-        if (field.fieldtype === 'Select' && Array.isArray(field.options)) {
-          cleanField.options = field.options.join('\n');
-        } else {
-          cleanField.options = field.options;
-        }
-      }
-      
-      if (field.default && field.default.trim()) {
-        cleanField.default = field.default;
-      }
-      
-      if (field.description && field.description.trim()) {
-        cleanField.description = field.description;
-      }
-      
-      if (field.depends_on && field.depends_on.trim()) {
-        cleanField.depends_on = field.depends_on;
+      // Handle field-specific properties that might need processing
+      if (field.options && field.fieldtype === 'Select' && Array.isArray(field.options)) {
+        cleanField.options = field.options.join('\n');
       }
 
       return cleanField;
     });
   }
 
-  // Set up permissions
-  cleanDocType.permissions = [
-    {
-      role: "System Manager",
-      read: 1,
-      write: 1,
-      create: 1,
-      delete: 1,
-      export: 1
-    },
-    {
-      role: "All",
-      read: 1,
-      write: 1,
-      create: 1
-    }
-  ];
-
-  // Handle additional permissions from original DocType
-  if (docType.permissions && Array.isArray(docType.permissions)) {
-    docType.permissions.forEach((perm: any) => {
-      if (perm.role && perm.role !== "System Manager" && perm.role !== "All") {
-        cleanDocType.permissions.push({
-          role: perm.role,
-          read: perm.read || 0,
-          write: perm.write || 0,
-          create: perm.create || 0,
-          delete: perm.delete || 0,
-          submit: perm.submit || 0,
-          cancel: perm.cancel || 0,
-          amend: perm.amend || 0,
-          export: perm.export || 0
-        });
-      }
-    });
-  }
-
+  console.log('validateAndFixDocType: Final clean DocType', cleanDocType);
   return cleanDocType;
 };
 

@@ -153,8 +153,8 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/api-tester',
-    name: 'api-tester',
+    path: '/test-api',
+    name: 'test-api',
     component: ApiTester,
     meta: { 
       requiresAuth: true,

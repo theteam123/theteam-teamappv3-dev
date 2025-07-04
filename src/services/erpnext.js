@@ -433,9 +433,7 @@ export const clearDocTypeCache = (page, pageSize, search, category) => {
 // Update the existing functions to clear cache when modifying DocTypes
 export const createDocType = async (data) => {
   try {
-    const response = await erp.post('/api/resource/DocType', {
-      data: data
-    });
+    const response = await erp.post('/api/resource/DocType', data);
     // Clear all DocType caches after creating a new DocType
     metadataCache.forEach((value, key) => {
       if (key.startsWith('doctypes-')) {
