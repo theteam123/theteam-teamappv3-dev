@@ -796,6 +796,11 @@ const validateAndFixDocType = (docType: any) => {
     delete cleanDocType.doctype;
   }
 
+  // Remove the 'naming_rule' attribute if it exists
+  if (cleanDocType.naming_rule) {
+    delete cleanDocType.naming_rule;
+  }
+
   console.log('validateAndFixDocType: Creating clean DocType', {
     originalDoctype: docType.doctype,
     originalName: docType.name,
