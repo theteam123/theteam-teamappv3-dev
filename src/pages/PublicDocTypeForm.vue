@@ -63,7 +63,7 @@
         <!-- Form Header -->
         <div class="px-6 py-5 border-b border-gray-200">
           <h3 class="text-lg leading-6 font-medium text-gray-900">{{ docType?.name || 'Loading...' }}</h3>
-          <p v-if="docType?.description" class="mt-1 text-sm text-gray-500">
+          <p v-if="docType?.description && !docType.description.includes('[public-form]')" class="mt-1 text-sm text-gray-500">
             {{ docType.description }}
           </p>
         </div>
