@@ -600,8 +600,12 @@ export const getWebforms = async (page = 1, pageSize = 20, search = '', category
   }
 };
 
-export const createDoctypeSubmission = async (doctypeName, data) => {
+export const createDoctypeSubmission = async (doctypeName, data, submissionType = 'private') => {
   try {
+    let authHeader = `Bearer ${await getCurrentToken()}`;
+    if (submissionType === 'public') {
+      authHeader = getApiKeyAuthHeader();
+    }
     const response = await fetchWithErrorHandling(
       `${getErpNextApiUrl()}/api/resource/${doctypeName}`,
       {
@@ -609,7 +613,7 @@ export const createDoctypeSubmission = async (doctypeName, data) => {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': `Bearer ${await getCurrentToken()}`
+          'Authorization': authHeader
         },
         body: JSON.stringify({ data })
       },
@@ -812,14 +816,17 @@ export const checkDocTypePermission = async (docType) => {
   }
 };
 
-export const getDocTypeData = async (doctypeName) => {
+export const getDocTypeData = async (doctypeName, submissionType = 'private') => {
   try {
-    const token = await getCurrentToken();
+    let authHeader = `Bearer ${await getCurrentToken()}`;
+    if (submissionType === 'public') {
+      authHeader = getApiKeyAuthHeader();
+    }
     const response = await fetchWithErrorHandling(
       `${getErpNextApiUrl()}/api/method/frappe.desk.form.load.getdoctype?doctype=${doctypeName}`,
       {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': authHeader,
           'Accept': 'application/json'
         }
       },

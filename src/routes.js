@@ -153,6 +153,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/form/:id',
+    name: 'public-doctype-form',
+    component: () => import('./pages/PublicDocTypeForm.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/test-api',
     name: 'test-api',
     component: ApiTester,
