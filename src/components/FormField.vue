@@ -1496,10 +1496,12 @@ interface FormField {
 }
 
 interface UploadedFile {
-  file: File;
+  file: File | null;
   preview: string;
   uploaded?: boolean;
   fileUrl?: string;
+  isExisting?: boolean;
+  originalIndex?: number;
 }
 
 interface GeolocationData {
@@ -1547,6 +1549,40 @@ const errorStore = useErrorStore();
 const authStore = useAuthStore();
 
 const mediaQueryMatches = ref(false);
+
+// Initialize uploadedFiles with existing data for multiple upload tables
+const initializeExistingFiles = () => {
+  if (props.field.fieldtype === 'Table' && 
+      (props.field.label?.toLowerCase().includes('[multiple-upload]') || 
+       props.field.label?.toLowerCase().includes('[multiple-upload-view]') || 
+       props.field.label?.toLowerCase().includes('[multiple-camera]') || 
+       props.field.label?.toLowerCase().includes('[multiple-camera-view]'))) {
+    
+    if (Array.isArray(props.modelValue) && props.modelValue.length > 0) {
+             const existingFiles: UploadedFile[] = [];
+       props.modelValue.forEach((item: any, index: number) => {
+         const imageUrl = item.image || item.file_url || item.attachment;
+         if (imageUrl) {
+           // Convert relative URLs to absolute URLs
+           const fullUrl = imageUrl.startsWith('http') ? imageUrl : 
+                          imageUrl.startsWith('/') ? `${getErpNextApiUrl()}${imageUrl}` : 
+                          `${getErpNextApiUrl()}/${imageUrl}`;
+           
+           existingFiles.push({
+             file: null, // No file object for existing files
+             preview: fullUrl,
+             uploaded: true,
+             fileUrl: imageUrl,
+             isExisting: true,
+             originalIndex: index
+           });
+         }
+       });
+       
+       uploadedFiles.value = existingFiles;
+    }
+  }
+};
 
 const shouldShowField = computed(() => {
   // console.log('shouldShowField', props.field);
@@ -1821,6 +1857,9 @@ onMounted(() => {
   });
 
   console.log('Component mounted, initializing geolocation fields');
+  
+  // Initialize existing files for multiple upload tables
+  initializeExistingFiles();
 });
 
 onUnmounted(() => {
@@ -1833,7 +1872,8 @@ const handleMultipleFileUpload = async (event: Event) => {
     const newFiles = Array.from(input.files).map(file => ({
       file,
       preview: URL.createObjectURL(file),
-      uploaded: false
+      uploaded: false,
+      isExisting: false
     }));
     uploadedFiles.value = [...uploadedFiles.value, ...newFiles];
     
@@ -1846,17 +1886,21 @@ const uploadFiles = async () => {
   console.log('uploadedFiles.value', uploadedFiles.value);
   if (uploadedFiles.value.length === 0) return;
 
+  // Only process files that need to be uploaded (not existing files)
+  const filesToUpload = uploadedFiles.value.filter(f => !f.uploaded && f.file);
+  if (filesToUpload.length === 0) return;
+
   uploading.value = true;
   uploadProgress.value = 0;
-  const totalFiles = uploadedFiles.value.length;
+  const totalFiles = filesToUpload.length;
   let completedFiles = 0;
 
-  console.log('uploadedFiles.value', uploadedFiles.value);
+  console.log('filesToUpload', filesToUpload);
 
   try {
     for (let i = 0; i < uploadedFiles.value.length; i++) {
       const file = uploadedFiles.value[i];
-      if (file.uploaded) continue;
+      if (file.uploaded || !file.file) continue;
 
       try {
         const response = await uploadFile(
@@ -1891,7 +1935,13 @@ const uploadFiles = async () => {
 };
 
 const removeFile = (index: number) => {
-  URL.revokeObjectURL(uploadedFiles.value[index].preview);
+  const fileToRemove = uploadedFiles.value[index];
+  
+  // Only revoke object URL for newly uploaded files (not existing files)
+  if (fileToRemove.file && !fileToRemove.isExisting) {
+    URL.revokeObjectURL(fileToRemove.preview);
+  }
+  
   uploadedFiles.value.splice(index, 1);
   
   emit('update:modelValue', uploadedFiles.value
@@ -1902,7 +1952,10 @@ const removeFile = (index: number) => {
 
 onUnmounted(() => {
   uploadedFiles.value.forEach(file => {
-    URL.revokeObjectURL(file.preview);
+    // Only revoke URLs for newly uploaded files, not existing files
+    if (file.file && !file.isExisting && file.preview.startsWith('blob:')) {
+      URL.revokeObjectURL(file.preview);
+    }
   });
 });
 
@@ -2497,7 +2550,16 @@ const deleteSelectedRows = () => {
 // Initialize table data from model value
 watch(() => props.modelValue, (newValue) => {
   if (props.field.fieldtype === 'Table') {
-    tableData.value = Array.isArray(newValue) ? newValue : [];
+    // Handle multiple upload tables
+    if (props.field.label?.toLowerCase().includes('[multiple-upload]') || 
+        props.field.label?.toLowerCase().includes('[multiple-upload-view]') || 
+        props.field.label?.toLowerCase().includes('[multiple-camera]') || 
+        props.field.label?.toLowerCase().includes('[multiple-camera-view]')) {
+      initializeExistingFiles();
+    } else {
+      // Handle regular tables
+      tableData.value = Array.isArray(newValue) ? newValue : [];
+    }
   }
 }, { immediate: true });
 
