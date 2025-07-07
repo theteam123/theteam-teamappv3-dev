@@ -949,7 +949,7 @@
       <div class="mt-1" :data-form-field="field.fieldname">
         <div class="border-2 border-gray-300 rounded-md p-4">
           <!-- Signature Area -->
-          <div class="relative bg-white" ref="signaturePadContainer">
+          <div class="relative bg-white touch-none select-none" ref="signaturePadContainer">
             <!-- Canvas for drawing -->
             <canvas 
               v-show="!modelValue && !field.read_only"
@@ -958,7 +958,12 @@
               :class="{
                 'cursor-not-allowed': field.read_only === 1
               }"
-              :style="{ width: '100%', height: '200px' }"
+              :style="{ 
+                width: '100%', 
+                height: '200px',
+                touchAction: 'none',
+                userSelect: 'none'
+              }"
             ></canvas>
             
             <!-- Signature Preview -->
@@ -2071,9 +2076,34 @@ onMounted(() => {
 const signatureCanvas = ref<HTMLCanvasElement | null>(null);
 const signaturePad = ref<SignaturePad | null>(null);
 const signaturePadContainer = ref<HTMLElement | null>(null);
+const signatureTouchListeners = ref<{ [key: string]: (e: Event) => void } | null>(null);
+
+const cleanupSignaturePad = () => {
+  if (signatureCanvas.value && signatureTouchListeners.value) {
+    const canvas = signatureCanvas.value;
+    const listeners = signatureTouchListeners.value;
+    
+    // Remove all event listeners
+    canvas.removeEventListener('touchstart', listeners.touchstart);
+    canvas.removeEventListener('touchmove', listeners.touchmove);
+    canvas.removeEventListener('touchend', listeners.touchend);
+    canvas.removeEventListener('touchcancel', listeners.touchcancel);
+    canvas.removeEventListener('contextmenu', listeners.contextmenu);
+    
+    signatureTouchListeners.value = null;
+  }
+  
+  if (signaturePad.value) {
+    signaturePad.value.off();
+    signaturePad.value = null;
+  }
+};
 
 const initSignaturePad = () => {
   if (!signatureCanvas.value) return;
+
+  // Clean up previous instance
+  cleanupSignaturePad();
 
   const container = signaturePadContainer.value;
   if (!container) return;
@@ -2088,6 +2118,35 @@ const initSignaturePad = () => {
     backgroundColor: 'rgb(255, 255, 255)',
     penColor: 'rgb(0, 0, 0)'
   });
+
+  // Add touch event listeners to prevent scrolling and other default behaviors
+  const preventTouchDefault = (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const preventContextMenu = (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // Store listener references for cleanup
+  signatureTouchListeners.value = {
+    touchstart: preventTouchDefault,
+    touchmove: preventTouchDefault,
+    touchend: preventTouchDefault,
+    touchcancel: preventTouchDefault,
+    contextmenu: preventContextMenu
+  };
+
+  // Prevent scrolling and other touch behaviors on the canvas
+  canvas.addEventListener('touchstart', preventTouchDefault, { passive: false });
+  canvas.addEventListener('touchmove', preventTouchDefault, { passive: false });
+  canvas.addEventListener('touchend', preventTouchDefault, { passive: false });
+  canvas.addEventListener('touchcancel', preventTouchDefault, { passive: false });
+
+  // Prevent context menu on long press
+  canvas.addEventListener('contextmenu', preventContextMenu);
 
   // Remove the automatic saving on stroke end
   // signaturePad.value.addEventListener("endStroke", () => {
@@ -2149,6 +2208,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+  cleanupSignaturePad();
 });
 
 function handleDurationFocus() {
