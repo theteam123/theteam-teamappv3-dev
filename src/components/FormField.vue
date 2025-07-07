@@ -2100,6 +2100,7 @@ const cleanupSignaturePad = () => {
 };
 
 const initSignaturePad = () => {
+  console.log('initSignaturePad');
   if (!signatureCanvas.value) return;
 
   // Clean up previous instance
@@ -2198,6 +2199,7 @@ onMounted(() => {
 
 const handleResize = () => {
   if (props.field.fieldtype === 'Signature') {
+    console.log('handleResize signature');
     initSignaturePad();
   }
 };
