@@ -61,11 +61,13 @@
                 <div class="grid grid-cols-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   <div v-for="image in images" :key="image.name" class="group relative bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
                     <div class="aspect-w-4 aspect-h-3 w-full overflow-hidden rounded-t-xl">
-                      <img
-                        :src="image.image"
-                        :alt="image.description || 'Image'"
-                        class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
-                      />
+                      <a :href="image.image" target="_blank" rel="noopener noreferrer" class="block h-full w-full">
+                        <img
+                          :src="image.image"
+                          :alt="image.description || 'Image'"
+                          class="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </a>
                     </div>
                     <div class="p-4" v-if="image.description">
                       <p class="text-sm text-gray-600 line-clamp-2">{{ image.description }}</p>

@@ -998,6 +998,7 @@ export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
     formData.append('doctype', doctype);
     formData.append('docname', docname);
     formData.append('is_private', isPrivate ? '1' : '0');
+    formData.append('optimize', '1');
 
     let response;
 
