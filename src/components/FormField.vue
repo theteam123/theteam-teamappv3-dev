@@ -2199,8 +2199,9 @@ onMounted(() => {
 
 const handleResize = () => {
   if (props.field.fieldtype === 'Signature') {
-    console.log('handleResize signature');
-    initSignaturePad();
+    if (!isMobile.value) {
+      initSignaturePad();
+    }
   }
 };
 
