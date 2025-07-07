@@ -1007,7 +1007,7 @@
       <template v-else>
         <div v-html="field.options" class="prose prose-sm max-w-none"></div>
       </template>
-      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+      <p v-if="field.description && !field.label?.includes('[pdf-viewer]')" class="mt-1 text-xs text-gray-500">
         {{ field.description }}
       </p>
     </template>
@@ -3201,6 +3201,19 @@ const pdfUrl = computed(() => {
 
 const pdfViewerHtml = computed(() => {
   if (!pdfUrl.value) return '';
+  
+  // Hide PDF viewer on mobile devices
+  if (isMobile.value) {
+    const pdfUrlValue = pdfUrl.value;
+    return `
+      <div style="margin-bottom: 8px;">
+        <a href="${pdfUrlValue}" target="_blank" 
+           style="display:inline-block; padding:4px 8px; font-size: 12px; background:#808080; color:#fff; border-radius:3px; text-decoration:none;">
+          Open PDF in New Tab
+        </a>
+      </div>
+    `;
+  }
   
   const pdfUrlValue = pdfUrl.value;
   return `
