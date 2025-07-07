@@ -2217,6 +2217,11 @@ const clearSignature = () => {
     signaturePad.value.clear();
   }
   emit('update:modelValue', '');
+  
+  // Reinitialize the signature pad after clearing
+  nextTick(() => {
+    initSignaturePad();
+  });
 };
 
 // Add a method to save the current signature
@@ -2335,6 +2340,18 @@ watch(() => shouldShowField.value, (isVisible) => {
     nextTick(() => {
       initSignaturePad();
     });
+  }
+});
+
+// Watch for signature modelValue changes to reinitialize when cleared
+watch(() => props.modelValue, (newValue, oldValue) => {
+  if (props.field.fieldtype === 'Signature') {
+    // If signature was cleared (had value, now empty), reinitialize
+    if (oldValue && !newValue) {
+      nextTick(() => {
+        initSignaturePad();
+      });
+    }
   }
 });
 
