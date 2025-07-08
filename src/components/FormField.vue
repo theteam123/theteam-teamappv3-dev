@@ -752,7 +752,7 @@
           <span class="ml-2 text-sm text-gray-600">Download a copy of watermarked image</span>
         </label>
       </div>
-      <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+      <p v-if="field.description && !field.description.includes('watermark')" class="mt-1 text-xs text-gray-500">
         {{ field.description }}
       </p>
     </template>

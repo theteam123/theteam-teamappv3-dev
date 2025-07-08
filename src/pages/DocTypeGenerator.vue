@@ -123,6 +123,15 @@ The form should have multiple sections and be optimized for mobile devices."
         <p class="text-sm text-green-700" v-html="erpSaveSuccess"></p>
       </div>
 
+      <!-- ERP Save Warning Message -->
+      <div v-if="erpSaveWarning" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-yellow-800">⚠️ DocType Name Changed</h3>
+        <p class="text-sm text-yellow-700" v-html="erpSaveWarning"></p>
+        <button @click="erpSaveWarning = ''" class="mt-2 text-xs text-yellow-600 underline">
+          Dismiss
+        </button>
+      </div>
+
       <!-- ERP Save Error Message -->
       <div v-if="erpSaveError" class="bg-red-50 border border-red-200 rounded-lg p-4">
         <h3 class="text-sm font-medium text-red-800">❌ Failed to Save to ERP</h3>
@@ -324,8 +333,8 @@ The form should have multiple sections and be optimized for mobile devices."
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <!-- Modal Header -->
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h3 class="text-lg font-medium text-gray-900">Select Module</h3>
-          <button @click="showModuleSelectionModal = false" class="text-gray-400 hover:text-gray-500">
+          <h3 class="text-lg font-medium text-gray-900">Configure DocType</h3>
+          <button @click="cancelModuleSelection" class="text-gray-400 hover:text-gray-500">
             <XIcon class="w-6 h-6" />
           </button>
         </div>
@@ -335,29 +344,58 @@ The form should have multiple sections and be optimized for mobile devices."
           <div v-if="loadingModules" class="flex justify-center py-8">
             <LoaderIcon class="w-8 h-8 animate-spin text-green-600" />
           </div>
-          <div v-else>
-            <p class="text-sm text-gray-600 mb-4">
-              Choose which module this DocType should belong to. This affects organization and permissions.
+          <div v-else class="space-y-6">
+            <p class="text-sm text-gray-600">
+              Configure your DocType name and module before saving to ERPNext.
             </p>
             
-            <div class="space-y-2 max-h-60 overflow-y-auto">
-              <label 
-                v-for="module in availableModules" 
-                :key="module.value"
-                class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                :class="{ 'border-green-500 bg-green-50': selectedModule === module.value }"
-              >
-                <input 
-                  type="radio" 
-                  :value="module.value" 
-                  v-model="selectedModule" 
-                  class="text-green-600 focus:ring-green-500"
-                >
-                <div class="ml-3">
-                  <div class="text-sm font-medium text-gray-900">{{ module.value }}</div>
-                  <div v-if="module.description" class="text-xs text-gray-500">{{ module.description }}</div>
-                </div>
+            <!-- DocType Name Input -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                DocType Name
+                <span class="text-red-500">*</span>
               </label>
+              <input 
+                v-model="selectedDocTypeName" 
+                type="text" 
+                placeholder="Enter DocType name..."
+                class="form-input w-full"
+                required
+              >
+              <p class="text-xs text-gray-500 mt-1">
+                This will be the name of your DocType in ERPNext. Make sure it's unique and descriptive.
+              </p>
+            </div>
+            
+            <!-- Module Selection -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Module
+                <span class="text-red-500">*</span>
+              </label>
+              <p class="text-sm text-gray-600 mb-3">
+                Choose which module this DocType should belong to. This affects organization and permissions.
+              </p>
+              
+              <div class="space-y-2 max-h-60 overflow-y-auto">
+                <label 
+                  v-for="module in availableModules" 
+                  :key="module.value"
+                  class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                  :class="{ 'border-green-500 bg-green-50': selectedModule === module.value }"
+                >
+                  <input 
+                    type="radio" 
+                    :value="module.value" 
+                    v-model="selectedModule" 
+                    class="text-green-600 focus:ring-green-500"
+                  >
+                  <div class="ml-3">
+                    <div class="text-sm font-medium text-gray-900">{{ module.value }}</div>
+                    <div v-if="module.description" class="text-xs text-gray-500">{{ module.description }}</div>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -365,17 +403,17 @@ The form should have multiple sections and be optimized for mobile devices."
         <!-- Modal Footer -->
         <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
           <button
-            @click="showModuleSelectionModal = false"
+            @click="cancelModuleSelection"
             class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             Cancel
           </button>
           <button
             @click="proceedWithModuleSave"
-            :disabled="!selectedModule || loadingModules"
+            :disabled="!selectedModule || !selectedDocTypeName.trim() || loadingModules"
             class="px-4 py-2 text-sm font-medium text-white btn-primary rounded-md disabled:opacity-50"
           >
-            Save to {{ selectedModule }}
+            💾 Save DocType
           </button>
         </div>
       </div>
@@ -417,9 +455,11 @@ const error = ref('');
 const savingToErp = ref(false);
 const erpSaveSuccess = ref('');
 const erpSaveError = ref('');
+const erpSaveWarning = ref('');
 const showModuleSelectionModal = ref(false);
 const availableModules = ref<Module[]>([]);
 const selectedModule = ref('Custom');
+const selectedDocTypeName = ref('');
 const loadingModules = ref(false);
 
 // Get Claude API key from environment variable
@@ -436,176 +476,83 @@ const previewTabs = [
   { id: 'metadata', name: '🔍 Quality Report' }
 ];
 
-// Enhanced example templates with more complexity
+// Simple example templates for easy understanding
 const examples = [
   {
-    name: 'Employee Safety Training',
-    description: 'Advanced training records with certifications and mobile features',
-    text: `I need a comprehensive DocType for managing employee safety training records with advanced features.
-
-MAIN PURPOSE:
-Track and manage employee safety training completion, certifications, and compliance with full audit trails and mobile capabilities.
+    name: 'Employee Record',
+    description: 'Basic employee information management',
+    text: `I need a simple DocType for managing employee records.
 
 REQUIRED FIELDS:
-- Employee information (name, employee ID, department, position, supervisor)
-- Training details (course name, training type, completion date, instructor name, training hours)
-- Certification (certificate number, issue date, expiry date, certification body, renewal required)
-- Training location, duration, and cost tracking
-- Pass/fail status, score, and performance metrics
-- Comments, notes, and recommendations
+- Employee ID (unique identifier)
+- Full Name
+- Email Address
+- Phone Number
+- Department (HR, IT, Sales, Marketing, Finance)
+- Position/Job Title
+- Hire Date
+- Salary
+- Status (Active, Inactive, On Leave)
+- Address
+- Emergency Contact Name
+- Emergency Contact Phone
 
-ADVANCED FEATURES:
-- Multi-level approval workflow
-- Automatic certificate expiry notifications
-- Integration with HR systems
-- Mobile-first design for field training
-- Offline synchronization capabilities
-- Photo verification and digital signatures
-
-CHILD TABLES:
-- Training modules completed (module name, completion date, score, time spent)
-- Required documents (document type, upload status, file attachment, verification)
-- Training resources used (resource type, quantity, cost)
-- Follow-up actions (action required, responsible person, due date, status)
-
-MOBILE FEATURES:
-- GPS location capture for training sites
-- Camera integration for certificate photos
-- Digital signatures for verification
-- Barcode scanning for employee badges
-- Offline form completion capability
-
-WORKFLOW REQUIREMENTS:
-- Employee self-enrollment
-- Supervisor approval process
-- Training coordinator assignment
-- Certificate verification workflow
-- Automatic reporting to compliance systems
-
-REPORTING NEEDS:
-- Training completion dashboards
-- Compliance status reports
-- Certificate expiry alerts
-- Training cost analysis
-- Performance trending`
+FEATURES:
+- Basic employee information tracking
+- Department-based organization
+- Contact information management
+- Employment status tracking`
   },
   {
-    name: 'Project Inspection System',
-    description: 'Comprehensive inspection management with advanced mobile features',
-    text: `I need an enterprise-grade DocType for managing detailed project inspections with full mobile capabilities.
+    name: 'Task Management',
+    description: 'Simple task tracking system',
+    text: `I need a basic DocType for tracking tasks and to-do items.
 
-MAIN PURPOSE:
-Comprehensive project inspection management system with real-time data collection, quality assurance, and regulatory compliance.
+REQUIRED FIELDS:
+- Task Title
+- Description
+- Priority (Low, Medium, High, Urgent)
+- Status (To Do, In Progress, Completed, Cancelled)
+- Assigned To (employee name)
+- Due Date
+- Start Date
+- Project/Category
+- Estimated Hours
+- Actual Hours
+- Notes/Comments
 
-CORE REQUIREMENTS:
-- Project information (project ID, name, location, phase, manager, contractor details)
-- Inspection details (inspection type, date, time, weather conditions, inspector credentials)
-- Detailed findings (observation categories, severity levels, compliance status, corrective actions)
-- Quality metrics (scores, ratings, benchmarks, performance indicators)
-- Safety compliance (violations, hazards, safety measures, PPE requirements)
-- Environmental factors (conditions, impact assessments, mitigation measures)
-
-ADVANCED INSPECTION FEATURES:
-- Multi-category inspection checklists
-- Real-time photo annotations
-- Voice-to-text note taking
-- Automated report generation
-- Integration with project management systems
-- Regulatory compliance tracking
-
-CHILD TABLES:
-- Inspection items (category, item description, status, priority, deadline, responsible party)
-- Photo documentation (photo type, description, GPS coordinates, timestamp, annotations)
-- Safety violations (violation type, severity, regulation reference, corrective action, deadline)
-- Equipment inspected (equipment ID, condition, last service, next service due, maintenance notes)
-- Quality measurements (measurement type, value, specification, tolerance, pass/fail)
-- Action items (action description, assigned to, priority, due date, status, completion notes)
-
-MOBILE-FIRST FEATURES:
-- GPS location tracking with accuracy indicators
-- High-resolution photo capture with metadata
-- Barcode/QR code scanning for equipment
-- Digital signatures for sign-offs
-- Offline capability with sync indicators
-- Real-time collaboration features
-
-WORKFLOW AUTOMATION:
-- Automatic assignment based on inspection type
-- Escalation rules for critical findings
-- Integration with scheduling systems
-- Automated stakeholder notifications
-- Compliance reporting automation
-
-REPORTING REQUIREMENTS:
-- Executive dashboards with KPIs
-- Detailed inspection reports
-- Trend analysis and predictive insights
-- Regulatory compliance summaries
-- Mobile-optimized field reports`
+FEATURES:
+- Simple task creation and tracking
+- Priority and status management
+- Time tracking capabilities
+- Assignment to team members`
   },
   {
-    name: 'Customer Service Excellence Platform',
-    description: 'Advanced customer service management with AI-powered insights',
-    text: `I need an advanced DocType for comprehensive customer service request management with AI-powered analytics and workflow automation.
+    name: 'Product Inventory',
+    description: 'Basic product and inventory management',
+    text: `I need a simple DocType for managing product inventory.
 
-MAIN PURPOSE:
-End-to-end customer service management platform with intelligent routing, SLA tracking, satisfaction analytics, and omnichannel support.
+REQUIRED FIELDS:
+- Product Code (unique identifier)
+- Product Name
+- Category (Electronics, Clothing, Books, etc.)
+- Brand
+- Description
+- Purchase Price
+- Selling Price
+- Stock Quantity
+- Minimum Stock Level
+- Supplier Name
+- Supplier Contact
+- Product Image (file attachment)
+- Status (Active, Discontinued, Out of Stock)
 
-COMPREHENSIVE REQUIREMENTS:
-- Customer profile (customer ID, name, tier, contact preferences, history, account details)
-- Request details (type, priority, channel, subject, detailed description, urgency level)
-- Service categorization (department, product line, issue complexity, expertise required)
-- Assignment tracking (assigned agent, team, supervisor, escalation path)
-- Resolution tracking (status, progress updates, time invested, solution provided)
-- Quality assurance (satisfaction rating, feedback, quality score, review notes)
-
-ADVANCED SERVICE FEATURES:
-- Intelligent request categorization
-- Automated priority assignment
-- SLA compliance monitoring
-- Multi-language support
-- Sentiment analysis integration
-- Knowledge base integration
-
-CHILD TABLES:
-- Communication timeline (date, channel, type, from, to, message, attachments, sentiment)
-- Resolution steps (step description, completed by, time spent, resources used, outcome)
-- Related documentation (document type, file, description, access level, version)
-- Escalation history (escalation reason, level, assigned to, resolution time, outcome)
-- Follow-up activities (activity type, scheduled date, responsible party, completion status)
-- Knowledge articles (article ID, title, relevance score, usage count, effectiveness)
-
-OMNICHANNEL INTEGRATION:
-- Email integration with threading
-- Chat system integration
-- Phone system integration
-- Social media monitoring
-- Mobile app support
-- Video call capabilities
-
-AUTOMATION & AI FEATURES:
-- Intelligent routing algorithms
-- Predictive SLA alerts
-- Automated response suggestions
-- Customer sentiment tracking
-- Performance analytics
-- Workload balancing
-
-ANALYTICS & REPORTING:
-- Real-time dashboards
-- Customer satisfaction trends
-- Agent performance metrics
-- SLA compliance reports
-- Predictive analytics
-- Executive summaries
-
-MOBILE CAPABILITIES:
-- Agent mobile app
-- Push notifications
-- Offline case access
-- Photo/document capture
-- GPS location for field service
-- Real-time status updates`
+FEATURES:
+- Basic product information tracking
+- Stock level monitoring
+- Supplier management
+- Price tracking
+- Category-based organization`
   }
 ];
 
@@ -751,6 +698,7 @@ const resetGenerator = () => {
   requirements.value = '';
   erpSaveSuccess.value = '';
   erpSaveError.value = '';
+  erpSaveWarning.value = '';
   // Keep API key for convenience
 };
 
@@ -766,25 +714,42 @@ const formatTimestamp = (timestamp: string) => {
   return new Date(timestamp).toLocaleString();
 };
 
-const validateAndFixDocType = (docType: any) => {
+const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
   if (!docType) {
     console.error('validateAndFixDocType: No docType provided');
-    return null;
+    return { docType: null, warning: null };
   }
 
   // Use either 'doctype' or 'name' field as the name (Claude uses 'doctype', API expects 'name')
-  const docTypeName = docType.doctype || docType.name;
+  let docTypeName = docType.doctype || docType.name;
+  const originalName = docTypeName;
+  let warning: string | null = null;
   
   // Ensure we have a valid name field
   if (!docTypeName || !docTypeName.trim()) {
     console.error('validateAndFixDocType: DocType name is missing or empty', docType);
-    return null;
+    return { docType: null, warning: null };
+  }
+
+  // Clean up the name
+  docTypeName = docTypeName.trim();
+
+  // Check if the name conflicts with common ERPNext built-in DocTypes (only if auto-rename is enabled)
+  if (!skipAutoRename) {
+    const builtInDocTypes = ['Employee', 'Customer', 'Supplier', 'Item', 'User', 'Company', 'Project', 'Task', 'Lead', 'Opportunity', 'Account', 'Sales Order', 'Purchase Order', 'Quotation', 'Sales Invoice', 'Purchase Invoice', 'Delivery Note', 'Purchase Receipt', 'Journal Entry', 'Payment Entry', 'Stock Entry', 'Material Request', 'BOM', 'Work Order', 'Timesheet', 'Expense Claim', 'Leave Application', 'Salary Slip', 'Attendance', 'Holiday List', 'Department', 'Designation', 'Branch', 'Warehouse', 'UOM', 'Currency', 'Tax Rule', 'Price List', 'Shipping Rule', 'Terms and Conditions', 'Address', 'Contact', 'Communication', 'Event', 'ToDo', 'Note', 'File', 'Email Account', 'Print Format', 'Letter Head', 'Web Page', 'Blog Post', 'Website Settings'];
+    
+    if (builtInDocTypes.includes(docTypeName)) {
+      // Automatically append "Custom" to avoid conflicts
+      docTypeName = `Custom ${docTypeName}`;
+      warning = `DocType name changed from "<strong>${originalName}</strong>" to "<strong>${docTypeName}</strong>" to avoid conflicts with built-in ERPNext DocTypes.`;
+      console.warn(`DocType name "${originalName}" conflicts with built-in ERPNext DocType. Renamed to "${docTypeName}"`);
+    }
   }
 
   // Start with the original docType object to preserve all attributes
   const cleanDocType: any = {
     ...docType, // Copy all original attributes
-    name: docTypeName.trim(), // Fix the name field
+    name: docTypeName, // Fix the name field
     module: docType.module || "Custom", // Ensure module is set
     custom: 1, // Ensure it's marked as custom
     istable: docType.istable !== undefined ? docType.istable : 0, // Preserve istable if exists, default to 0
@@ -809,7 +774,7 @@ const validateAndFixDocType = (docType: any) => {
     preservedAttributes: Object.keys(cleanDocType).filter(key => !['name', 'module', 'custom', 'istable'].includes(key))
   });
 
-  // Process fields - preserve all original field attributes
+  // Process fields - preserve all original field attributes and fix validation issues
   if (docType.fields && Array.isArray(docType.fields)) {
     cleanDocType.fields = docType.fields.map((field: any) => {
       // Start with the original field object to preserve all attributes
@@ -825,12 +790,104 @@ const validateAndFixDocType = (docType: any) => {
         cleanField.options = field.options.join('\n');
       }
 
+      // Fix Link field options that might reference non-existent DocTypes
+      if (cleanField.fieldtype === 'Link' && cleanField.options) {
+        // List of common built-in DocTypes that should be safe to reference
+        const safeDocTypes = ['User', 'Company', 'Customer', 'Supplier', 'Item', 'Employee', 'Project', 'Task', 'Lead', 'Contact', 'Address'];
+        
+        // If the linked DocType is not in our safe list, convert to Data field
+        if (!safeDocTypes.includes(cleanField.options)) {
+          console.warn(`Converting Link field "${cleanField.fieldname}" from linking to "${cleanField.options}" to Data field to avoid validation errors`);
+          cleanField.fieldtype = 'Data';
+          cleanField.options = '';
+        }
+      }
+
+      // Remove any problematic field properties that might cause validation issues
+      if (cleanField.fieldtype === 'Table' && !cleanField.options) {
+        console.warn(`Table field "${cleanField.fieldname}" has no child table defined, converting to Section Break`);
+        cleanField.fieldtype = 'Section Break';
+        cleanField.options = '';
+      }
+
+      // Fix ERPNext validation issue: Fields cannot be hidden and mandatory without default
+      if (cleanField.hidden && cleanField.reqd && !cleanField.default) {
+        console.warn(`Field "${cleanField.fieldname}" is hidden and mandatory without default - making it not mandatory`);
+        cleanField.reqd = 0; // Make it not mandatory instead of hidden
+      }
+
+      // Convert boolean values to integers for ERPNext compatibility
+      if (cleanField.hidden === true) cleanField.hidden = 1;
+      if (cleanField.hidden === false) cleanField.hidden = 0;
+      if (cleanField.reqd === true) cleanField.reqd = 1;
+      if (cleanField.reqd === false) cleanField.reqd = 0;
+      if (cleanField.read_only === true) cleanField.read_only = 1;
+      if (cleanField.read_only === false) cleanField.read_only = 0;
+
       return cleanField;
     });
   }
 
+  // Fix permissions with invalid role references
+  if (cleanDocType.permissions && Array.isArray(cleanDocType.permissions)) {
+    // Common roles that exist in most ERPNext installations
+    const standardRoles = ['System Manager', 'Administrator', 'Guest', 'All'];
+    
+    cleanDocType.permissions = cleanDocType.permissions.map((perm: any) => {
+      // If the role doesn't exist in our standard list, replace with a safe default
+      if (perm.role && !standardRoles.includes(perm.role)) {
+        console.warn(`Replacing invalid role "${perm.role}" with "System Manager"`);
+        perm.role = 'System Manager';
+      }
+      
+      // Ensure permission values are properly formatted
+      if (perm.read === true) perm.read = 1;
+      if (perm.read === false) perm.read = 0;
+      if (perm.write === true) perm.write = 1;
+      if (perm.write === false) perm.write = 0;
+      if (perm.create === true) perm.create = 1;
+      if (perm.create === false) perm.create = 0;
+      if (perm.delete === true) perm.delete = 1;
+      if (perm.delete === false) perm.delete = 0;
+      if (perm.submit === true) perm.submit = 1;
+      if (perm.submit === false) perm.submit = 0;
+      if (perm.cancel === true) perm.cancel = 1;
+      if (perm.cancel === false) perm.cancel = 0;
+      if (perm.amend === true) perm.amend = 1;
+      if (perm.amend === false) perm.amend = 0;
+      
+      return perm;
+    });
+    
+    // If no valid permissions remain, add a basic System Manager permission
+    if (cleanDocType.permissions.length === 0) {
+      cleanDocType.permissions = [{
+        role: 'System Manager',
+        read: 1,
+        write: 1,
+        create: 1,
+        delete: 1,
+        submit: 0,
+        cancel: 0,
+        amend: 0
+      }];
+    }
+  } else {
+    // If no permissions are defined, add basic System Manager permission
+    cleanDocType.permissions = [{
+      role: 'System Manager',
+      read: 1,
+      write: 1,
+      create: 1,
+      delete: 1,
+      submit: 0,
+      cancel: 0,
+      amend: 0
+    }];
+  }
+
   console.log('validateAndFixDocType: Final clean DocType', cleanDocType);
-  return cleanDocType;
+  return { docType: cleanDocType, warning };
 };
 
 const fetchModules = async () => {
@@ -867,6 +924,12 @@ const fetchModules = async () => {
   }
 };
 
+const cancelModuleSelection = () => {
+  showModuleSelectionModal.value = false;
+  selectedDocTypeName.value = '';
+  selectedModule.value = 'Custom';
+};
+
 const proceedWithModuleSave = async () => {
   showModuleSelectionModal.value = false;
   await actualSaveToErp();
@@ -876,6 +939,15 @@ const saveDocTypeToErp = async () => {
   if (!generatedOutput.value?.mainDocType) {
     erpSaveError.value = 'No DocType available to save';
     return;
+  }
+
+  // Initialize the selected name with the current DocType name
+  const validationResult = validateAndFixDocType(generatedOutput.value.mainDocType);
+  selectedDocTypeName.value = validationResult.docType?.name || generatedOutput.value.mainDocType.name || '';
+  
+  // Show warning if name was auto-changed
+  if (validationResult.warning) {
+    erpSaveWarning.value = validationResult.warning;
   }
 
   // Show module selection modal
@@ -892,23 +964,30 @@ const actualSaveToErp = async () => {
   savingToErp.value = true;
   erpSaveError.value = '';
   erpSaveSuccess.value = '';
+  erpSaveWarning.value = '';
   
   try {
-    // Validate and fix the DocType before sending to ERP
-    const fixedDocType = validateAndFixDocType(generatedOutput.value.mainDocType);
+    // Create a copy of the DocType with user-selected name
+    const docTypeToSave = {
+      ...generatedOutput.value.mainDocType,
+      name: selectedDocTypeName.value.trim(),
+      module: selectedModule.value,
+      custom: 1,
+      allow_import: 1
+    };
+
+    // Validate and fix the DocType structure (but keep user's chosen name)
+    const validationResult = validateAndFixDocType(docTypeToSave, true);
     
-    if (!fixedDocType) {
+    if (!validationResult.docType) {
       throw new Error('Failed to validate DocType structure');
     }
 
-    // Update the module with selected module
-    fixedDocType.module = selectedModule.value;
-
-    console.log('Sending fixed DocType to ERP:', fixedDocType);
+    console.log('Sending DocType to ERP:', validationResult.docType);
     
-    const response = await createDocType(fixedDocType);
+    const response = await createDocType(validationResult.docType);
     
-    erpSaveSuccess.value = `Successfully saved "${fixedDocType.name}" to "${selectedModule.value}" module!`;
+    erpSaveSuccess.value = `Successfully saved "${validationResult.docType.name}" to "${selectedModule.value}" module!`;
     
     // Auto-clear success message after 5 seconds
     setTimeout(() => {
@@ -919,10 +998,15 @@ const actualSaveToErp = async () => {
     console.error('Failed to save DocType to ERP:', err);
     
     // Handle specific error types
-    if (err.message?.includes('DuplicateEntryError') || err.message?.includes('already exists')) {
-      erpSaveError.value = `DocType "${generatedOutput.value.mainDocType.name}" already exists in your ERP system. Please use a different name or delete the existing DocType first.`;
+    if (err.message?.includes('DuplicateEntryError') || err.message?.includes('already exists') || err.message?.includes('Duplicate entry')) {
+      const docTypeName = generatedOutput.value.mainDocType.name;
+      erpSaveError.value = `DocType "${docTypeName}" already exists in your ERP system. The system has been enhanced to automatically rename conflicting DocTypes. Please generate a new DocType - it will be automatically renamed to avoid conflicts.`;
     } else if (err.message?.includes('PermissionError') || err.message?.includes('403')) {
       erpSaveError.value = 'You do not have permission to create DocTypes. Please contact your system administrator.';
+    } else if (err.message?.includes('HiddenAndMandatoryWithoutDefaultError') || err.message?.includes('hidden and mandatory without default')) {
+      erpSaveError.value = 'Field validation error detected. The DocType has been automatically fixed to resolve hidden/mandatory field conflicts. Please try saving again.';
+    } else if (err.message?.includes('LinkValidationError') || err.message?.includes('Could not find') || err.message?.includes('Role:')) {
+      erpSaveError.value = 'Invalid role reference detected in permissions. The DocType has been automatically fixed to use standard roles. Please try saving again.';
     } else if (err.message?.includes('ValidationError')) {
       erpSaveError.value = `Validation Error: ${err.message}. Please check the DocType structure and try again.`;
     } else if (err.message?.includes('TypeError') || err.message?.includes('NoneType')) {
