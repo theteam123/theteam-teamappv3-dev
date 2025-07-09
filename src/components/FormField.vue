@@ -24,13 +24,13 @@
             @input="!isGeolocationField && handleValueUpdate(($event.target as HTMLInputElement).value)"
             type="text"
             :required="isFieldRequired"
-            :disabled="isGettingLocation || isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
-            :readonly="isGeolocationField || field.read_only === 1 || shouldAutoFillUserData"
+            :disabled="isGettingLocation || isGeolocationField || isFieldReadOnly || shouldAutoFillUserData"
+            :readonly="isGeolocationField || isFieldReadOnly || shouldAutoFillUserData"
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             :class="{ 
               'pr-10': isGeolocationField,
-              'bg-gray-50': isGeolocationField || field.read_only === 1 || shouldAutoFillUserData,
-              'cursor-not-allowed': isGeolocationField || field.read_only === 1 || shouldAutoFillUserData
+              'bg-gray-50': isGeolocationField || isFieldReadOnly || shouldAutoFillUserData,
+              'cursor-not-allowed': isGeolocationField || isFieldReadOnly || shouldAutoFillUserData
             }"
             :placeholder="isGeolocationField ? 'Click the location icon to get current location' : ''"
           />
@@ -75,12 +75,12 @@
           @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
           type="number"
           :required="isFieldRequired"
-          :disabled="field.read_only === 1"
-          :readonly="field.read_only === 1"
+          :disabled="isFieldReadOnly"
+          :readonly="isFieldReadOnly"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
           :class="{
-            'bg-gray-50': field.read_only === 1,
-            'cursor-not-allowed': field.read_only === 1
+            'bg-gray-50': isFieldReadOnly,
+            'cursor-not-allowed': isFieldReadOnly
           }"
         />
         <p v-if="field.description" class="mt-1 text-xs text-gray-500">
@@ -103,12 +103,12 @@
             @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
             type="date"
             :required="isFieldRequired"
-            :disabled="field.read_only === 1"
-            :readonly="field.read_only === 1"
+            :disabled="isFieldReadOnly"
+            :readonly="isFieldReadOnly"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             :class="{
-              'bg-gray-50': field.read_only === 1,
-              'cursor-not-allowed': field.read_only === 1
+              'bg-gray-50': isFieldReadOnly,
+              'cursor-not-allowed': isFieldReadOnly
             }"
           />
         </div>
@@ -132,12 +132,12 @@
             @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
             type="datetime-local"
             :required="isFieldRequired"
-            :disabled="field.read_only === 1"
-            :readonly="field.read_only === 1"
+            :disabled="isFieldReadOnly"
+            :readonly="isFieldReadOnly"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             :class="{
-              'bg-gray-50': field.read_only === 1,
-              'cursor-not-allowed': field.read_only === 1
+              'bg-gray-50': isFieldReadOnly,
+              'cursor-not-allowed': isFieldReadOnly
             }"
           />
         </div>
@@ -160,12 +160,12 @@
           @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
           type="time"
           :required="isFieldRequired"
-          :disabled="field.read_only === 1"
-          :readonly="field.read_only === 1"
+          :disabled="isFieldReadOnly"
+          :readonly="isFieldReadOnly"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
           :class="{
-            'bg-gray-50': field.read_only === 1,
-            'cursor-not-allowed': field.read_only === 1
+            'bg-gray-50': isFieldReadOnly,
+            'cursor-not-allowed': isFieldReadOnly
           }"
         />
         <p v-if="field.description" class="mt-1 text-xs text-gray-500">
@@ -189,17 +189,17 @@
             @input="onDurationInput($event)"
             type="text"
             :required="isFieldRequired"
-            :disabled="field.read_only === 1"
-            :readonly="field.read_only === 1"
+            :disabled="isFieldReadOnly"
+            :readonly="isFieldReadOnly"
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             :class="{
-              'bg-gray-50': field.read_only === 1,
-              'cursor-not-allowed': field.read_only === 1
+              'bg-gray-50': isFieldReadOnly,
+              'cursor-not-allowed': isFieldReadOnly
             }"
             autocomplete="off"
           />
           <div
-            v-if="showDurationPopup && !field.read_only"
+            v-if="showDurationPopup && !isFieldReadOnly"
             class="absolute z-10 mt-2 w-max bg-white border border-gray-200 rounded-md shadow-lg p-4 flex space-x-4"
           >
             <div class="flex flex-col items-center">
@@ -245,10 +245,10 @@
                 @change="handleValueUpdate(option)"
                 type="radio"
                 :required="isFieldRequired"
-                :disabled="field.read_only === 1"
+                :disabled="isFieldReadOnly"
                 class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
                 :class="{
-                  'cursor-not-allowed': field.read_only === 1
+                  'cursor-not-allowed': isFieldReadOnly
                 }"
               />
               <label :for="`${field.fieldname}-${option}`" class="ml-2 block text-sm text-gray-700">
@@ -264,11 +264,11 @@
             :value="modelValue"
             @input="handleValueUpdate(($event.target as HTMLSelectElement).value)"
             :required="isFieldRequired"
-            :disabled="field.read_only === 1"
+            :disabled="isFieldReadOnly"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             :class="{
-              'bg-gray-50': field.read_only === 1,
-              'cursor-not-allowed': field.read_only === 1
+              'bg-gray-50': isFieldReadOnly,
+              'cursor-not-allowed': isFieldReadOnly
             }"
           >
             <option value="">Select an option</option>
@@ -295,11 +295,11 @@
           :value="modelValue"
           @input="handleValueUpdate(($event.target as HTMLSelectElement).value)"
           :required="isFieldRequired"
-          :disabled="field.read_only === 1"
+          :disabled="isFieldReadOnly"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
           :class="{
-            'bg-gray-50': field.read_only === 1,
-            'cursor-not-allowed': field.read_only === 1
+            'bg-gray-50': isFieldReadOnly,
+            'cursor-not-allowed': isFieldReadOnly
           }"
         >
           <option value="">Select {{ formattedLabel }}</option>
@@ -331,17 +331,17 @@
             type="text"
             :placeholder="getDynamicLinkPlaceholder()"
             :required="isFieldRequired"
-            :disabled="field.read_only === 1 || !getDynamicLinkDoctype()"
-            :readonly="field.read_only === 1"
+            :disabled="isFieldReadOnly || !getDynamicLinkDoctype()"
+            :readonly="isFieldReadOnly"
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 pr-10"
             :class="{
-              'bg-gray-50': field.read_only === 1 || !getDynamicLinkDoctype(),
-              'cursor-not-allowed': field.read_only === 1 || !getDynamicLinkDoctype()
+              'bg-gray-50': isFieldReadOnly || !getDynamicLinkDoctype(),
+              'cursor-not-allowed': isFieldReadOnly || !getDynamicLinkDoctype()
             }"
           />
           <!-- Clear search button -->
           <button
-            v-if="dynamicLinkSearchQuery && !field.read_only"
+            v-if="dynamicLinkSearchQuery && !isFieldReadOnly"
             @click="clearDynamicLinkSearch"
             type="button"
             class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
@@ -353,7 +353,7 @@
         
           <!-- Dropdown with search results -->
           <div 
-            v-if="showDynamicLinkDropdown && !field.read_only && getDynamicLinkDoctype()"
+            v-if="showDynamicLinkDropdown && !isFieldReadOnly && getDynamicLinkDoctype()"
             class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
           >
             <!-- Loading state in dropdown -->
@@ -420,10 +420,10 @@
           @change="handleValueUpdate(($event.target as HTMLInputElement).checked)"
           type="checkbox"
           :required="isFieldRequired"
-          :disabled="field.read_only === 1"
+          :disabled="isFieldReadOnly"
           class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
           :class="{
-            'cursor-not-allowed': field.read_only === 1
+            'cursor-not-allowed': isFieldReadOnly
           }"
         />
         <label :for="field.fieldname" class="ml-2 block text-sm text-gray-900">
@@ -448,12 +448,12 @@
           @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
           rows="5"
           :required="isFieldRequired"
-          :disabled="field.read_only === 1"
-          :readonly="field.read_only === 1"
+          :disabled="isFieldReadOnly"
+          :readonly="isFieldReadOnly"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
           :class="{
-            'bg-gray-50': field.read_only === 1,
-            'cursor-not-allowed': field.read_only === 1
+            'bg-gray-50': isFieldReadOnly,
+            'cursor-not-allowed': isFieldReadOnly
           }"
         ></textarea>
         <p v-if="field.description" class="mt-1 text-xs text-gray-500">
@@ -475,12 +475,12 @@
           @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
           rows="4"
           :required="isFieldRequired"
-          :disabled="field.read_only === 1 || shouldAutoFillUserData"
-          :readonly="field.read_only === 1 || shouldAutoFillUserData"
+          :disabled="isFieldReadOnly || shouldAutoFillUserData"
+          :readonly="isFieldReadOnly || shouldAutoFillUserData"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
           :class="{
-            'bg-gray-50': field.read_only === 1 || shouldAutoFillUserData,
-            'cursor-not-allowed': field.read_only === 1 || shouldAutoFillUserData
+            'bg-gray-50': isFieldReadOnly || shouldAutoFillUserData,
+            'cursor-not-allowed': isFieldReadOnly || shouldAutoFillUserData
           }"
         ></textarea>
         <p v-if="shouldAutoFillUserData" class="mt-1 text-xs text-gray-500">
@@ -504,12 +504,12 @@
         @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
         rows="8"
         :required="isFieldRequired"
-        :disabled="field.read_only === 1"
-        :readonly="field.read_only === 1"
+        :disabled="isFieldReadOnly"
+        :readonly="isFieldReadOnly"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
         :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
+          'bg-gray-50': isFieldReadOnly,
+          'cursor-not-allowed': isFieldReadOnly
         }"
       ></textarea>
       <p v-if="field.description" class="mt-1 text-xs text-gray-500">
@@ -530,19 +530,19 @@
           @input="handleJsonInput"
           rows="8"
           :required="isFieldRequired"
-          :disabled="field.read_only === 1"
-          :readonly="field.read_only === 1"
+          :disabled="isFieldReadOnly"
+          :readonly="isFieldReadOnly"
           class="mt-1 block w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
           :class="{
-            'bg-gray-50': field.read_only === 1,
-            'cursor-not-allowed': field.read_only === 1,
+            'bg-gray-50': isFieldReadOnly,
+            'cursor-not-allowed': isFieldReadOnly,
             'border-red-500': jsonError
           }"
         ></textarea>
         <p v-if="jsonError" class="mt-1 text-sm text-red-600">{{ jsonError }}</p>
         <div class="mt-2 flex justify-end space-x-2">
           <button
-            v-if="!field.read_only"
+            v-if="!isFieldReadOnly"
             type="button"
             @click="formatJson"
             class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
@@ -570,12 +570,12 @@
             @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
             rows="6"
             :required="isFieldRequired"
-            :disabled="field.read_only === 1"
-            :readonly="field.read_only === 1"
+            :disabled="isFieldReadOnly"
+            :readonly="isFieldReadOnly"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             :class="{
-              'bg-gray-50': field.read_only === 1,
-              'cursor-not-allowed': field.read_only === 1
+              'bg-gray-50': isFieldReadOnly,
+              'cursor-not-allowed': isFieldReadOnly
             }"
           ></textarea>
         </div>
@@ -598,7 +598,7 @@
             type="file"
             @change="handleFileUpload"
             :required="isFieldRequired && !hasExistingFile"
-            :disabled="field.read_only === 1"
+            :disabled="isFieldReadOnly"
             class="block w-full text-sm text-gray-500
               file:mr-4 file:py-2 file:px-4
               file:rounded-md file:border-0
@@ -606,7 +606,7 @@
               file:bg-green-50 file:text-green-700
               hover:file:bg-green-100"
             :class="{
-              'cursor-not-allowed opacity-60': field.read_only === 1
+              'cursor-not-allowed opacity-60': isFieldReadOnly
             }"
           />
           <!-- Upload Progress -->
@@ -639,7 +639,7 @@
             </span>
           </div>
           <button
-            v-if="(filePreview || hasExistingFile) && !field.read_only"
+            v-if="(filePreview || hasExistingFile) && !isFieldReadOnly"
             @click.stop="clearFile"
             type="button"
             class="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
@@ -668,10 +668,10 @@
             <button
               type="button"
               @click="openCamera"
-              :disabled="field.read_only === 1"
+              :disabled="isFieldReadOnly"
               class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               :class="{
-                'opacity-60 cursor-not-allowed': field.read_only === 1
+                'opacity-60 cursor-not-allowed': isFieldReadOnly
               }"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -687,7 +687,7 @@
               class="hidden"
               @change="handleImageUpload"
               :required="isFieldRequired && !hasExistingFile"
-              :disabled="field.read_only === 1"
+              :disabled="isFieldReadOnly"
             />
           </template>
           <!-- Show regular file input when not using camera -->
@@ -698,7 +698,7 @@
               accept="image/*"
               @change="handleImageUpload"
               :required="isFieldRequired && !hasExistingFile"
-              :disabled="field.read_only === 1"
+              :disabled="isFieldReadOnly"
               class="block w-full text-sm text-gray-500
                 file:mr-4 file:py-2 file:px-4
                 file:rounded-md file:border-0
@@ -706,7 +706,7 @@
                 file:bg-green-50 file:text-green-700
                 hover:file:bg-green-100"
               :class="{
-                'cursor-not-allowed opacity-60': field.read_only === 1
+                'cursor-not-allowed opacity-60': isFieldReadOnly
               }"
             />
           </template>
@@ -728,7 +728,7 @@
             class="h-full w-full rounded-md object-cover" 
           />
           <button
-            v-if="(imagePreview || hasExistingFile) && !field.read_only"
+            v-if="(imagePreview || hasExistingFile) && !isFieldReadOnly"
             @click.stop="clearImage"
             type="button"
             class="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
@@ -740,7 +740,7 @@
         </div>
       </div>
       <!-- Watermark Download Checkbox -->
-      <div v-if="shouldUseCameraInput" class="mt-2">
+      <div v-if="shouldUseCameraInput && !shouldUserChangeWatermarkDownloadValue" class="mt-2">
         <label class="inline-flex items-center">
           <input
             type="checkbox"
@@ -771,10 +771,10 @@
             @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
             type="color"
             :required="isFieldRequired"
-            :disabled="field.read_only === 1"
+            :disabled="isFieldReadOnly"
             class="h-8 w-8 rounded-md border-gray-300 p-1"
             :class="{
-              'cursor-not-allowed opacity-60': field.read_only === 1
+              'cursor-not-allowed opacity-60': isFieldReadOnly
             }"
           />
           <input
@@ -782,12 +782,12 @@
             @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
             type="text"
             :required="isFieldRequired"
-            :disabled="field.read_only === 1"
-            :readonly="field.read_only === 1"
+            :disabled="isFieldReadOnly"
+            :readonly="isFieldReadOnly"
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             :class="{
-              'bg-gray-50': field.read_only === 1,
-              'cursor-not-allowed': field.read_only === 1
+              'bg-gray-50': isFieldReadOnly,
+              'cursor-not-allowed': isFieldReadOnly
             }"
           />
         </div>
@@ -814,12 +814,12 @@
           type="number"
           step="0.01"
           :required="isFieldRequired"
-          :disabled="field.read_only === 1"
-          :readonly="field.read_only === 1"
+          :disabled="isFieldReadOnly"
+          :readonly="isFieldReadOnly"
           class="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
           :class="{
-            'bg-gray-50': field.read_only === 1,
-            'cursor-not-allowed': field.read_only === 1
+            'bg-gray-50': isFieldReadOnly,
+            'cursor-not-allowed': isFieldReadOnly
           }"
         />
         <p v-if="field.description" class="mt-1 text-xs text-gray-500">
@@ -838,11 +838,11 @@
         v-model="phoneValue"
         :id="field.fieldname"
         :required="isFieldRequired"
-        :disabled="field.read_only === 1"
+        :disabled="isFieldReadOnly"
         @input="onPhoneInput"
         class="mt-1"
         :class="{
-          'opacity-60': field.read_only === 1
+          'opacity-60': isFieldReadOnly
         }"
         :placeholder="'Enter phone number'"
         :mode="'international'"
@@ -854,7 +854,7 @@
         :inputOptions="{
           showDialCode: true,
           showFlags: true,
-          disabled: field.read_only === 1
+          disabled: isFieldReadOnly
         }"
         :showCountryFlag="true"
         :useEmoji="false"
@@ -879,12 +879,12 @@
           @input="handleValueUpdate(($event.target as HTMLInputElement).value)"
           type="password"
           :required="isFieldRequired"
-          :disabled="field.read_only === 1"
-          :readonly="field.read_only === 1"
+          :disabled="isFieldReadOnly"
+          :readonly="isFieldReadOnly"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
           :class="{
-            'bg-gray-50': field.read_only === 1,
-            'cursor-not-allowed': field.read_only === 1
+            'bg-gray-50': isFieldReadOnly,
+            'cursor-not-allowed': isFieldReadOnly
           }"
         />
         <p v-if="field.description" class="mt-1 text-xs text-gray-500">
@@ -904,11 +904,11 @@
           v-for="star in 5"
           :key="star"
           type="button"
-          @click="!field.read_only && handleRatingClick(getStarValue(star, $event))"
-          :disabled="field.read_only === 1"
+          @click="!isFieldReadOnly && handleRatingClick(getStarValue(star, $event))"
+          :disabled="isFieldReadOnly"
           class="focus:outline-none"
           :class="{
-            'cursor-not-allowed': field.read_only === 1
+            'cursor-not-allowed': isFieldReadOnly
           }"
           style="background: none; border: none; padding: 0; position: relative; width: 2rem; height: 2rem;"
         >
@@ -952,12 +952,12 @@
           <div class="relative bg-white touch-none select-none" ref="signaturePadContainer">
             <!-- Canvas for drawing -->
             <canvas 
-              v-show="!modelValue && !field.read_only"
+              v-show="!modelValue && !isFieldReadOnly"
               ref="signatureCanvas"
               class="border border-gray-200 rounded touch-none"
-              :class="{
-                'cursor-not-allowed': field.read_only === 1
-              }"
+                              :class="{
+                  'cursor-not-allowed': isFieldReadOnly
+                }"
               :style="{ 
                 width: '100%', 
                 height: '200px',
@@ -976,7 +976,7 @@
             </div>
 
             <!-- Controls -->
-            <div v-if="!field.read_only" class="mt-2 flex justify-end">
+            <div v-if="!isFieldReadOnly" class="mt-2 flex justify-end">
               <button
                 type="button"
                 @click="clearSignature"
@@ -1231,7 +1231,7 @@
             >
               <span class="mr-2">{{ item.name }}</span>
               <button
-                v-if="!field.read_only"
+                v-if="!isFieldReadOnly"
                 @click="removeTableItem(item)"
                 type="button"
                 class="text-green-600 hover:text-green-800"
@@ -1256,17 +1256,17 @@
               @keydown="handleSearchKeydown"
               type="text"
               :placeholder="`Search ${formattedLabel}...`"
-              :disabled="field.read_only === 1"
-              :readonly="field.read_only === 1"
+              :disabled="isFieldReadOnly"
+              :readonly="isFieldReadOnly"
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 pr-10"
               :class="{
-                'bg-gray-50': field.read_only === 1,
-                'cursor-not-allowed': field.read_only === 1
+                'bg-gray-50': isFieldReadOnly,
+                'cursor-not-allowed': isFieldReadOnly
               }"
             />
             <!-- Clear search button -->
             <button
-              v-if="tableSearchQuery && !field.read_only"
+              v-if="tableSearchQuery && !isFieldReadOnly"
               @click="clearSearch"
               type="button"
               class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
@@ -1279,7 +1279,7 @@
           
           <!-- Dropdown with search results -->
           <div 
-            v-if="showTableDropdown && !field.read_only"
+            v-if="showTableDropdown && !isFieldReadOnly"
             class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
           >
             <!-- Loading state in dropdown -->
@@ -1348,12 +1348,12 @@
         @input="handleBarcodeInput"
         type="text"
         :required="isFieldRequired"
-        :disabled="field.read_only === 1"
-        :readonly="field.read_only === 1"
+        :disabled="isFieldReadOnly"
+        :readonly="isFieldReadOnly"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
         :class="{
-          'bg-gray-50': field.read_only === 1,
-          'cursor-not-allowed': field.read_only === 1
+          'bg-gray-50': isFieldReadOnly,
+          'cursor-not-allowed': isFieldReadOnly
         }"
       />
       <div class="mt-2">
@@ -1376,7 +1376,7 @@
         v-model:value="codeValue"
         :lang="aceLanguageMode"
         :theme="'chrome'"
-        :readonly="field.read_only === 1"
+        :readonly="isFieldReadOnly"
         style="width: 100%; min-height: 180px; border-radius: 0.375rem; border: 1px solid #d1d5db; font-size: 1rem; margin-top: 0.5rem;"
         :options="{ useWorker: false, tabSize: 2, showPrintMargin: false }"
       />
@@ -1490,6 +1490,7 @@ interface FormField {
   parent?: string;
   read_only?: number;
   mandatory_depends_on?: string;
+  read_only_depends_on?: string;
   description?: string;
   default?: string;
   tableFields?: TableField[];
@@ -1597,6 +1598,15 @@ const isFieldRequired = computed(() => {
   return props.field.reqd === 1;
 });
 
+const isFieldReadOnly = computed(() => {
+  // Check if field has read_only_depends_on condition
+  if (props.field.read_only_depends_on) {
+    return evaluateFieldDependency(props.field, props.formData, 'read_only_depends_on');
+  }
+  // Fall back to the static read_only property
+  return props.field.read_only === 1;
+});
+
 const formattedLabel = computed(() => {
   if (!props.field.label) return '';
   return props.field.label.replace(/\[.*?\]/g, '').trim();
@@ -1609,6 +1619,10 @@ const isMobile = computed(() => {
 
 const shouldUseCameraInput = computed(() => {
   return isMobile.value && props.field.label?.includes('[camera]');
+});
+
+const shouldUserChangeWatermarkDownloadValue = computed(() => {
+  return authStore.user?.roles?.includes('Technician') && !authStore.user?.roles?.includes('System Manager');
 });
 
 const shouldAutoFillUserData = computed(() => {
@@ -2273,7 +2287,7 @@ onUnmounted(() => {
 });
 
 function handleDurationFocus() {
-  if (!props.field.read_only) {
+  if (!isFieldReadOnly.value) {
     showDurationPopup.value = true;
   }
   parseDurationString();

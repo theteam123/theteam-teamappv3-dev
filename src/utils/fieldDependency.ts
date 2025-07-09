@@ -9,13 +9,14 @@ interface FormField {
   hidden?: number;
   depends_on?: string;
   mandatory_depends_on?: string;
+  read_only_depends_on?: string;
   columnIndex?: number;
 }
 
 export function evaluateFieldDependency(
   field: FormField, 
   formData: Record<string, any> | undefined,
-  dependencyType: 'depends_on' | 'mandatory_depends_on' = 'depends_on',
+  dependencyType: 'depends_on' | 'mandatory_depends_on' | 'read_only_depends_on' = 'depends_on',
   debug: boolean = false
 ): boolean {
   if (debug) {
@@ -24,23 +25,32 @@ export function evaluateFieldDependency(
       label: field.label,
       depends_on: field.depends_on,
       mandatory_depends_on: field.mandatory_depends_on,
+      read_only_depends_on: field.read_only_depends_on,
       evaluating: dependencyType
     });
   }
 
   if (!field[dependencyType]) {
     if (debug) {
-      console.log(`No ${dependencyType} condition, returning ${dependencyType === 'depends_on' ? 'true' : String(field.reqd === 1)}`);
+      console.log(`No ${dependencyType} condition, returning default value`);
     }
-    return dependencyType === 'depends_on' ? true : field.reqd === 1;
+    // Default behaviors for each dependency type
+    if (dependencyType === 'depends_on') return true; // Show field by default
+    if (dependencyType === 'mandatory_depends_on') return field.reqd === 1; // Use base required setting
+    if (dependencyType === 'read_only_depends_on') return false; // Not read-only by default
+    return false; // Fallback
   }
   
-  const dependsOn = field[dependencyType];
+  const dependsOn = field[dependencyType]!; // Non-null assertion since we checked above
   if (!dependsOn.startsWith('eval:doc.')) {
     if (debug) {
-      console.log(`${dependencyType} does not start with eval:doc., returning ${dependencyType === 'depends_on' ? 'true' : String(field.reqd === 1)}`);
+      console.log(`${dependencyType} does not start with eval:doc., returning default value`);
     }
-    return dependencyType === 'depends_on' ? true : field.reqd === 1;
+    // Default behaviors for each dependency type
+    if (dependencyType === 'depends_on') return true;
+    if (dependencyType === 'mandatory_depends_on') return field.reqd === 1;
+    if (dependencyType === 'read_only_depends_on') return false;
+    return false; // Fallback
   }
 
   try {
@@ -136,7 +146,11 @@ export function evaluateFieldDependency(
       if (debug) {
         console.warn('Unhandled field references in condition:', evalCondition);
       }
-      return dependencyType === 'depends_on' ? true : field.reqd === 1;
+      // Default behaviors for each dependency type
+      if (dependencyType === 'depends_on') return true;
+      if (dependencyType === 'mandatory_depends_on') return field.reqd === 1;
+      if (dependencyType === 'read_only_depends_on') return false;
+      return false; // Fallback
     }
 
     // Safely evaluate the condition
@@ -212,6 +226,10 @@ export function evaluateFieldDependency(
     return finalResult;
   } catch (error) {
     console.error('Error evaluating field dependency:', error);
-    return dependencyType === 'depends_on' ? true : field.reqd === 1;
+    // Default behaviors for each dependency type on error
+    if (dependencyType === 'depends_on') return true;
+    if (dependencyType === 'mandatory_depends_on') return field.reqd === 1;
+    if (dependencyType === 'read_only_depends_on') return false;
+    return false; // Fallback
   }
 } 
