@@ -934,7 +934,7 @@
         </button>
       </div>
       <p v-if="modelValue !== null && modelValue !== undefined" class="mt-1 text-xs text-gray-500">
-        Rating: {{ modelValue }} ({{ getRatingStars() }} stars)
+        Rating: {{ formatRatingValue(modelValue) }} ({{ formatStarsValue(getRatingStars()) }} stars)
       </p>
       <p v-if="field.description" class="mt-1 text-xs text-gray-500">
         {{ field.description }}
@@ -3599,6 +3599,25 @@ const getStarValue = (star: number, event: MouseEvent) => {
   } else {
     return star;
   }
+};
+
+// Helper functions to format rating values and avoid floating-point precision issues
+const formatRatingValue = (value: any): string => {
+  if (value === null || value === undefined || value === '') {
+    return '0';
+  }
+  const rating = parseFloat(value);
+  if (isNaN(rating)) return '0';
+  // Round to 1 decimal place and remove trailing zeros
+  return parseFloat(rating.toFixed(1)).toString();
+};
+
+const formatStarsValue = (stars: number): string => {
+  if (stars === null || stars === undefined || isNaN(stars)) {
+    return '0';
+  }
+  // Round to 1 decimal place and remove trailing zeros
+  return parseFloat(stars.toFixed(1)).toString();
 };
 
 const barcodeSvg = ref<SVGSVGElement | null>(null);

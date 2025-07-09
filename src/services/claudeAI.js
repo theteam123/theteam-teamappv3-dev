@@ -101,6 +101,231 @@ Analyze the requirements using these dimensions:
 
 ${projectKnowledge}
 
+REFERENCE EXAMPLES OF PROPERLY STRUCTURED ERPNEXT DOCTYPES:
+
+Here are real-world examples of correctly structured ERPNext DocTypes with various field types and configurations. Use these as references for proper field configuration, validation patterns, and ERPNext best practices:
+
+EXAMPLE 1 - BASIC FIELDS DOCTYPE:
+\`\`\`json
+{
+  "doctype": "DocType",
+  "name": "Priority Field", 
+  "module": "Testing Only",
+  "custom": 1,
+  "fields": [
+    {
+      "fieldname": "data",
+      "label": "Data",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "link",
+      "label": "Link", 
+      "fieldtype": "Link",
+      "options": "User"
+    },
+    {
+      "fieldname": "select",
+      "label": "Select",
+      "fieldtype": "Select"
+    },
+    {
+      "fieldname": "test_chek",
+      "label": "Test Check",
+      "fieldtype": "Check",
+      "default": "0"
+    },
+    {
+      "fieldname": "date",
+      "label": "Date",
+      "fieldtype": "Date"
+    },
+    {
+      "fieldname": "date_time",
+      "label": "Date Time",
+      "fieldtype": "Datetime"
+    },
+    {
+      "fieldname": "time",
+      "label": "Time",
+      "fieldtype": "Time"
+    },
+    {
+      "fieldname": "duration",
+      "label": "Duration",
+      "fieldtype": "Duration"
+    },
+    {
+      "fieldname": "small_text",
+      "label": "Small Text",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "long_text",
+      "label": "Long Text",
+      "fieldtype": "Long Text"
+    },
+    {
+      "fieldname": "text",
+      "label": "Text",
+      "fieldtype": "Text"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "share": 1,
+      "print": 1,
+      "email": 1
+    }
+  ]
+}
+\`\`\`
+
+EXAMPLE 2 - ADVANCED FIELDS DOCTYPE:
+\`\`\`json
+{
+  "doctype": "DocType",
+  "name": "Low Priority Field",
+  "module": "Testing Only",
+  "custom": 1,
+  "fields": [
+    {
+      "fieldname": "low_priority_field_section",
+      "label": "Low Priority Field",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "password",
+      "label": "Password",
+      "fieldtype": "Password"
+    },
+    {
+      "fieldname": "barcode",
+      "label": "Barcode",
+      "fieldtype": "Barcode"
+    },
+    {
+      "fieldname": "rating",
+      "label": "Rating",
+      "fieldtype": "Rating"
+    },
+    {
+      "fieldname": "color",
+      "label": "Color",
+      "fieldtype": "Color"
+    },
+    {
+      "fieldname": "html",
+      "label": "HTML",
+      "fieldtype": "HTML"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "share": 1,
+      "print": 1,
+      "email": 1
+    }
+  ]
+}
+\`\`\`
+
+EXAMPLE 3 - COMPLEX FIELDS WITH TABLES AND DYNAMIC LINKS:
+\`\`\`json
+{
+  "doctype": "DocType",
+  "name": "Medium Priority Fields",
+  "module": "Testing Only",
+  "custom": 1,
+  "fields": [
+    {
+      "fieldname": "tables_section",
+      "label": "Tables",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "signature_field",
+      "label": "Signature",
+      "fieldtype": "Signature"
+    },
+    {
+      "fieldname": "test_gelocation_map",
+      "label": "Test Geolocation Map",
+      "fieldtype": "Geolocation"
+    },
+    {
+      "fieldname": "test_table",
+      "label": "Test Table",
+      "fieldtype": "Table",
+      "options": "Sample Table List"
+    },
+    {
+      "fieldname": "read_only",
+      "label": "Read Only",
+      "fieldtype": "Read Only",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "test_multiselect",
+      "label": "Test MultiSelect",
+      "fieldtype": "Table MultiSelect",
+      "options": "Make Details"
+    },
+    {
+      "fieldname": "doc_link",
+      "label": "Link",
+      "fieldtype": "Link",
+      "options": "DocType"
+    },
+    {
+      "fieldname": "dynamic_link",
+      "label": "Dynamic Link",
+      "fieldtype": "Dynamic Link",
+      "options": "doc_link"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "share": 1,
+      "print": 1,
+      "email": 1
+    }
+  ]
+}
+\`\`\`
+
+KEY PATTERNS FROM EXAMPLES:
+- Always include "custom": 1 for custom DocTypes
+- Use proper field naming conventions (lowercase with underscores)
+- Include appropriate permissions for System Manager role
+- Use Section Break for organizing fields into logical groups
+- For Link fields, specify the target DocType in "options"
+- For Dynamic Link fields, reference a Link field that points to "DocType"
+- For Table fields, reference child DocTypes in "options"
+- Set proper field attributes like "in_list_view", "reqd", "read_only" as needed
+- Use consistent permission structure with proper role assignments
+
 ENHANCED OUTPUT REQUIREMENTS:
 
 Generate a comprehensive solution including:
