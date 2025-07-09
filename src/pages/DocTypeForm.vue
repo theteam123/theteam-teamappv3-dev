@@ -395,9 +395,19 @@ const handleSubmit = async () => {
 
     const formDataToSubmit = { ...formData.value };
 
-    // Fix: Set empty string duration fields to null, and convert duration strings to seconds
+    // Fix: Clean up phone fields and duration fields before submission
     docType.value?.fields.forEach(field => {
-      if (field.fieldtype === 'Duration') {
+      if (field.fieldtype === 'Phone') {
+        const val = formDataToSubmit[field.fieldname];
+        // Ensure phone field is a string, not an event object
+        if (val && typeof val === 'object') {
+          console.warn(`Phone field "${field.fieldname}" contains object instead of string:`, val);
+          // Try to extract phone number from common object patterns
+          formDataToSubmit[field.fieldname] = val.number || val.phone || val.value || '';
+        } else if (val === null || val === undefined) {
+          formDataToSubmit[field.fieldname] = '';
+        }
+      } else if (field.fieldtype === 'Duration') {
         const val = formDataToSubmit[field.fieldname];
         if (val === '') {
           formDataToSubmit[field.fieldname] = null;

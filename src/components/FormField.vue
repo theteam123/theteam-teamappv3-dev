@@ -839,7 +839,8 @@
         :id="field.fieldname"
         :required="isFieldRequired"
         :disabled="isFieldReadOnly"
-        @input="onPhoneInput"
+        @update:modelValue="onPhoneUpdate"
+        @on-input="onPhoneInputEvent"
         class="mt-1"
         :class="{
           'opacity-60': isFieldReadOnly
@@ -1540,7 +1541,11 @@ const durationParts = ref({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 const durationString = ref('');
 const durationPopupRef = ref<HTMLElement | null>(null);
 const durationWrapperRef = ref<HTMLElement | null>(null);
-const phoneValue = ref(typeof props.modelValue === 'string' ? props.modelValue : '');
+const phoneValue = ref(
+  props.field.fieldtype === 'Phone' && typeof props.modelValue === 'string' 
+    ? props.modelValue 
+    : ''
+);
 const linkOptions = ref<any[]>([]);
 const uploading = ref(false);
 const uploadProgress = ref(0);
@@ -1631,8 +1636,12 @@ const shouldAutoFillUserData = computed(() => {
 
 watch(() => props.modelValue, (val) => {
   durationString.value = typeof val === 'string' ? val : formatDurationString();
-  if (typeof val === 'string' && val !== phoneValue.value) {
-    phoneValue.value = val;
+  // Update phoneValue when parent modelValue changes
+  if (props.field.fieldtype === 'Phone') {
+    const newPhoneValue = typeof val === 'string' ? val : '';
+    if (newPhoneValue !== phoneValue.value) {
+      phoneValue.value = newPhoneValue;
+    }
   }
 });
 
@@ -1672,8 +1681,23 @@ function onDurationPartChange() {
   emit('update:modelValue', durationString.value);
 }
 
-function onPhoneInput(val: string) {
-  emit('update:modelValue', val);
+// Handle vue-tel-input model value updates
+function onPhoneUpdate(value: string) {
+  // Direct v-model update from vue-tel-input
+  phoneValue.value = value || '';
+  emit('update:modelValue', phoneValue.value);
+}
+
+// Handle vue-tel-input input events (provides phone object)
+function onPhoneInputEvent(phoneObject: any) {
+  // vue-tel-input @on-input event provides a phone object with formatted number
+  if (phoneObject && typeof phoneObject === 'object') {
+    const formattedNumber = phoneObject.number || phoneObject.formattedNumber || '';
+    if (formattedNumber && typeof formattedNumber === 'string') {
+      phoneValue.value = formattedNumber;
+      emit('update:modelValue', formattedNumber);
+    }
+  }
 }
 
 const filePreview = ref<string | null>(null);

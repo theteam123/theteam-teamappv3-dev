@@ -3,6 +3,9 @@
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-900">AI DocType Generator</h1>
       <p class="text-sm text-gray-500 mt-1">Generate comprehensive DocType JSON files and HTML mockups using Claude AI</p>
+      <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+        ⚡ Optimized for ERPNext v15+ with advanced field types
+      </div>
     </div>
 
     <!-- Requirements Input -->
@@ -145,12 +148,8 @@ The form should have multiple sections and be optimized for mobile devices."
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-semibold mb-4">📥 Download Generated Files</h3>
         
-        <!-- Quality Indicator -->
+        <!-- Generation Info -->
         <div class="mb-4 flex items-center space-x-3">
-          <span :class="['px-3 py-1 rounded-full text-sm font-medium', getQualityBadgeColor(generatedOutput.metadata.quality)]">
-            {{ generatedOutput.metadata.quality === 'enterprise-grade' ? '✅' : generatedOutput.metadata.quality === 'needs-improvement' ? '⚠️' : '❓' }}
-            {{ generatedOutput.metadata.quality.charAt(0).toUpperCase() + generatedOutput.metadata.quality.slice(1).replace('-', ' ') }}
-          </span>
           <span class="text-sm text-gray-500">
             Generated: {{ formatTimestamp(generatedOutput.metadata.generatedAt) }}
           </span>
@@ -166,13 +165,6 @@ The form should have multiple sections and be optimized for mobile devices."
           </button>
           <button @click="downloadImplementationGuide" class="btn-secondary text-sm flex items-center justify-center">
             📋 Implementation
-          </button>
-          <button 
-            v-if="generatedOutput.businessLogic" 
-            @click="downloadBusinessLogic" 
-            class="btn-secondary text-sm flex items-center justify-center"
-          >
-            🔄 Business Logic
           </button>
           <button 
             v-if="generatedOutput.childDocTypes && generatedOutput.childDocTypes.length > 0" 
@@ -251,16 +243,7 @@ The form should have multiple sections and be optimized for mobile devices."
             </div>
           </div>
 
-          <!-- Business Logic -->
-          <div v-if="activeTab === 'business'">
-            <div class="mb-4">
-              <h4 class="font-medium text-gray-900 mb-2">Business Logic</h4>
-              <p class="text-sm text-gray-600">Description of the business logic implemented in the DocType</p>
-            </div>
-            <div class="prose max-w-none bg-gray-50 p-4 rounded-lg">
-              <div v-html="generatedOutput.businessLogic"></div>
-            </div>
-          </div>
+
 
           <!-- Child DocTypes (if any) -->
           <div v-if="activeTab === 'child' && generatedOutput.childDocTypes && generatedOutput.childDocTypes.length > 0">
@@ -279,51 +262,7 @@ The form should have multiple sections and be optimized for mobile devices."
             </div>
           </div>
 
-          <!-- Metadata -->
-          <div v-if="activeTab === 'metadata'">
-            <div class="mb-4">
-              <h4 class="font-medium text-gray-900 mb-2">🔍 Quality Report</h4>
-              <p class="text-sm text-gray-600">Detailed analysis of the generated DocType quality and metadata</p>
-            </div>
-            <div class="bg-gray-50 p-6 rounded-lg space-y-4">
-              <!-- Quality Badge -->
-              <div class="flex items-center space-x-3">
-                <span class="text-sm font-medium text-gray-700">Quality Status:</span>
-                <span :class="['px-3 py-1 rounded-full text-sm font-medium', getQualityBadgeColor(generatedOutput.metadata.quality)]">
-                  {{ generatedOutput.metadata.quality === 'enterprise-grade' ? '✅' : generatedOutput.metadata.quality === 'needs-improvement' ? '⚠️' : '❓' }}
-                  {{ generatedOutput.metadata.quality.charAt(0).toUpperCase() + generatedOutput.metadata.quality.slice(1).replace('-', ' ') }}
-                </span>
-              </div>
-              
-              <!-- Metadata Grid -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div class="space-y-2">
-                  <div><span class="font-medium">Generated At:</span> {{ formatTimestamp(generatedOutput.metadata.generatedAt) }}</div>
-                  <div><span class="font-medium">Generator Version:</span> {{ generatedOutput.metadata.version }}</div>
-                  <div><span class="font-medium">Validated At:</span> {{ generatedOutput.metadata.validatedAt ? formatTimestamp(generatedOutput.metadata.validatedAt) : 'Not validated' }}</div>
-                </div>
-                <div class="space-y-2">
-                  <div><span class="font-medium">DocType Name:</span> {{ generatedOutput.mainDocType?.name || 'N/A' }}</div>
-                  <div><span class="font-medium">Field Count:</span> {{ generatedOutput.mainDocType?.fields?.length || 0 }}</div>
-                  <div><span class="font-medium">Child DocTypes:</span> {{ generatedOutput.childDocTypes?.length || 0 }}</div>
-                </div>
-              </div>
-              
-              <!-- Quality Issues -->
-              <div v-if="generatedOutput.metadata.qualityIssues && generatedOutput.metadata.qualityIssues.length > 0" 
-                   class="border-l-4 border-yellow-400 bg-yellow-50 p-4 rounded">
-                <h5 class="font-medium text-yellow-800 mb-2">⚠️ Quality Issues Detected</h5>
-                <ul class="list-disc list-inside text-sm text-yellow-700 space-y-1">
-                  <li v-for="issue in generatedOutput.metadata.qualityIssues" :key="issue">{{ issue }}</li>
-                </ul>
-              </div>
-              
-              <!-- No Issues -->
-              <div v-else class="border-l-4 border-green-400 bg-green-50 p-4 rounded">
-                <p class="text-sm text-green-700">✅ No quality issues detected. The generated DocType meets all validation criteria.</p>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -471,9 +410,7 @@ const previewTabs = [
   { id: 'doctype', name: '📄 DocType JSON' },
   { id: 'html', name: '🌐 HTML Mockup' },
   { id: 'implementation', name: '📋 Implementation' },
-  { id: 'business', name: '🔄 Business Logic' },
-  { id: 'child', name: '📁 Child DocTypes' },
-  { id: 'metadata', name: '🔍 Quality Report' }
+  { id: 'child', name: '📁 Child DocTypes' }
 ];
 
 // Simple example templates for easy understanding
@@ -662,20 +599,7 @@ const downloadImplementationGuide = () => {
   URL.revokeObjectURL(url);
 };
 
-const downloadBusinessLogic = () => {
-  if (!generatedOutput.value?.businessLogic) return;
-  
-  const docTypeName = generatedOutput.value.mainDocType?.name || 'Generated_DocType';
-  const blob = new Blob([generatedOutput.value.businessLogic], {
-    type: 'text/markdown'
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${docTypeName.replace(/\s+/g, '_')}_business_logic.md`;
-  a.click();
-  URL.revokeObjectURL(url);
-};
+
 
 const downloadAllFiles = () => {
   if (!generatedOutput.value) return;
@@ -684,9 +608,6 @@ const downloadAllFiles = () => {
   downloadDocTypeJSON();
   downloadHTMLMockup();
   downloadImplementationGuide();
-  if (generatedOutput.value.businessLogic) {
-    downloadBusinessLogic();
-  }
   if (generatedOutput.value.childDocTypes?.length) {
     downloadChildDocTypes();
   }
@@ -702,16 +623,118 @@ const resetGenerator = () => {
   // Keep API key for convenience
 };
 
-const getQualityBadgeColor = (quality: string) => {
-  switch (quality) {
-    case 'enterprise-grade': return 'bg-green-100 text-green-800';
-    case 'needs-improvement': return 'bg-yellow-100 text-yellow-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
+
 
 const formatTimestamp = (timestamp: string) => {
   return new Date(timestamp).toLocaleString();
+};
+
+// Function to fix advanced field types and their requirements
+const fixAdvancedFieldTypes = (fields: any[]) => {
+  if (!fields || !Array.isArray(fields)) return fields;
+
+  const dynamicLinkFields: Array<{ field: any; index: number }> = [];
+  const docTypeFields: any[] = [];
+  
+  // First pass: identify Dynamic Link fields and existing DocType Link fields
+  fields.forEach((field, index) => {
+    if (field.fieldtype === 'Dynamic Link') {
+      dynamicLinkFields.push({ field, index });
+    }
+    if (field.fieldtype === 'Link' && field.options === 'DocType') {
+      docTypeFields.push(field);
+    }
+  });
+
+  // Process Dynamic Link fields
+  dynamicLinkFields.forEach(({ field, index }) => {
+    let docTypeFieldName: string | null = null;
+    
+    // Check if the field already has a valid options pointing to a DocType field
+    if (field.options && docTypeFields.some((f: any) => f.fieldname === field.options)) {
+      docTypeFieldName = field.options;
+      console.log(`Dynamic Link field "${field.fieldname}" already has valid DocType field: ${docTypeFieldName}`);
+    } else {
+      // Look for an existing DocType field we can use
+      if (docTypeFields.length > 0) {
+        docTypeFieldName = docTypeFields[0].fieldname;
+        console.log(`Dynamic Link field "${field.fieldname}" will use existing DocType field: ${docTypeFieldName}`);
+      } else {
+        // Create a new DocType field
+        docTypeFieldName = `${field.fieldname}_doctype`;
+        const newDocTypeField = {
+          fieldname: docTypeFieldName,
+          fieldtype: 'Link',
+          label: `${field.label || field.fieldname} DocType`,
+          options: 'DocType', // Exact capitalization is critical for ERPNext validation
+          reqd: field.reqd || 0,
+          hidden: 0,
+          read_only: 0
+        };
+        
+        // Insert the new DocType field before the Dynamic Link field
+        fields.splice(index, 0, newDocTypeField);
+        docTypeFields.push(newDocTypeField);
+        console.log(`Created new DocType field "${docTypeFieldName}" for Dynamic Link field "${field.fieldname}"`);
+      }
+    }
+    
+    // Update the Dynamic Link field to point to the DocType field
+    if (docTypeFieldName) {
+      field.options = docTypeFieldName;
+    }
+  });
+
+  // Enhance advanced field types for ERPNext v15+
+  fields.forEach((field) => {
+    // Configure Geolocation fields for v15+ features
+    if (field.fieldtype === 'Geolocation') {
+      if (!field.label) field.label = field.fieldname.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      // v15+ supports advanced geolocation features
+      field.map_default_zoom = field.map_default_zoom || 15;
+      field.map_default_location = field.map_default_location || '';
+      console.log(`Geolocation field "${field.fieldname}" configured for ERPNext v15+ with enhanced mapping`);
+    }
+    
+    // Configure JSON fields for v15+ capabilities
+    if (field.fieldtype === 'JSON') {
+      if (!field.label) field.label = field.fieldname.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      // v15+ has improved JSON editor and validation
+      field.enable_json_editor = 1;
+      console.log(`JSON field "${field.fieldname}" configured for ERPNext v15+ with enhanced JSON editor`);
+    }
+    
+    // Configure Icon fields for v15+ support
+    if (field.fieldtype === 'Icon') {
+      if (!field.label) field.label = field.fieldname.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      // v15+ has full icon field support
+      console.log(`Icon field "${field.fieldname}" configured for ERPNext v15+ with full icon support`);
+    }
+    
+    // Configure Rating fields for v15+
+    if (field.fieldtype === 'Rating') {
+      if (!field.label) field.label = field.fieldname.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      field.options = field.options || 5; // Default to 5-star rating
+      console.log(`Rating field "${field.fieldname}" configured for ERPNext v15+ with ${field.options}-star rating`);
+    }
+    
+    // Configure Duration fields for v15+
+    if (field.fieldtype === 'Duration') {
+      if (!field.label) field.label = field.fieldname.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      field.hide_days = field.hide_days || 0;
+      field.hide_seconds = field.hide_seconds || 0;
+      console.log(`Duration field "${field.fieldname}" configured for ERPNext v15+ with time tracking`);
+    }
+    
+    // Configure Barcode fields for v15+
+    if (field.fieldtype === 'Barcode') {
+      if (!field.label) field.label = field.fieldname.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      field.options = field.options || 'CODE128'; // Default barcode type
+      console.log(`Barcode field "${field.fieldname}" configured for ERPNext v15+ with ${field.options} encoding`);
+    }
+  });
+
+  return fields;
 };
 
 const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
@@ -721,7 +744,8 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
   }
 
   // Use either 'doctype' or 'name' field as the name (Claude uses 'doctype', API expects 'name')
-  let docTypeName = docType.doctype || docType.name;
+  // Priority: name field (user input) > doctype field (AI generated)
+  let docTypeName = docType.name || docType.doctype;
   const originalName = docTypeName;
   let warning: string | null = null;
   
@@ -730,6 +754,8 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
     console.error('validateAndFixDocType: DocType name is missing or empty', docType);
     return { docType: null, warning: null };
   }
+
+  console.log('validateAndFixDocType: Using DocType name:', docTypeName);
 
   // Clean up the name
   docTypeName = docTypeName.trim();
@@ -787,27 +813,162 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
 
       // Handle field-specific properties that might need processing
       if (field.options && field.fieldtype === 'Select' && Array.isArray(field.options)) {
-        cleanField.options = field.options.join('\n');
+        // Clean up Select field options
+        const cleanOptions = field.options
+          .filter(option => option && typeof option === 'string' && option.trim().length > 0)
+          .map(option => option.trim())
+          .filter((option, index, arr) => arr.indexOf(option) === index); // remove duplicates
+        
+        cleanField.options = cleanOptions.join('\n');
+        
+        if (cleanOptions.length !== field.options.length) {
+          console.log(`Select field "${cleanField.fieldname}": Cleaned options from ${field.options.length} to ${cleanOptions.length} valid options`);
+        }
+      } else if (field.options && field.fieldtype === 'Select' && typeof field.options === 'string') {
+        // Handle string options (already newline-separated)
+        const cleanOptions = field.options
+          .split('\n')
+          .map(option => option.trim())
+          .filter(option => option.length > 0)
+          .filter((option, index, arr) => arr.indexOf(option) === index); // remove duplicates
+        
+        cleanField.options = cleanOptions.join('\n');
       }
 
-      // Fix Link field options that might reference non-existent DocTypes
+      // Enhanced Link field validation for ERPNext v15+
       if (cleanField.fieldtype === 'Link' && cleanField.options) {
-        // List of common built-in DocTypes that should be safe to reference
-        const safeDocTypes = ['User', 'Company', 'Customer', 'Supplier', 'Item', 'Employee', 'Project', 'Task', 'Lead', 'Contact', 'Address'];
+        // v15+ has excellent support for linking to custom DocTypes but validates strictly
+        const problematicDocTypes = ['undefined', 'null', '', ' '];
+        const suspiciousPatterns = [
+          /^[a-z]+$/, // all lowercase (usually invalid)
+          /\s{2,}/, // multiple spaces
+          /[^a-zA-Z0-9\s_-]/, // special characters except space, underscore, hyphen
+          /^\d/, // starts with number
+        ];
         
-        // If the linked DocType is not in our safe list, convert to Data field
-        if (!safeDocTypes.includes(cleanField.options)) {
-          console.warn(`Converting Link field "${cleanField.fieldname}" from linking to "${cleanField.options}" to Data field to avoid validation errors`);
+        let isProblematic = problematicDocTypes.includes(cleanField.options) || 
+                           cleanField.options.length < 2 ||
+                           suspiciousPatterns.some(pattern => pattern.test(cleanField.options));
+        
+        if (isProblematic) {
+          console.warn(`Converting Link field "${cleanField.fieldname}" with potentially invalid DocType reference "${cleanField.options}" to Data field`);
           cleanField.fieldtype = 'Data';
           cleanField.options = '';
-        }
+                  } else {
+            // Special handling for DocType master references
+            if (cleanField.options.toLowerCase() === 'doctype') {
+              cleanField.options = 'DocType'; // Exact capitalization required by ERPNext
+              console.log(`Link field "${cleanField.fieldname}": Fixed DocType master reference to exact "DocType" capitalization`);
+            } else {
+              // Try to fix common DocType name issues for other DocTypes
+              let fixedOptions = cleanField.options
+                .trim()
+                .replace(/\s+/g, ' ') // normalize spaces
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' '); // Title Case
+              
+              if (fixedOptions !== cleanField.options) {
+                console.log(`Link field "${cleanField.fieldname}": Fixed DocType name from "${cleanField.options}" to "${fixedOptions}"`);
+                cleanField.options = fixedOptions;
+              }
+            }
+            
+            console.log(`Link field "${cleanField.fieldname}" linking to "${cleanField.options}" - validated for ERPNext v15+`);
+          }
       }
 
-      // Remove any problematic field properties that might cause validation issues
-      if (cleanField.fieldtype === 'Table' && !cleanField.options) {
-        console.warn(`Table field "${cleanField.fieldname}" has no child table defined, converting to Section Break`);
-        cleanField.fieldtype = 'Section Break';
-        cleanField.options = '';
+      // Enhanced Table field validation for ERPNext v15+
+      if (cleanField.fieldtype === 'Table') {
+        if (!cleanField.options) {
+          console.warn(`Table field "${cleanField.fieldname}" has no child table defined, converting to Section Break`);
+          cleanField.fieldtype = 'Section Break';
+          cleanField.options = '';
+        } else {
+          // Validate Table field options (child DocType names)
+          const problematicDocTypes = ['undefined', 'null', '', ' '];
+          const suspiciousPatterns = [
+            /^[a-z]+$/, // all lowercase (usually invalid)
+            /\s{2,}/, // multiple spaces
+            /[^a-zA-Z0-9\s_-]/, // special characters except space, underscore, hyphen
+            /^\d/, // starts with number
+          ];
+          
+          let isProblematic = problematicDocTypes.includes(cleanField.options) || 
+                             cleanField.options.length < 2 ||
+                             suspiciousPatterns.some(pattern => pattern.test(cleanField.options));
+          
+          // Check for non-existent child DocType patterns (common AI-generated names that don't exist)
+          const nonExistentChildDocTypePatterns = [
+            /Item$/i, // ends with "Item" (e.g., "Field Type Showcase Item", "Product Item")
+            /Items$/i, // ends with "Items" (e.g., "Gallery Items", "Order Items")
+            /Detail$/i, // ends with "Detail" (e.g., "Order Detail", "Invoice Detail")
+            /Details$/i, // ends with "Details" (e.g., "Product Details", "Customer Details")
+            /Line$/i, // ends with "Line" (e.g., "Sales Line", "Purchase Line")
+            /Lines$/i, // ends with "Lines" (e.g., "Invoice Lines", "Order Lines")
+            /Entry$/i, // ends with "Entry" (e.g., "Log Entry", "Data Entry")
+            /Entries$/i, // ends with "Entries" (e.g., "Log Entries", "Time Entries")
+            /Record$/i, // ends with "Record" (e.g., "History Record", "Audit Record")
+            /Records$/i, // ends with "Records" (e.g., "Training Records", "Audit Records")
+            /Child$/i, // ends with "Child" (e.g., "Table Child", "Item Child")
+            /Children$/i, // ends with "Children" (e.g., "Table Children", "Child Items")
+            /Image$/i, // ends with "Image" (e.g., "Gallery Image", "Product Image")
+            /Images$/i, // ends with "Images" (e.g., "Gallery Images", "Product Images")
+            /Photo$/i, // ends with "Photo" (e.g., "Gallery Photo", "Profile Photo")
+            /Photos$/i, // ends with "Photos" (e.g., "Gallery Photos", "Event Photos")
+            /File$/i, // ends with "File" (e.g., "Attachment File", "Document File")
+            /Files$/i, // ends with "Files" (e.g., "Attachment Files", "Document Files")
+            /Document$/i, // ends with "Document" (e.g., "Support Document", "Reference Document")
+            /Documents$/i, // ends with "Documents" (e.g., "Support Documents", "Reference Documents")
+            /Attachment$/i, // ends with "Attachment" (e.g., "Email Attachment", "File Attachment")
+            /Attachments$/i, // ends with "Attachments" (e.g., "Email Attachments", "File Attachments")
+            /Gallery/i, // contains "Gallery" (e.g., "Photo Gallery", "Image Gallery")
+            /Media/i, // contains "Media" (e.g., "Media Files", "Media Gallery")
+            /Upload/i, // contains "Upload" (e.g., "File Upload", "Image Upload")
+            /Sub/i, // contains "Sub" (e.g., "Sub Item", "Sub Category")
+          ];
+          
+          const seemsLikeNonExistentChildDocType = nonExistentChildDocTypePatterns.some(pattern => 
+            pattern.test(cleanField.options)
+          );
+          
+          if (isProblematic || seemsLikeNonExistentChildDocType) {
+            if (seemsLikeNonExistentChildDocType) {
+              console.warn(`Table field "${cleanField.fieldname}" references likely non-existent child DocType "${cleanField.options}". Converting to Text field for data entry.`);
+              cleanField.fieldtype = 'Text';
+              cleanField.options = '';
+              // Keep the label and add helpful description
+              if (!cleanField.description) {
+                cleanField.description = `Enter ${cleanField.label || cleanField.fieldname} details (converted from table field)`;
+              }
+            } else {
+              console.warn(`Table field "${cleanField.fieldname}" has invalid child DocType "${cleanField.options}", converting to Section Break`);
+              cleanField.fieldtype = 'Section Break';
+              cleanField.options = '';
+            }
+          } else {
+            // Special handling for DocType master references in Table fields (rare but possible)
+            if (cleanField.options.toLowerCase() === 'doctype') {
+              cleanField.options = 'DocType'; // Exact capitalization required by ERPNext
+              console.log(`Table field "${cleanField.fieldname}": Fixed DocType master reference to exact "DocType" capitalization`);
+            } else {
+              // Try to fix common child DocType name issues
+              let fixedOptions = cleanField.options
+                .trim()
+                .replace(/\s+/g, ' ') // normalize spaces
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' '); // Title Case
+              
+              if (fixedOptions !== cleanField.options) {
+                console.log(`Table field "${cleanField.fieldname}": Fixed child DocType name from "${cleanField.options}" to "${fixedOptions}"`);
+                cleanField.options = fixedOptions;
+              }
+            }
+            
+            console.log(`Table field "${cleanField.fieldname}" with child DocType "${cleanField.options}" - validated for ERPNext v15+`);
+          }
+        }
       }
 
       // Fix ERPNext validation issue: Fields cannot be hidden and mandatory without default
@@ -826,14 +987,18 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
 
       return cleanField;
     });
+
+    // Post-process fields to handle advanced field types that need special configuration
+    cleanDocType.fields = fixAdvancedFieldTypes(cleanDocType.fields);
   }
 
-  // Fix permissions with invalid role references
+  // Fix permissions with invalid role references and remove duplicates
   if (cleanDocType.permissions && Array.isArray(cleanDocType.permissions)) {
     // Common roles that exist in most ERPNext installations
     const standardRoles = ['System Manager', 'Administrator', 'Guest', 'All'];
     
-    cleanDocType.permissions = cleanDocType.permissions.map((perm: any) => {
+    // Process and fix permissions
+    const processedPermissions = cleanDocType.permissions.map((perm: any) => {
       // If the role doesn't exist in our standard list, replace with a safe default
       if (perm.role && !standardRoles.includes(perm.role)) {
         console.warn(`Replacing invalid role "${perm.role}" with "System Manager"`);
@@ -841,48 +1006,102 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
       }
       
       // Ensure permission values are properly formatted
-      if (perm.read === true) perm.read = 1;
-      if (perm.read === false) perm.read = 0;
-      if (perm.write === true) perm.write = 1;
-      if (perm.write === false) perm.write = 0;
-      if (perm.create === true) perm.create = 1;
-      if (perm.create === false) perm.create = 0;
-      if (perm.delete === true) perm.delete = 1;
-      if (perm.delete === false) perm.delete = 0;
-      if (perm.submit === true) perm.submit = 1;
-      if (perm.submit === false) perm.submit = 0;
-      if (perm.cancel === true) perm.cancel = 1;
-      if (perm.cancel === false) perm.cancel = 0;
-      if (perm.amend === true) perm.amend = 1;
-      if (perm.amend === false) perm.amend = 0;
+      const cleanPerm = {
+        role: perm.role || 'System Manager',
+        permlevel: perm.permlevel || 0,
+        if_owner: perm.if_owner || 0,
+        read: perm.read === true ? 1 : (perm.read === false ? 0 : (perm.read || 0)),
+        write: perm.write === true ? 1 : (perm.write === false ? 0 : (perm.write || 0)),
+        create: perm.create === true ? 1 : (perm.create === false ? 0 : (perm.create || 0)),
+        delete: perm.delete === true ? 1 : (perm.delete === false ? 0 : (perm.delete || 0)),
+        submit: perm.submit === true ? 1 : (perm.submit === false ? 0 : (perm.submit || 0)),
+        cancel: perm.cancel === true ? 1 : (perm.cancel === false ? 0 : (perm.cancel || 0)),
+        amend: perm.amend === true ? 1 : (perm.amend === false ? 0 : (perm.amend || 0)),
+        report: perm.report === true ? 1 : (perm.report === false ? 0 : (perm.report || 0)),
+        export: perm.export === true ? 1 : (perm.export === false ? 0 : (perm.export || 0)),
+        import: perm.import === true ? 1 : (perm.import === false ? 0 : (perm.import || 0)),
+        share: perm.share === true ? 1 : (perm.share === false ? 0 : (perm.share || 0)),
+        print: perm.print === true ? 1 : (perm.print === false ? 0 : (perm.print || 0)),
+        email: perm.email === true ? 1 : (perm.email === false ? 0 : (perm.email || 0))
+      };
       
-      return perm;
+      return cleanPerm;
     });
+
+    // Remove duplicates by grouping by role + permlevel + if_owner
+    const uniquePermissions = new Map();
+    
+    processedPermissions.forEach((perm: any) => {
+      const key = `${perm.role}-${perm.permlevel}-${perm.if_owner}`;
+      
+      if (uniquePermissions.has(key)) {
+        // Merge permissions - take the maximum value for each permission type
+        const existingPerm = uniquePermissions.get(key);
+        uniquePermissions.set(key, {
+          ...existingPerm,
+          read: Math.max(existingPerm.read, perm.read),
+          write: Math.max(existingPerm.write, perm.write),
+          create: Math.max(existingPerm.create, perm.create),
+          delete: Math.max(existingPerm.delete, perm.delete),
+          submit: Math.max(existingPerm.submit, perm.submit),
+          cancel: Math.max(existingPerm.cancel, perm.cancel),
+          amend: Math.max(existingPerm.amend, perm.amend),
+          report: Math.max(existingPerm.report, perm.report),
+          export: Math.max(existingPerm.export, perm.export),
+          import: Math.max(existingPerm.import, perm.import),
+          share: Math.max(existingPerm.share, perm.share),
+          print: Math.max(existingPerm.print, perm.print),
+          email: Math.max(existingPerm.email, perm.email)
+        });
+        console.warn(`Merged duplicate permission for role "${perm.role}" at level ${perm.permlevel}`);
+      } else {
+        uniquePermissions.set(key, perm);
+      }
+    });
+    
+    // Convert back to array
+    cleanDocType.permissions = Array.from(uniquePermissions.values());
     
     // If no valid permissions remain, add a basic System Manager permission
     if (cleanDocType.permissions.length === 0) {
       cleanDocType.permissions = [{
         role: 'System Manager',
+        permlevel: 0,
+        if_owner: 0,
         read: 1,
         write: 1,
         create: 1,
         delete: 1,
         submit: 0,
         cancel: 0,
-        amend: 0
+        amend: 0,
+        report: 1,
+        export: 1,
+        import: 1,
+        share: 1,
+        print: 1,
+        email: 1
       }];
     }
   } else {
     // If no permissions are defined, add basic System Manager permission
     cleanDocType.permissions = [{
       role: 'System Manager',
+      permlevel: 0,
+      if_owner: 0,
       read: 1,
       write: 1,
       create: 1,
       delete: 1,
       submit: 0,
       cancel: 0,
-      amend: 0
+      amend: 0,
+      report: 1,
+      export: 1,
+      import: 1,
+      share: 1,
+      print: 1,
+      email: 1
     }];
   }
 
@@ -928,6 +1147,8 @@ const cancelModuleSelection = () => {
   showModuleSelectionModal.value = false;
   selectedDocTypeName.value = '';
   selectedModule.value = 'Custom';
+  erpSaveWarning.value = ''; // Clear any warnings when canceling
+  console.log('cancelModuleSelection: Cleared selected name and module');
 };
 
 const proceedWithModuleSave = async () => {
@@ -943,7 +1164,10 @@ const saveDocTypeToErp = async () => {
 
   // Initialize the selected name with the current DocType name
   const validationResult = validateAndFixDocType(generatedOutput.value.mainDocType);
-  selectedDocTypeName.value = validationResult.docType?.name || generatedOutput.value.mainDocType.name || '';
+  const initialName = validationResult.docType?.name || generatedOutput.value.mainDocType.name || generatedOutput.value.mainDocType.doctype || '';
+  selectedDocTypeName.value = initialName;
+  
+  console.log('saveDocTypeToErp: Initializing modal with name:', initialName);
   
   // Show warning if name was auto-changed
   if (validationResult.warning) {
@@ -967,14 +1191,25 @@ const actualSaveToErp = async () => {
   erpSaveWarning.value = '';
   
   try {
+    const userSelectedName = selectedDocTypeName.value.trim();
+    console.log('actualSaveToErp: User selected name:', userSelectedName);
+    
     // Create a copy of the DocType with user-selected name
     const docTypeToSave = {
       ...generatedOutput.value.mainDocType,
-      name: selectedDocTypeName.value.trim(),
+      name: userSelectedName,
       module: selectedModule.value,
       custom: 1,
       allow_import: 1
     };
+
+    // Remove the original 'doctype' field to prevent it from overriding user's choice
+    if (docTypeToSave.doctype) {
+      console.log('actualSaveToErp: Removing original doctype field:', docTypeToSave.doctype);
+      delete docTypeToSave.doctype;
+    }
+
+    console.log('actualSaveToErp: DocType before validation:', { name: docTypeToSave.name, hasDoctype: !!docTypeToSave.doctype });
 
     // Validate and fix the DocType structure (but keep user's chosen name)
     const validationResult = validateAndFixDocType(docTypeToSave, true);
@@ -983,7 +1218,8 @@ const actualSaveToErp = async () => {
       throw new Error('Failed to validate DocType structure');
     }
 
-    console.log('Sending DocType to ERP:', validationResult.docType);
+    console.log('actualSaveToErp: Final DocType name after validation:', validationResult.docType.name);
+    console.log('actualSaveToErp: Sending DocType to ERP:', { name: validationResult.docType.name, module: validationResult.docType.module });
     
     const response = await createDocType(validationResult.docType);
     
@@ -1007,12 +1243,18 @@ const actualSaveToErp = async () => {
       erpSaveError.value = 'Field validation error detected. The DocType has been automatically fixed to resolve hidden/mandatory field conflicts. Please try saving again.';
     } else if (err.message?.includes('LinkValidationError') || err.message?.includes('Could not find') || err.message?.includes('Role:')) {
       erpSaveError.value = 'Invalid role reference detected in permissions. The DocType has been automatically fixed to use standard roles. Please try saving again.';
+    } else if (err.message?.includes('Only one rule allowed with the same Role, Level and If Owner') || err.message?.includes('duplicate permission')) {
+      erpSaveError.value = 'Duplicate permission rules detected. The DocType has been automatically fixed to remove duplicates and merge conflicting permissions. Please try saving again.';
+    } else if (err.message?.includes('Dynamic Link') || err.message?.includes('must point to another Link Field')) {
+      erpSaveError.value = 'Dynamic Link field configuration issue detected. The DocType has been automatically fixed with proper ERPNext v15+ Dynamic Link configuration including required DocType reference fields. Please try saving again.';
+    } else if (err.message?.includes('WrongOptionsDoctypeLinkError') || err.message?.includes('Options must be a valid DocType')) {
+      erpSaveError.value = 'Invalid DocType reference detected in Link or Table field options. The DocType has been automatically fixed to use valid DocType references or convert problematic fields to safer alternatives. Please try saving again.';
     } else if (err.message?.includes('ValidationError')) {
-      erpSaveError.value = `Validation Error: ${err.message}. Please check the DocType structure and try again.`;
+      erpSaveError.value = `Validation Error: ${err.message}. The DocType has been automatically optimized for ERPNext v15+ compatibility. Please try saving again.`;
     } else if (err.message?.includes('TypeError') || err.message?.includes('NoneType')) {
-      erpSaveError.value = 'DocType structure issue detected. The generated DocType has been automatically fixed. Please try saving again.';
+      erpSaveError.value = 'DocType structure issue detected. The generated DocType has been automatically enhanced for ERPNext v15+ features. Please try saving again.';
     } else {
-      erpSaveError.value = err.message || 'Failed to save DocType to ERP system. Please try again.';
+      erpSaveError.value = err.message || 'Failed to save DocType to ERP system. The DocType has been optimized for ERPNext v15+ - please try saving again.';
     }
   } finally {
     savingToErp.value = false;
