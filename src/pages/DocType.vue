@@ -178,68 +178,104 @@
 
       <!-- List View -->
       <div v-else-if="docTypes.length > 0 && viewMode === 'list'" class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Document
-              </th>
-
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Category
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Updated
-              </th>
-              
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="doctype in docTypes" :key="doctype.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div class="flex justify-end gap-2">
-                  <button
-                    @click="router.push(`/documents/${doctype.id}/new`)"
-                    v-if="doctype.permissions.create === 1"
-                    class="text-white hover:text-black border border-primary hover:bg-white btn-primary p-1 rounded"
-                    title="New Submission"
-                  >
-                    <FilePlusIcon class="w-5 h-5" />
-                  </button>
-                  <button
-                    @click="viewDocuments(doctype)"
-                    class="text-white hover:text-black border  hover:bg-white btn-primary p-1 rounded"
-                    title="View Records"
-                  >
-                    <FileTextIcon class="w-5 h-5" />
-                  </button>
-                </div>
-              </td>            
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ doctype.name }}</div>
-                    <div class="text-sm text-gray-500">{{ doctype.module }}</div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 table-fixed">
+            <thead class="bg-gray-50">
+              <tr>
+                <th 
+                  class="relative px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200"
+                  :style="{ width: columnWidths.actions + 'px' }"
+                >
+                  Actions
+                  <div 
+                    class="absolute top-0 right-0 w-1 h-full cursor-col-resize resize-handle"
+                    @mousedown="startResize('actions', $event)"
+                    title="Drag to resize column"
+                  ></div>
+                </th>
+                <th 
+                  class="relative px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200"
+                  :style="{ width: columnWidths.document + 'px' }"
+                >
+                  Document
+                  <div 
+                    class="absolute top-0 right-0 w-1 h-full cursor-col-resize resize-handle"
+                    @mousedown="startResize('document', $event)"
+                    title="Drag to resize column"
+                  ></div>
+                </th>
+                <th 
+                  class="relative px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200"
+                  :style="{ width: columnWidths.category + 'px' }"
+                >
+                  Category
+                  <div 
+                    class="absolute top-0 right-0 w-1 h-full cursor-col-resize resize-handle"
+                    @mousedown="startResize('category', $event)"
+                    title="Drag to resize column"
+                  ></div>
+                </th>
+                <th 
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  :style="{ width: columnWidths.updated + 'px' }"
+                >
+                  Updated
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="doctype in docTypes" :key="doctype.id" class="hover:bg-gray-50">
+                <td 
+                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                  :style="{ width: columnWidths.actions + 'px' }"
+                >
+                  <div class="flex justify-end gap-2">
+                    <button
+                      @click="router.push(`/documents/${doctype.id}/new`)"
+                      v-if="doctype.permissions.create === 1"
+                      class="text-white hover:text-black border border-primary hover:bg-white btn-primary p-1 rounded"
+                      title="New Submission"
+                    >
+                      <FilePlusIcon class="w-5 h-5" />
+                    </button>
+                    <button
+                      @click="viewDocuments(doctype)"
+                      class="text-white hover:text-black border  hover:bg-white btn-primary p-1 rounded"
+                      title="View Records"
+                    >
+                      <FileTextIcon class="w-5 h-5" />
+                    </button>
                   </div>
-                </div>
-              </td>
-
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                  {{ typeof route.query.module === 'string' ? route.query.module.charAt(0).toUpperCase() + route.query.module.slice(1) : '' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatDate(doctype.updated_at) }}
-              </td>
-              
-            </tr>
-          </tbody>
-        </table>
+                </td>            
+                <td 
+                  class="px-6 py-4 whitespace-nowrap"
+                  :style="{ width: columnWidths.document + 'px' }"
+                >
+                  <div class="flex items-center">
+                    <div class="ml-4">
+                      <div class="text-sm font-medium text-gray-900">{{ doctype.name }}</div>
+                      <div class="text-sm text-gray-500">{{ doctype.module }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td 
+                  class="px-6 py-4 whitespace-nowrap"
+                  :style="{ width: columnWidths.category + 'px' }"
+                >
+                  <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                    {{ typeof route.query.module === 'string' ? route.query.module.charAt(0).toUpperCase() + route.query.module.slice(1) : '' }}
+                  </span>
+                </td>
+                <td 
+                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                  :style="{ width: columnWidths.updated + 'px' }"
+                >
+                  {{ formatDate(doctype.updated_at) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Empty State -->
@@ -290,7 +326,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { getDocTypes, createDocType, updateDocType, getRolePermissions } from '../services/erpnext';
@@ -340,6 +376,13 @@ interface DocType {
   linked_doctypes: string[];
 }
 
+interface ColumnWidths {
+  actions: number;
+  document: number;
+  category: number;
+  updated: number;
+}
+
 const router = useRouter();
 const authStore = useAuthStore();
 const route = useRoute();
@@ -359,6 +402,18 @@ const currentPage = ref(1);
 const pageSize = ref(20);
 const totalItems = ref(0);
 const totalPages = ref(0);
+
+// Add column resize state
+const columnWidths = ref<ColumnWidths>({
+  actions: 150,
+  document: 300,
+  category: 150,
+  updated: 200
+});
+const isResizing = ref(false);
+const resizingColumn = ref<keyof ColumnWidths | null>(null);
+const startX = ref(0);
+const startWidth = ref(0);
 
 // Add debounced search
 const debouncedSearch = ref('');
@@ -625,6 +680,37 @@ const goToPage = (page: number) => {
   }
 };
 
+// Add column resize functions
+const startResize = (columnKey: keyof ColumnWidths, event: MouseEvent) => {
+  isResizing.value = true;
+  resizingColumn.value = columnKey;
+  startX.value = event.clientX;
+  startWidth.value = columnWidths.value[columnKey];
+  
+  document.addEventListener('mousemove', handleResize);
+  document.addEventListener('mouseup', stopResize);
+  document.body.style.cursor = 'col-resize';
+  document.body.classList.add('table-resizing');
+  event.preventDefault();
+};
+
+const handleResize = (event: MouseEvent) => {
+  if (!isResizing.value || !resizingColumn.value) return;
+  
+  const deltaX = event.clientX - startX.value;
+  const newWidth = Math.max(80, startWidth.value + deltaX); // Minimum width of 80px
+  columnWidths.value[resizingColumn.value] = newWidth;
+};
+
+const stopResize = () => {
+  isResizing.value = false;
+  resizingColumn.value = null;
+  document.removeEventListener('mousemove', handleResize);
+  document.removeEventListener('mouseup', stopResize);
+  document.body.style.cursor = 'default';
+  document.body.classList.remove('table-resizing');
+};
+
 // Change default to list view - will be overridden in onMounted based on screen size
 const viewMode = ref('list');
 
@@ -667,4 +753,34 @@ onMounted(async () => {
   await fetchDocTypes();
   await fetchRolePermissions();
 });
-</script> 
+
+// Cleanup event listeners on unmount
+onUnmounted(() => {
+  if (isResizing.value) {
+    stopResize();
+  }
+});
+</script>
+
+<style scoped>
+/* Prevent text selection during resize */
+.table-resizing {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Custom resize handle styles */
+.resize-handle {
+  transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.resize-handle:active {
+  background-color: rgba(59, 130, 246, 0.5);
+}
+</style> 

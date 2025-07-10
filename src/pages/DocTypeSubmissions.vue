@@ -344,16 +344,26 @@
         <div class="overflow-x-auto">
           <div class="inline-block min-w-full align-middle">
             <div class="overflow-hidden">
-              <table class="min-w-full divide-y divide-gray-200">
+              <table class="min-w-full divide-y divide-gray-200 table-fixed">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th 
+                      class="relative px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200"
+                      :style="{ width: columnWidths.actions + 'px' }"
+                    >
                       Actions
+                      <div 
+                        class="absolute top-0 right-0 w-1 h-full cursor-col-resize resize-handle"
+                        @mousedown="startResize('actions', $event)"
+                        title="Drag to resize column"
+                      ></div>
                     </th>
                     <th
-                      v-for="field in docType?.fields.filter(f => !(f.label && f.label.toLowerCase().includes('[action]')))"
+                      v-for="(field, index) in docType?.fields.filter(f => !(f.label && f.label.toLowerCase().includes('[action]')))"
                       :key="field.fieldname"
-                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      class="relative px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      :class="{ 'border-r border-gray-200': index < (docType?.fields.filter(f => !(f.label && f.label.toLowerCase().includes('[action]'))).length - 1) }"
+                      :style="{ width: columnWidths[field.fieldname] + 'px' }"
                       @click="sortByColumn(field.fieldname)"
                     >
                       <div class="flex items-center gap-1">
@@ -369,6 +379,12 @@
                           />
                         </div>
                       </div>
+                      <div 
+                        v-if="index < (docType?.fields.filter(f => !(f.label && f.label.toLowerCase().includes('[action]'))).length - 1)"
+                        class="absolute top-0 right-0 w-1 h-full cursor-col-resize resize-handle"
+                        @mousedown="startResize(field.fieldname, $event)"
+                        title="Drag to resize column"
+                      ></div>
                     </th>
                   </tr>
                 </thead>
@@ -381,7 +397,10 @@
                       doc.owner === authStore.user?.email ? 'bg-green-50' : ''
                     ]"
                   >
-                    <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
+                    <td 
+                      class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium"
+                      :style="{ width: columnWidths.actions + 'px' }"
+                    >
                       <div class="flex gap-2">
                         <button
                           v-if="canEditDocument(doc)"
@@ -418,6 +437,7 @@
                       :key="field.fieldname"
                       class="px-6 py-4 text-sm text-gray-900"
                       :class="{'whitespace-nowrap': !field.fieldtype.includes('Text')}"
+                      :style="{ width: columnWidths[field.fieldname] + 'px' }"
                     >
                       <template v-if="field.fieldtype === 'Table' && ( (field.label && field.label.includes('[multiple-upload-view]'))  || (field.label && field.label.includes('[multiple-camera-view]')) )">
                         <button 
@@ -814,6 +834,13 @@ let fieldSearchTimeout: ReturnType<typeof setTimeout> | null = null;
 // Add minimum character limit for search
 const MIN_SEARCH_LENGTH = 3;
 
+// Add column resize state
+const columnWidths = ref<Record<string, number>>({});
+const isResizing = ref(false);
+const resizingColumn = ref<string | null>(null);
+const startX = ref(0);
+const startWidth = ref(0);
+
 // Add URL parameter handling
 // URL Parameters supported:
 // - search: Global search query (e.g., ?search=john)
@@ -1059,6 +1086,9 @@ const fetchDocType = async () => {
         )
       };
       console.log('DocType Fields:', docType.value?.fields);
+      
+      // Initialize column widths after docType is loaded
+      initializeColumnWidths();
     } else {
       error.value = "You don't have permission to read this document";
       docType.value = null;
@@ -1244,6 +1274,13 @@ watch(currentPage, () => {
 // Watch for filters visibility
 watch(showFilters, () => {
   updateURLWithSearchParams();
+});
+
+// Watch for docType changes to reinitialize column widths
+watch(docType, (newDocType) => {
+  if (newDocType) {
+    initializeColumnWidths();
+  }
 });
 
 // Add watch for field searches
@@ -1695,6 +1732,69 @@ const displayCount = computed(() => {
   return totalItems.value;
 });
 
+// Add column resize functions
+const initializeColumnWidths = () => {
+  if (!docType.value) return;
+  
+  const newWidths: Record<string, number> = {
+    actions: 150, // Fixed width for actions column
+  };
+  
+  // Add dynamic widths for each field
+  docType.value.fields
+    .filter(f => !(f.label && f.label.toLowerCase().includes('[action]')))
+    .forEach(field => {
+      // Set default width based on field type and label length
+      let defaultWidth = 200;
+      
+      if (field.fieldtype === 'Attach' || field.fieldtype === 'Attach Image') {
+        defaultWidth = 120;
+      } else if (field.fieldtype === 'Table') {
+        defaultWidth = 120;
+      } else if (field.fieldtype === 'Signature') {
+        defaultWidth = 200;
+      } else if (field.label && field.label.length > 20) {
+        defaultWidth = 250;
+      } else if (field.label && field.label.length < 10) {
+        defaultWidth = 150;
+      }
+      
+      newWidths[field.fieldname] = defaultWidth;
+    });
+  
+  columnWidths.value = newWidths;
+};
+
+const startResize = (columnKey: string, event: MouseEvent) => {
+  isResizing.value = true;
+  resizingColumn.value = columnKey;
+  startX.value = event.clientX;
+  startWidth.value = columnWidths.value[columnKey] || 200;
+  
+  document.addEventListener('mousemove', handleResize);
+  document.addEventListener('mouseup', stopResize);
+  document.body.style.cursor = 'col-resize';
+  document.body.classList.add('table-resizing');
+  event.preventDefault();
+};
+
+const handleResize = (event: MouseEvent) => {
+  if (!isResizing.value || !resizingColumn.value) return;
+  
+  const deltaX = event.clientX - startX.value;
+  const newWidth = Math.max(80, startWidth.value + deltaX); // Minimum width of 80px
+  columnWidths.value[resizingColumn.value] = newWidth;
+};
+
+const stopResize = () => {
+  isResizing.value = false;
+  resizingColumn.value = null;
+  document.removeEventListener('mousemove', handleResize);
+  document.removeEventListener('mouseup', stopResize);
+  document.body.style.cursor = 'default';
+  document.body.classList.remove('table-resizing');
+};
+
 onMounted(async () => {
   if (!authStore.isAuthenticated) {
     router.push('/auth');
@@ -1732,6 +1832,10 @@ onMounted(async () => {
     if (fieldSearchTimeout) {
       clearTimeout(fieldSearchTimeout);
     }
+    // Cleanup resize event listeners
+    if (isResizing.value) {
+      stopResize();
+    }
   });
   
   // Get saved filters for this doctype
@@ -1763,4 +1867,27 @@ onMounted(async () => {
   // Otherwise, just fetch documents normally
   await fetchDocuments();
 });
-</script> 
+</script>
+
+<style scoped>
+/* Prevent text selection during resize */
+.table-resizing {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Custom resize handle styles */
+.resize-handle {
+  transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.resize-handle:active {
+  background-color: rgba(59, 130, 246, 0.5);
+}
+</style> 
