@@ -198,7 +198,7 @@ font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, san
 
 The tool generates comprehensive deliverables:
 
-1. **DocType JSON Files**: Complete JSON files ready for import into Frappe/ERPNext
+1. **DocType JSON Files**: Complete JSON files ready for import into Frappe/ERPNext, please make sure the JSON is valid and the setting is based on the provided 4 REFERENCE EXAMPLES OF PROPERLY STRUCTURED ERPNEXT DOCTYPES json below.
 2. **HTML Mockup**: Fully functional HTML prototype with exact TheTeam App v3 design
 3. **Implementation Notes**: Deployment and integration guidance
 4. **Business Logic**: Workflow and automation recommendations

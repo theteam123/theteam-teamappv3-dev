@@ -51,7 +51,7 @@ I need a DocType for managing employee safety training records. It should includ
 - Photo uploads for certificates
 - GPS location for training location
 
-The form should have multiple sections and be optimized for mobile devices."
+The form should have multiple sections."
             class="form-textarea w-full" 
             rows="12"
             required
@@ -1233,28 +1233,54 @@ const actualSaveToErp = async () => {
   } catch (err: any) {
     console.error('Failed to save DocType to ERP:', err);
     
-    // Handle specific error types
-    if (err.message?.includes('DuplicateEntryError') || err.message?.includes('already exists') || err.message?.includes('Duplicate entry')) {
+    // Parse and clean server error messages
+    let error_message = err.response.data._server_messages || '';
+    
+    // Handle server messages with HTML tags and JSON parsing
+    if (err.response.data._server_messages) {
+      try {
+        const serverMessages = JSON.parse(err.response.data._server_messages);
+        if (Array.isArray(serverMessages)) {
+          // Join multiple messages if they exist and strip HTML tags
+          error_message = serverMessages.map(msg => {
+            try {
+              const parsedMsg = JSON.parse(msg).message;
+              // Remove HTML tags from the message
+              return parsedMsg.replace(/<[^>]*>/g, '');
+            } catch {
+              // Remove HTML tags from the raw message
+              return msg.replace(/<[^>]*>/g, '');
+            }
+          }).join('. ');
+        }
+      } catch {
+        // Remove HTML tags from the raw server messages
+        error_message = err.response.data._server_messages.replace(/<[^>]*>/g, '');
+      }
+    }
+    
+    // Handle specific error types using cleaned error message
+    if (error_message.includes('DuplicateEntryError') || error_message.includes('already exists') || error_message.includes('Duplicate entry')) {
       const docTypeName = generatedOutput.value.mainDocType.name;
       erpSaveError.value = `DocType "${docTypeName}" already exists in your ERP system. The system has been enhanced to automatically rename conflicting DocTypes. Please generate a new DocType - it will be automatically renamed to avoid conflicts.`;
-    } else if (err.message?.includes('PermissionError') || err.message?.includes('403')) {
+    } else if (error_message.includes('PermissionError') || error_message.includes('403')) {
       erpSaveError.value = 'You do not have permission to create DocTypes. Please contact your system administrator.';
-    } else if (err.message?.includes('HiddenAndMandatoryWithoutDefaultError') || err.message?.includes('hidden and mandatory without default')) {
+    } else if (error_message.includes('HiddenAndMandatoryWithoutDefaultError') || error_message.includes('hidden and mandatory without default')) {
       erpSaveError.value = 'Field validation error detected. The DocType has been automatically fixed to resolve hidden/mandatory field conflicts. Please try saving again.';
-    } else if (err.message?.includes('LinkValidationError') || err.message?.includes('Could not find') || err.message?.includes('Role:')) {
+    } else if (error_message.includes('LinkValidationError') || error_message.includes('Could not find') || error_message.includes('Role:')) {
       erpSaveError.value = 'Invalid role reference detected in permissions. The DocType has been automatically fixed to use standard roles. Please try saving again.';
-    } else if (err.message?.includes('Only one rule allowed with the same Role, Level and If Owner') || err.message?.includes('duplicate permission')) {
+    } else if (error_message.includes('Only one rule allowed with the same Role, Level and If Owner') || error_message.includes('duplicate permission')) {
       erpSaveError.value = 'Duplicate permission rules detected. The DocType has been automatically fixed to remove duplicates and merge conflicting permissions. Please try saving again.';
-    } else if (err.message?.includes('Dynamic Link') || err.message?.includes('must point to another Link Field')) {
+    } else if (error_message.includes('Dynamic Link') || error_message.includes('must point to another Link Field')) {
       erpSaveError.value = 'Dynamic Link field configuration issue detected. The DocType has been automatically fixed with proper ERPNext v15+ Dynamic Link configuration including required DocType reference fields. Please try saving again.';
-    } else if (err.message?.includes('WrongOptionsDoctypeLinkError') || err.message?.includes('Options must be a valid DocType')) {
+    } else if (error_message.includes('WrongOptionsDoctypeLinkError') || error_message.includes('Options must be a valid DocType')) {
       erpSaveError.value = 'Invalid DocType reference detected in Link or Table field options. The DocType has been automatically fixed to use valid DocType references or convert problematic fields to safer alternatives. Please try saving again.';
-    } else if (err.message?.includes('ValidationError')) {
-      erpSaveError.value = `Validation Error: ${err.message}. The DocType has been automatically optimized for ERPNext v15+ compatibility. Please try saving again.`;
-    } else if (err.message?.includes('TypeError') || err.message?.includes('NoneType')) {
+    } else if (error_message.includes('ValidationError')) {
+      erpSaveError.value = `Validation Error: ${error_message}. The DocType has been automatically optimized for ERPNext v15+ compatibility. Please try saving again.`;
+    } else if (error_message.includes('TypeError') || error_message.includes('NoneType')) {
       erpSaveError.value = 'DocType structure issue detected. The generated DocType has been automatically enhanced for ERPNext v15+ features. Please try saving again.';
     } else {
-      erpSaveError.value = err.message || 'Failed to save DocType to ERP system. The DocType has been optimized for ERPNext v15+ - please try saving again.';
+      erpSaveError.value = error_message || 'Failed to save DocType to ERP system. The DocType has been optimized for ERPNext v15+ - please try saving again.';
     }
   } finally {
     savingToErp.value = false;
