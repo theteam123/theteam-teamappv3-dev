@@ -5,6 +5,7 @@ import { getErpNextApiUrl, getApiKeyAuthHeader, getTheTeamAuthHeader } from '../
 import { handleApiError, fetchWithErrorHandling } from '../utils/api';
 import { getDomainConfig } from '../config/domains';
 import { getDoctypeModule } from './deskApi';
+import { parseServerError, handleServerError } from '../utils/errorCapture';
 
 // Get the current domain and environment
 const isProduction = import.meta.env.PROD;
@@ -1028,38 +1029,8 @@ export const uploadFile = async (file, doctype, docname, isPrivate = false) => {
 
     return await response.json();
   } catch (error) {
-    let error_message = 'Failed to upload file';
-    console.log('uploadFile Error uploading file:', error);
-
-    // Parse server messages if they exist
-    if (error._server_messages) {
-      try {
-        const serverMessages = JSON.parse(error._server_messages);
-        if (Array.isArray(serverMessages)) {
-          // Join multiple messages if they exist and strip HTML tags
-          error_message = serverMessages.map(msg => {
-            try {
-              const parsedMsg = JSON.parse(msg).message;
-              // Remove HTML tags from the message
-              return parsedMsg.replace(/<[^>]*>/g, '');
-            } catch {
-              // Remove HTML tags from the raw message
-              return msg.replace(/<[^>]*>/g, '');
-            }
-          }).join('. ');
-        }
-      } catch {
-        // Remove HTML tags from the raw server messages
-        error_message = error._server_messages.replace(/<[^>]*>/g, '');
-      }
-    }
-    
-    // Add exception type if it exists
-    if (error.exc_type) {
-      error_message = `${error.exc_type}: ${error_message}`;
-    }    
-    console.error('Error uploading file:', error_message);
-    throw error_message;
+    const errorMessage = handleServerError(error, 'uploadFile', 'Failed to upload file');
+    throw errorMessage;
   }
 };
 
@@ -1105,5 +1076,40 @@ export const getDoctypePermissions = async (doctype, roleName) => {
   } catch (error) {
     console.error('Error fetching role permissions:', error);
     throw error;
+  }
+};
+
+/**
+ * Get names for mentions from Frappe desk search
+ * @param {Object} data - The search parameters
+ * @returns {Promise<Object>} Response containing names for mentions
+ */
+export const getNamesForMentions = async (data = {}) => {
+  try {
+    const response = await erp.post('/api/method/frappe.desk.search.get_names_for_mentions', data);
+    return response.data;
+  } catch (error) {w
+    const errorMessage = handleServerError(error, 'getNamesForMentions', 'Failed to fetch names for mentions');
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Add a comment to a document
+ * @param {Object} commentData - The comment data
+ * @param {string} commentData.reference_doctype - The DocType of the document
+ * @param {string} commentData.reference_name - The name of the document
+ * @param {string} commentData.content - The HTML content of the comment
+ * @param {string} commentData.comment_email - Email of the person commenting
+ * @param {string} commentData.comment_by - Name of the person commenting
+ * @returns {Promise<Object>} Response from the add comment API
+ */
+export const addComment = async (commentData) => {
+  try {
+    const response = await erp.post('/api/method/frappe.desk.form.utils.add_comment', commentData);
+    return response.data;
+  } catch (error) {
+    const errorMessage = handleServerError(error, 'addComment', 'Failed to add comment');
+    throw new Error(errorMessage);
   }
 };

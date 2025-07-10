@@ -81,7 +81,7 @@ class ErrorCapture {
     // };
   }
 
-  private addError(error: CapturedError) {
+  public addError(error: CapturedError) {
     // Add to the beginning of the array (most recent first)
     this.errors.unshift(error);
     
@@ -141,6 +141,101 @@ class ErrorCapture {
 
 // Create a singleton instance
 export const errorCapture = new ErrorCapture();
+
+/**
+ * Parse ERPNext/Frappe server error responses into user-friendly messages
+ * @param error - The error object from the server response
+ * @param defaultMessage - Default message to use if parsing fails
+ * @returns Parsed and cleaned error message
+ */
+export const parseServerError = (error: any, defaultMessage: string = 'An error occurred'): string => {
+  let errorMessage = defaultMessage;
+
+  try {
+    // Parse server messages if they exist
+    if (error._server_messages) {
+      try {
+        const serverMessages = JSON.parse(error._server_messages);
+        if (Array.isArray(serverMessages)) {
+          // Join multiple messages if they exist and strip HTML tags
+          errorMessage = serverMessages.map(msg => {
+            try {
+              const parsedMsg = JSON.parse(msg).message;
+              // Remove HTML tags from the message
+              return parsedMsg.replace(/<[^>]*>/g, '');
+            } catch {
+              // Remove HTML tags from the raw message
+              return msg.replace(/<[^>]*>/g, '');
+            }
+          }).join('. ');
+        }
+      } catch {
+        // Remove HTML tags from the raw server messages
+        errorMessage = error._server_messages.replace(/<[^>]*>/g, '');
+      }
+    }
+    
+    // Check for direct message property
+    else if (error.message) {
+      errorMessage = error.message.replace(/<[^>]*>/g, '');
+    }
+    
+    // Check for response data message
+    else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message.replace(/<[^>]*>/g, '');
+    }
+    
+    // Check for response data _error_message
+    else if (error.response?.data?._error_message) {
+      errorMessage = error.response.data._error_message.replace(/<[^>]*>/g, '');
+    }
+    
+    // Check for exc property (raw exception message)
+    else if (error.exc) {
+      errorMessage = error.exc.replace(/<[^>]*>/g, '');
+    }
+    
+    // Add exception type if it exists
+    if (error.exc_type && !errorMessage.includes(error.exc_type)) {
+      errorMessage = `${error.exc_type}: ${errorMessage}`;
+    }
+  } catch (parseError) {
+    console.warn('Error parsing server error:', parseError);
+    // Fall back to default message if parsing completely fails
+    errorMessage = defaultMessage;
+  }
+
+  return errorMessage.trim();
+};
+
+/**
+ * Enhanced error handling wrapper that logs to error capture and returns parsed message
+ * @param error - The error object
+ * @param context - Context information about where the error occurred
+ * @param defaultMessage - Default message if parsing fails
+ * @returns Parsed error message
+ */
+export const handleServerError = (error: any, context: string, defaultMessage: string = 'An error occurred'): string => {
+  const parsedMessage = parseServerError(error, defaultMessage);
+  
+  // Log the error with context
+  console.error(`Error in ${context}:`, {
+    originalError: error,
+    parsedMessage,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Add to error capture
+  errorCapture.addError({
+    timestamp: new Date().toISOString(),
+    type: 'error',
+    message: `${context}: ${parsedMessage}`,
+    stack: error.stack,
+    url: window.location.href
+  });
+  
+  return parsedMessage;
+};
 
 // Export functions for easy use
 export const getErrorsAsJson = () => errorCapture.getErrorsAsJson();

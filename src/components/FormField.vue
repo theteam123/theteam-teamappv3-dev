@@ -498,20 +498,70 @@
         {{ formattedLabel }}
         <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
-      <textarea
-        :id="field.fieldname"
-        :value="modelValue"
-        @input="handleValueUpdate(($event.target as HTMLTextAreaElement).value)"
-        rows="8"
-        :required="isFieldRequired"
-        :disabled="isFieldReadOnly"
-        :readonly="isFieldReadOnly"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-        :class="{
-          'bg-gray-50': isFieldReadOnly,
-          'cursor-not-allowed': isFieldReadOnly
-        }"
-      ></textarea>
+      <div class="mention-container relative">
+        <textarea
+          :id="field.fieldname"
+          ref="longTextRef"
+          :value="modelValue"
+          @input="handleLongTextInput"
+          @keydown="handleMentionKeydown"
+          rows="8"
+          :required="isFieldRequired"
+          :disabled="isFieldReadOnly"
+          :readonly="isFieldReadOnly"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          :class="{
+            'bg-gray-50': isFieldReadOnly,
+            'cursor-not-allowed': isFieldReadOnly
+          }"
+        ></textarea>
+        
+        <!-- Mention Dropdown -->
+        <div 
+          v-if="showMentionDropdown && !isFieldReadOnly"
+          class="absolute z-10 w-full max-w-sm mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+        >
+          <!-- Loading state -->
+          <div v-if="loadingMentions" class="px-4 py-3 text-sm text-gray-500 text-center">
+            <div class="flex items-center justify-center">
+              <LoaderIcon class="h-4 w-4 mr-2 animate-spin" />
+              Searching for mentions...
+            </div>
+          </div>
+          
+          <!-- No results state -->
+          <div v-else-if="!loadingMentions && mentionResults.length === 0 && mentionQuery.trim() !== ''" class="px-4 py-3 text-sm text-gray-500 text-center">
+            No users found for "@{{ mentionQuery }}"
+          </div>
+          
+          <!-- Mention results -->
+          <div v-else-if="mentionResults.length > 0">
+            <div 
+              v-for="mention in mentionResults" 
+              :key="mention.value || mention.name || mention"
+              @click="selectMention(mention)"
+              class="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
+            >
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    {{ (mention.label || mention.value || mention.name || mention).charAt(0).toUpperCase() }}
+                  </div>
+                </div>
+                <div class="ml-3 flex-1">
+                  <div class="font-medium text-gray-900">{{ mention.label || mention.value || mention.name || mention }}</div>
+                  <div v-if="mention.description" class="text-sm text-gray-500">{{ mention.description }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Initial state when just typed @ -->
+          <div v-else-if="mentionQuery.trim() === '' && !loadingMentions" class="px-4 py-3 text-sm text-gray-500 text-center">
+            Type to search for users to mention
+          </div>
+        </div>
+      </div>
       <p v-if="field.description" class="mt-1 text-xs text-gray-500">
         {{ field.description }}
       </p>
@@ -1451,6 +1501,7 @@ import { getErrorsAsJson } from '../utils/errorCapture';
 import FormField from './FormField.vue';
 import JsBarcode from 'jsbarcode';
 import { VAceEditor } from 'vue3-ace-editor';
+import { useMentions } from '../composables/useMentions';
 import 'ace-builds/src-noconflict/ace';
 import 'ace-builds/src-noconflict/theme-chrome';
 import 'ace-builds/src-noconflict/mode-javascript';
@@ -3323,11 +3374,17 @@ onMounted(() => {
   if (props.field.fieldtype === 'Table MultiSelect') {
     document.addEventListener('click', handleTableMultiSelectClickOutside);
   }
+  if (props.field.fieldtype === 'Long Text') {
+    setupMentionListeners();
+  }
 });
 
 onUnmounted(() => {
   if (props.field.fieldtype === 'Table MultiSelect') {
     document.removeEventListener('click', handleTableMultiSelectClickOutside);
+  }
+  if (props.field.fieldtype === 'Long Text') {
+    cleanupMentionListeners();
   }
 });
 
@@ -3674,6 +3731,22 @@ watch(() => props.modelValue, (val) => {
 watch(codeValue, (val) => {
   if (val !== props.modelValue) emit('update:modelValue', val);
 });
+
+// Initialize mentions composable for Long Text fields
+const {
+  showMentionDropdown,
+  mentionQuery,
+  mentionResults,
+  loadingMentions,
+  longTextRef,
+  handleLongTextInput,
+  selectMention,
+  handleMentionKeydown,
+  setupMentionListeners,
+  cleanupMentionListeners
+} = useMentions(handleValueUpdate, () => isFieldReadOnly.value);
+
+
 </script>
 
 <style>
