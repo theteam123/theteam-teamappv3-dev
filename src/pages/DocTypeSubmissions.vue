@@ -259,7 +259,8 @@
                     @mouseleave="hoveredPdfIcon = null"
                   >
                     <component 
-                      :is="(field.label && field.label.toLowerCase().includes('pdf')) ? 
+                      :is="(field.label && field.label.toLowerCase().includes('sign on')) ? FileCheck2 :
+                           (field.label && field.label.toLowerCase().includes('pdf')) ? 
                            (hoveredPdfIcon === (doc.name + field.fieldname) ? PdfIconBlack : PdfIcon) : 
                            (field.label && field.label.toLowerCase().includes('folder')) ? FolderIcon : 
                            LinkIcon" 
@@ -414,7 +415,6 @@
                           <a
                             v-if="doc[field.fieldname]"
                             :href="doc[field.fieldname]"
-                            target="_blank"
                             rel="noopener noreferrer"
                             class="text-gray-600 hover:text-green-600 hover:bg-white border border-green-600 btn-primary p-1 rounded text-white"
                             :title="field.label ? field.label.replace('[action]', '').trim() : ''"
@@ -422,7 +422,8 @@
                             @mouseleave="hoveredPdfIcon = null"
                           >
                             <component 
-                              :is="(field.label && field.label.toLowerCase().includes('pdf')) ? 
+                              :is="(field.label && field.label.toLowerCase().includes('sign on')) ? FileCheck2 :
+                                   (field.label && field.label.toLowerCase().includes('pdf')) ? 
                                    (hoveredPdfIcon === (doc.name + field.fieldname) ? PdfIconBlack : PdfIcon) : 
                                    (field.label && field.label.toLowerCase().includes('folder')) ? FolderIcon : 
                                    LinkIcon" 
@@ -656,7 +657,8 @@ import {
   PlusIcon,
   FilterIcon,
   ShareIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  FileCheck2
 } from 'lucide-vue-next';
 import ImageModal from '../components/ImageModal.vue';
 import PdfIcon from '../components/icons/PdfIcon.vue';

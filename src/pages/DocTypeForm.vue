@@ -9,7 +9,7 @@
           <ArrowLeftIcon class="w-6 h-6" />
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">New {{ docType?.name || 'Loading...' }}</h1>
+          <h1 class="text-2xl font-bold text-gray-900">{{ docType?.name || 'Loading...' }}</h1>
           <p class="text-sm text-gray-500 mt-1">{{ docType?.description }}</p>
         </div>
       </div>

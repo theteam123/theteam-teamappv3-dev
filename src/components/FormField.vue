@@ -24,13 +24,13 @@
             @input="!isGeolocationField && handleValueUpdate(($event.target as HTMLInputElement).value)"
             type="text"
             :required="isFieldRequired"
-            :disabled="isGettingLocation || isGeolocationField || isFieldReadOnly || shouldAutoFillUserData"
-            :readonly="isGeolocationField || isFieldReadOnly || shouldAutoFillUserData"
+            :disabled="isGettingLocation || isGeolocationField || isFieldReadOnly"
+            :readonly="isGeolocationField || isFieldReadOnly "
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
             :class="{ 
               'pr-10': isGeolocationField,
-              'bg-gray-50': isGeolocationField || isFieldReadOnly || shouldAutoFillUserData,
-              'cursor-not-allowed': isGeolocationField || isFieldReadOnly || shouldAutoFillUserData
+              'bg-gray-50': isGeolocationField || isFieldReadOnly ,
+              'cursor-not-allowed': isGeolocationField || isFieldReadOnly
             }"
             :placeholder="isGeolocationField ? 'Click the location icon to get current location' : ''"
           />
