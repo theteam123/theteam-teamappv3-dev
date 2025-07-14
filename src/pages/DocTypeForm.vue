@@ -10,7 +10,7 @@
         </button>
         <div>
           <h1 class="text-2xl font-bold text-gray-900">{{ docType?.name || 'Loading...' }}</h1>
-          <p class="text-sm text-gray-500 mt-1">{{ docType?.description }}</p>
+          <p class="text-sm text-gray-500 mt-1" v-if="!docType?.description.includes('[redirect:')">{{ docType?.description }}</p>
         </div>
       </div>
     </div>
@@ -30,6 +30,29 @@
         </div>
         <div class="ml-3">
           <p class="text-sm text-red-700">{{ error }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thank You State -->
+    <div v-else-if="submitted" class="bg-white shadow rounded-lg">
+      <div class="text-center py-12">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+          <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+        <h3 class="mt-2 text-lg font-medium text-gray-900">Form Submitted Successfully!</h3>
+        <p class="mt-1 text-sm text-gray-500">Thank you for your submission. Your form has been processed.</p>
+        
+        <!-- Optional: Add a back button or other actions -->
+        <div class="mt-6">
+          <button
+            @click="router.push('/')"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 mr-3"
+          >
+            Go Back
+          </button>
         </div>
       </div>
     </div>
@@ -323,6 +346,7 @@ const authStore = useAuthStore();
 const successStore = useSuccessStore();
 const loading = ref(false);
 const submitting = ref(false);
+const submitted = ref(false);
 const error = ref<string | null>(null);
 const docType = ref<DocType | null>(null);
 const docTypeTable = ref<DocTypeField[]>([]);
@@ -552,7 +576,25 @@ const handleSubmit = async () => {
         
         // Wait a brief moment for the success message to be visible
         setTimeout(() => {
-          router.push(`/documents/${route.params.id}`);
+          if (docType.value?.description.includes('[redirect:')) {
+            // Extract the redirect value after "[redirect:"
+            const redirectMatch = docType.value.description.match(/\[redirect:([^\]]+)\]/);
+            if (redirectMatch) {
+              const redirectValue = redirectMatch[1];
+              
+              if (redirectValue === 'thank-you-page') {
+                // Show thank you page instead of redirecting
+                submitted.value = true;
+              } else {
+                // Handle other redirect values here if needed
+                router.push(`/documents/${route.params.id}`);
+              }
+            } else {
+              router.push(`/documents/${route.params.id}`);
+            }
+          } else {
+            router.push(`/documents/${route.params.id}`);
+          }
         }, 1000);
       }
     } catch (err: any) {
@@ -650,6 +692,42 @@ const goToPreviousTab = () => {
     const prevIndex = currentTabIndex.value - 1;
     currentTab.value = processedSections.value.tabs[prevIndex].id;
   }
+};
+
+const resetForm = () => {
+  // Clear submitted state
+  submitted.value = false;
+  // Clear error state
+  error.value = null;
+  
+  // Re-initialize form data with empty values based on docType fields
+  if (docType.value?.fields) {
+    formData.value = docType.value.fields.reduce((acc: Record<string, any>, field: DocTypeField) => {
+      acc[field.fieldname] = '';
+      return acc;
+    }, {});
+    
+    // Re-initialize geolocation fields
+    geoLocationFields.value = initializeGeolocationFields(docType.value.fields, formData.value);
+    
+    // Re-initialize watermark configs
+    watermarkConfigs.value = initializeWatermarkFields(docType.value.fields, formData.value);
+  } else {
+    formData.value = {};
+    geoLocationFields.value = [];
+    watermarkConfigs.value = [];
+  }
+  
+  // Clear uploaded files
+  filesToDownload.value = [];
+  
+  // Reset tab to first tab
+  if (processedSections.value.hasTabs && processedSections.value.tabs.length > 0) {
+    currentTab.value = processedSections.value.tabs[0].id;
+  }
+  
+  // Load form data from URL parameters after reset
+  loadFormDataFromURL();
 };
 
 onMounted(async () => {
