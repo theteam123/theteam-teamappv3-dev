@@ -9,7 +9,7 @@
         </button>
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Edit {{ docType?.name }}</h1>
-          <p class="text-sm text-gray-500 mt-1" v-if="!docType?.description.includes('[redirect:')">{{ docType?.description }}</p>
+          <p class="text-sm text-gray-500 mt-1" v-if="!docType?.description?.includes('[redirect:')">{{ docType?.description }}</p>
         </div>
       </div>
     </div>
@@ -304,6 +304,7 @@ import SuccessMessage from '../components/SuccessMessage.vue';
 import { addWatermark } from '../utils/imageUtils';
 import { initializeGeolocationFields, GeolocationData, initializeWatermarkFields, WatermarkConfig, parseDurationToSeconds, formatSecondsToDuration } from '../utils/formUtils';
 import { downloadWatermarkedFiles } from '../utils/imageUtils';
+import { setupDoctypeReactiveScripts } from '../utils/doctypeReactiveScripts';
 
 interface DocTypeField {
   fieldname: string;
@@ -408,6 +409,9 @@ const fetchDocTypeAndDocument = async () => {
       
       // Initialize watermark fields
       watermarkConfigs.value = initializeWatermarkFields(docType.value.fields, formData.value);
+      
+      // Setup reactive scripts for this doctype
+      setupDoctypeReactiveScripts(docType.value.name, formData, docType);
     } else {
       throw new Error('Document not found');
     }

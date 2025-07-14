@@ -10,7 +10,7 @@
         </button>
         <div>
           <h1 class="text-2xl font-bold text-gray-900">{{ docType?.name || 'Loading...' }}</h1>
-          <p class="text-sm text-gray-500 mt-1" v-if="!docType?.description.includes('[redirect:')">{{ docType?.description }}</p>
+          <p class="text-sm text-gray-500 mt-1" v-if="!docType?.description?.includes('[redirect:')">{{ docType?.description }}</p>
         </div>
       </div>
     </div>
@@ -324,6 +324,7 @@ import { initializeGeolocationFields, GeolocationData } from '../utils/formUtils
 import { initializeWatermarkFields, WatermarkConfig } from '../utils/formUtils';
 import { downloadWatermarkedFiles } from '../utils/imageUtils';
 import { parseDurationToSeconds } from '../utils/formUtils';
+import { setupDoctypeReactiveScripts } from '../utils/doctypeReactiveScripts';
 
 interface DocTypeField {
   fieldname: string;
@@ -417,6 +418,9 @@ const fetchDocType = async () => {
       description: docTypeData.description || '',
       fields: docTypeData.fields || []
     };
+    
+    // Setup reactive scripts for this doctype
+    setupDoctypeReactiveScripts(docType.value.name, formData, docType);
     
     // Initialize form data with empty values
     if (Array.isArray(docTypeData.fields)) {
@@ -630,6 +634,8 @@ watch(() => formData.value, (newFormData) => {
   // Update watermark configs when form data changes
   watermarkConfigs.value = initializeWatermarkFields(docType.value?.fields || [], newFormData);
 }, { deep: true });
+
+
 
 // Set initial tab when form loads
 watch(() => processedSections.value, (newValue) => {
