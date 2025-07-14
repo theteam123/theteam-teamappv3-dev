@@ -85,11 +85,32 @@
               >
                 <!-- Section Title -->
                 <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
-                  <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                  <div class="flex items-center justify-between">
+                    <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                    <button
+                      v-if="section.collapsible"
+                      @click="toggleSectionCollapse(sectionIndex, tab.id)"
+                      class="text-gray-500 hover:text-gray-700 transition-colors"
+                      type="button"
+                    >
+                      <ChevronDownIcon 
+                        :class="[
+                          'w-5 h-5 transition-transform duration-200',
+                          { 'rotate-180': !section.collapsed }
+                        ]"
+                      />
+                    </button>
+                  </div>
                 </div>
                 
                 <!-- Fields Grid -->
-                <div>
+                <div 
+                  :class="[
+                    'transition-all duration-300 ease-in-out',
+                    section.collapsible ? 'overflow-hidden' : '',
+                    section.collapsed && section.collapsible ? 'max-h-0 opacity-0' : section.collapsible ? ' opacity-100' : ''
+                  ]"
+                >
                   <!-- Column Labels -->
                   <div v-if="section.columnLabels.length > 0" :class="{
                     'grid gap-6 mb-4': true,
@@ -134,11 +155,32 @@
             >
               <!-- Section Title -->
               <div v-if="section.title" class="mb-4 border-b border-gray-200 pb-2">
-                <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                <div class="flex items-center justify-between">
+                  <span class="text-lg font-semibold text-gray-700">{{ section.title }}</span>
+                  <button
+                    v-if="section.collapsible"
+                    @click="toggleSectionCollapse(sectionIndex)"
+                    class="text-gray-500 hover:text-gray-700 transition-colors"
+                    type="button"
+                  >
+                    <ChevronDownIcon 
+                      :class="[
+                        'w-5 h-5 transition-transform duration-200',
+                        { 'rotate-180': !section.collapsed }
+                      ]"
+                    />
+                  </button>
+                </div>
               </div>
               
               <!-- Fields Grid -->
-              <div>
+              <div 
+                :class="[
+                  'transition-all duration-300 ease-in-out',
+                  section.collapsible ? 'overflow-hidden' : '',
+                  section.collapsed && section.collapsible ? 'max-h-0 opacity-0' : section.collapsible ? 'max-h-96 opacity-100' : ''
+                ]"
+              >
                 <!-- Column Labels -->
                 <div v-if="section.columnLabels.length > 0" :class="{
                   'grid gap-6 mb-4': true,
@@ -247,7 +289,8 @@ import {
   LoaderIcon,
   ArrowLeftIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ChevronDownIcon
 } from 'lucide-vue-next';
 import FormField from '../components/FormField.vue';
 import { useFormSections } from '../composables/useFormSections';
@@ -294,7 +337,7 @@ const currentTab = ref<string>('');
 // Add refs to store FormField component references
 const formFieldRefs = ref<Record<string, any>>({});
 
-const { processedSections } = useFormSections(
+const { processedSections, toggleSectionCollapse } = useFormSections(
   computed(() => docType.value?.fields),
   computed(() => formData.value),
   computed(() => docTypeTable.value)

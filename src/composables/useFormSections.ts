@@ -1,4 +1,4 @@
-import { computed, Ref } from 'vue';
+import { computed, ref, Ref } from 'vue';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 
 interface FormField {
@@ -11,6 +11,10 @@ interface FormField {
   depends_on?: string;
   columnIndex?: number;
   tab_id?: string;
+  collapsible?: number;
+  name?: string; // For table doctypes
+  fields?: FormField[]; // For table doctypes
+  tableFields?: FormField[]; // For fields that reference table doctypes
 }
 
 interface FormSection {
@@ -20,6 +24,9 @@ interface FormSection {
   hidden: boolean;
   tab_id?: string;
   columnLabels: string[];
+  collapsible?: boolean;
+  collapsed?: boolean;
+  sectionKey?: string;
 }
 
 interface FormTab {
@@ -36,6 +43,8 @@ interface ProcessedSections {
 }
 
 export function useFormSections(fields: Ref<FormField[] | undefined>, formData?: Ref<Record<string, any> | undefined>, docTypeTable?: Ref<FormField[] | undefined>) {
+  // Track collapsed state separately for reactivity
+  const collapsedSections = ref<Record<string, boolean>>({});
   const processedSections = computed<ProcessedSections>(() => {
     if (!fields.value) return {
       tabs: [],
@@ -51,7 +60,10 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
       columnCount: 0,
       fields: [],
       hidden: false,
-      columnLabels: []
+      columnLabels: [],
+      collapsible: false,
+      collapsed: false,
+      sectionKey: undefined
     };
 
     fields.value.forEach((field, index) => {
@@ -91,13 +103,23 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
         }
 
         const shouldShowSection = !field.depends_on || evaluateFieldDependency(field, formData?.value);
+        const sectionKey = `${currentTab?.id || 'main'}_${field.fieldname}`;
+        
+        // Initialize collapsed state if not set
+        if (field.collapsible === 1 && !(sectionKey in collapsedSections.value)) {
+          collapsedSections.value[sectionKey] = true; // Start collapsed by default
+        }
+        
         currentSection = {
           title: field.label || '',
           columnCount: 0,
           fields: [],
           hidden: field.hidden === 1 || !shouldShowSection,
           tab_id: currentTab?.id,
-          columnLabels: []
+          columnLabels: [],
+          collapsible: field.collapsible === 1,
+          collapsed: collapsedSections.value[sectionKey] || false,
+          sectionKey: sectionKey
         };
       } else if (field.fieldtype === 'Column Break') {
         // console.log('Column Break Label', field.label);
@@ -121,7 +143,7 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
 
     if (currentSection.fields.length > 0) {
       if (currentTab) {
-        currentTab.sections.push({ ...currentSection });
+        (currentTab as FormTab).sections.push({ ...currentSection });
       } else {
         sections.push({ ...currentSection });
       }
@@ -143,7 +165,30 @@ export function useFormSections(fields: Ref<FormField[] | undefined>, formData?:
     };
   });
 
+  const toggleSectionCollapse = (sectionIndex: number, tabId?: string) => {
+    let section: FormSection | undefined;
+    
+    if (tabId) {
+      // Handle tabbed sections
+      const tabIndex = processedSections.value.tabs.findIndex(tab => tab.id === tabId);
+      if (tabIndex !== -1 && processedSections.value.tabs[tabIndex].sections[sectionIndex]) {
+        section = processedSections.value.tabs[tabIndex].sections[sectionIndex];
+      }
+    } else {
+      // Handle non-tabbed sections
+      if (processedSections.value.sections[sectionIndex]) {
+        section = processedSections.value.sections[sectionIndex];
+      }
+    }
+    
+    if (section && section.sectionKey) {
+      const currentState = collapsedSections.value[section.sectionKey] || false;
+      collapsedSections.value[section.sectionKey] = !currentState;
+    }
+  };
+
   return {
-    processedSections
+    processedSections,
+    toggleSectionCollapse
   };
 } 
