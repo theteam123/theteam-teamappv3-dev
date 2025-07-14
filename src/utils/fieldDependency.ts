@@ -117,13 +117,19 @@ export function evaluateFieldDependency(
         const authStore = useAuthStore();
         const roles = authStore.user?.roles || [];
         const targetRole = value.trim();
-        console.log('roles', roles);
-        console.log('targetRole', targetRole);
+        if (debug) {
+          console.log('roles', roles);
+          console.log('targetRole', targetRole);
+        }
         if (operator === '==') {
-          console.log('roles.includes(targetRole)', roles.includes(targetRole));
+          if (debug) {
+            console.log('roles.includes(targetRole)', roles.includes(targetRole));
+          }
           return String(roles.includes(targetRole));
         } else if (operator === '!=') {
-          console.log('roles.includes(targetRole)', roles.includes(targetRole));
+          if (debug) {
+            console.log('roles.includes(targetRole)', roles.includes(targetRole));
+          }
           return String(!roles.includes(targetRole));
         }
       }
