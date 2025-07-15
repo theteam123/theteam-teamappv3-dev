@@ -104,6 +104,92 @@ ${projectKnowledge}
 
 ${erpnextDocTypeReferences}
 
+CRITICAL ERPNEXT VALIDATION RULES - STRICTLY FOLLOW THESE:
+
+🚨 **TABLE FIELD RESTRICTIONS:**
+- NEVER use "Table" or "Table MultiSelect" fields with these master DocTypes: Employee, Customer, Supplier, Item, User, Company, Project, Task, Lead, Opportunity, Account, Sales Order, Purchase Order, Quotation, Sales Invoice, Purchase Invoice, Delivery Note, Purchase Receipt, Journal Entry, Payment Entry, Stock Entry, Material Request, BOM, Work Order, Timesheet, Expense Claim, Leave Application, Salary Slip, Attendance, Holiday List, Department, Designation, Branch, Warehouse, UOM, Currency, Tax Rule, Price List, Shipping Rule, Terms and Conditions, Address, Contact, Communication, Event, ToDo, Note, File, Email Account, Print Format, Letter Head, Web Page, Blog Post, Website Settings
+- NEVER create child DocTypes with names like: "Meeting Attendee", "Meeting Action Item", "Meeting Agenda Item", "Form Field", "Action Item", "Agenda Item", "Table Field", "Form Element", "Attendee", "Participant", "Member"
+- NEVER use Table fields with options containing words: "Meeting", "Attendee", "Action", "Agenda", "Form", "Field", "Item", "Element", "Component", "Participant", "Member"
+
+🔧 **PREFERRED ALTERNATIVES:**
+- For employee selection: Use "Link" field with options "Employee" (single selection) or "Text" field for comma-separated names (multiple selection)
+- For attendees/participants: Use "Text" field with description "Enter comma-separated names"
+- For action items: Use "Text" field for manual entry
+- For agenda items: Use "Text" field for manual entry
+- For multiple selections: Use "Text" fields with descriptive placeholders
+
+⚠️ **DOCTYPE PROPERTIES TO AVOID:**
+- NEVER set "autoname" property - it causes validation issues
+- NEVER set "naming_rule" property 
+- ALWAYS set "is_submittable": 0 (not 1)
+- NEVER set submit/cancel permissions to 1 in permissions array
+
+✅ **SAFE PERMISSION STRUCTURE:**
+\`\`\`json
+"permissions": [
+  {
+    "role": "System Manager",
+    "read": 1,
+    "write": 1, 
+    "create": 1,
+    "delete": 1,
+    "submit": 0,
+    "cancel": 0,
+    "amend": 0,
+    "report": 1,
+    "export": 1,
+    "import": 1,
+    "share": 1,
+    "print": 1,
+    "email": 1
+  }
+]
+\`\`\`
+
+🎯 **FIELD TYPE BEST PRACTICES:**
+- Use "Link" fields for single master DocType references
+- Use "Text" fields for multiple entries (comma-separated)
+- Use "Data" fields for short text input
+- Use "Text Editor" for rich formatting needs
+- Use "Select" fields for predefined options only
+- Use "Check" fields for boolean values
+- Use "Date", "Time", "Datetime" for temporal data
+- Use "Int", "Float", "Currency" for numeric data
+
+📋 **STRUCTURE REQUIREMENTS:**
+- Always include "custom": 1
+- Always include "module": "Custom" (or user-specified module)
+- Field names must be lowercase with underscores
+- Field labels should be properly capitalized
+- Include proper "reqd" flags (0 or 1, not boolean)
+- Include "in_list_view": 1 for key fields
+
+💡 **COMMON SCENARIOS - CORRECT APPROACHES:**
+
+**Meeting Minutes DocType:**
+- ❌ WRONG: "attendees" field as Table → "Meeting Attendee"
+- ✅ CORRECT: "attendees" field as Text with description "Enter comma-separated attendee names"
+- ❌ WRONG: "action_items" field as Table → "Meeting Action Item" 
+- ✅ CORRECT: "action_items" field as Text with description "Enter action items details"
+
+**Employee Selection:**
+- ❌ WRONG: Table MultiSelect → Employee
+- ✅ CORRECT: Link → Employee (single selection) OR Text field (multiple names)
+
+**Form Builder DocType:**
+- ❌ WRONG: "form_fields" as Table → "Form Field"
+- ✅ CORRECT: "form_fields" as Text for field definitions
+
+**JotForm Integration:**
+- ❌ WRONG: "uploaded_files" as Table → "Form Attachment"
+- ✅ CORRECT: "uploaded_files" as Text for file descriptions
+
+🔄 **JOTFORM TO ERPNEXT CONVERSION GUIDE:**
+- JotForm MultiSelect widgets → ERPNext Text fields with comma-separated values
+- JotForm embedded employee lists → ERPNext Text fields for names
+- JotForm table structures → ERPNext Text fields for structured data entry
+- JotForm conditional logic → ERPNext field descriptions explaining dependencies
+
 ENHANCED OUTPUT REQUIREMENTS:
 
 Generate a comprehensive solution including:
@@ -157,7 +243,18 @@ ADVANCED FEATURES TO CONSIDER:
 - Custom dashboards and reporting views
 - API endpoints for external integrations
 
-Begin analysis and generation now, ensuring every aspect meets enterprise-grade standards and exceeds user expectations.`;
+🔍 **FINAL VALIDATION CHECKLIST - VERIFY BEFORE RESPONDING:**
+- ✅ No Table/Table MultiSelect fields reference master DocTypes (Employee, Customer, etc.)
+- ✅ No Table fields reference non-existent child DocTypes (Meeting Attendee, etc.)
+- ✅ No autoname or naming_rule properties in DocType JSON
+- ✅ is_submittable is set to 0 (not 1)
+- ✅ All permissions have submit: 0 and cancel: 0
+- ✅ All field names are lowercase with underscores
+- ✅ All reqd values are 0 or 1 (not boolean)
+- ✅ All attendee/participant fields are Text fields, not Table fields
+- ✅ custom: 1 is included in DocType JSON
+
+Begin analysis and generation now, ensuring every aspect meets enterprise-grade standards and exceeds user expectations. DOUBLE-CHECK YOUR OUTPUT AGAINST THE VALIDATION RULES ABOVE.`;
 };
 
 /**

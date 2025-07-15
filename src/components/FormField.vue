@@ -3627,8 +3627,6 @@ const getRatingStars = () => {
 };
 
 const handleRatingClick = (starValue: number) => {
-  // Convert star value (0.5, 1, 1.5, 2, 2.5, etc.) to ERP rating (0.1, 0.2, 0.3, 0.4, 0.5, etc.)
-  // 0.5 stars = 0.1, 1 star = 0.2, 1.5 stars = 0.3, 2 stars = 0.4, 2.5 stars = 0.5, etc.
   const rating = starValue * 0.2;
   emit('update:modelValue', rating);
   if (props.formData) {

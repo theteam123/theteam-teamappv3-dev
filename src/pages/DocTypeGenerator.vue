@@ -10,7 +10,7 @@
 
     <!-- Requirements Input -->
     <div v-if="!generatedOutput" class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-lg font-semibold mb-4">Business Requirements</h2>
+      <h2 class="text-lg font-semibold mb-4">Input Method</h2>
       
       <div class="space-y-6">
         <!-- Claude AI Status -->
@@ -31,16 +31,36 @@
           </p>
         </div>
 
-        <!-- Requirements Text -->
-         <!-- Test Update -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Business Requirements
-            <span class="text-red-500">*</span>
-          </label>
-          <textarea 
-            v-model="requirements" 
-            placeholder="Describe your DocType requirements in detail. For example:
+        <!-- Input Method Tabs -->
+        <div class="border-b border-gray-200">
+          <nav class="-mb-px flex space-x-8">
+            <button 
+              @click="activeInputTab = 'requirements'"
+              :class="['py-2 px-1 border-b-2 font-medium text-sm',
+                      activeInputTab === 'requirements' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700']"
+            >
+              📝 Business Requirements
+            </button>
+            <button 
+              @click="activeInputTab = 'jotform'"
+              :class="['py-2 px-1 border-b-2 font-medium text-sm',
+                      activeInputTab === 'jotform' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700']"
+            >
+              📋 JotForm Resources
+            </button>
+          </nav>
+        </div>
+
+        <!-- Business Requirements Tab -->
+        <div v-if="activeInputTab === 'requirements'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Business Requirements
+              <span class="text-red-500">*</span>
+            </label>
+            <textarea 
+              v-model="requirements" 
+              placeholder="Describe your DocType requirements in detail. For example:
 
 I need a DocType for managing employee safety training records. It should include:
 - Employee information (name, department, position)
@@ -52,27 +72,103 @@ I need a DocType for managing employee safety training records. It should includ
 - GPS location for training location
 
 The form should have multiple sections."
-            class="form-textarea w-full" 
-            rows="12"
-            required
-          ></textarea>
-          <p class="text-sm text-gray-500 mt-2">
-            Be as detailed as possible. Mention field types, mobile features, child tables, and any specific requirements.
-          </p>
+              class="form-textarea w-full" 
+              rows="12"
+              required
+            ></textarea>
+            <p class="text-sm text-gray-500 mt-2">
+              Be as detailed as possible. Mention field types, mobile features, child tables, and any specific requirements.
+            </p>
+          </div>
+
+          <!-- Examples -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 class="text-sm font-medium text-blue-800 mb-2">Example Requirements</h3>
+            <div class="space-y-2">
+              <button 
+                v-for="example in examples" 
+                :key="example.name"
+                @click="requirements = example.text"
+                class="text-left block w-full p-2 text-sm text-blue-700 hover:bg-blue-100 rounded"
+              >
+                <strong>{{ example.name }}:</strong> {{ example.description }}
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Examples -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 class="text-sm font-medium text-blue-800 mb-2">Example Requirements</h3>
-          <div class="space-y-2">
-            <button 
-              v-for="example in examples" 
-              :key="example.name"
-              @click="requirements = example.text"
-              class="text-left block w-full p-2 text-sm text-blue-700 hover:bg-blue-100 rounded"
-            >
-              <strong>{{ example.name }}:</strong> {{ example.description }}
-            </button>
+        <!-- JotForm Resources Tab -->
+        <div v-if="activeInputTab === 'jotform'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              JotForm Resources
+              <span class="text-red-500">*</span>
+            </label>
+            <textarea 
+              v-model="jotformData" 
+              placeholder="Paste any JotForm resources here. You can include:
+
+- HTML/JavaScript embed code from JotForm
+- Exported form structure or configuration
+- Field lists and definitions
+- Form settings and validation rules
+- Conditional logic and workflow
+- Any other JotForm-related content
+
+Example:
+<script>window.enableEventObserver=true</script>
+<script src='https://cdn.jotfor.ms/s/static/a8f2017c497/static/prototype.forms.js' type='text/javascript'></script>
+<script src='https://cdn.jotfor.ms/s/static/a8f2017c497/static/jotform.forms.js' type='text/javascript'></script>
+<form class='jotform-form'>
+  <div class='form-line'>
+    <label class='form-label'>Full Name</label>
+    <input type='text' name='q1_fullName' class='form-textbox' required />
+  </div>
+  <!-- ... more fields ... -->
+</form>
+
+The AI will analyze this content and create an equivalent ERPNext DocType with mobile support."
+              class="form-textarea w-full" 
+              rows="16"
+              required
+            ></textarea>
+            <p class="text-sm text-gray-500 mt-2">
+              Paste any JotForm content including HTML/JS embed code, exported form data, field structures, or configuration. The AI will analyze this and create an equivalent ERPNext DocType.
+            </p>
+          </div>
+
+          <!-- JotForm Examples -->
+          <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <h3 class="text-sm font-medium text-purple-800 mb-2">📋 Example JotForm Resources</h3>
+            <p class="text-xs text-purple-700 mb-3">
+              Click any example below to see what type of JotForm content you can paste:
+            </p>
+            <div class="space-y-2">
+              <button 
+                v-for="example in jotformExamples" 
+                :key="example.name"
+                @click="jotformData = example.text"
+                class="text-left block w-full p-2 text-sm text-purple-700 hover:bg-purple-100 rounded transition-colors"
+              >
+                <strong>{{ example.name }}:</strong> {{ example.description }}
+              </button>
+            </div>
+            <div class="mt-3 text-xs text-purple-600">
+              💡 These examples show different formats you can paste - field lists, HTML embed code, exported data, etc.
+            </div>
+          </div>
+
+          <!-- JotForm Tips -->
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h3 class="text-sm font-medium text-yellow-800 mb-2">💡 Tips for JotForm Input</h3>
+            <ul class="text-sm text-yellow-700 space-y-1">
+              <li>• You can copy/paste field lists directly from your JotForm builder</li>
+              <li>• Include field types (text, dropdown, checkbox, etc.) for better accuracy</li>
+              <li>• Mention any conditional logic or field dependencies</li>
+              <li>• Include validation rules and required fields</li>
+              <li>• Describe any file uploads or special field types</li>
+              <li>• Add form submission workflow information if available</li>
+            </ul>
           </div>
         </div>
 
@@ -80,7 +176,7 @@ The form should have multiple sections."
         <div class="text-center">
           <button 
             @click="generateDocType" 
-            :disabled="generating || !requirements.trim() || !getClaudeApiKey()" 
+            :disabled="generating || !validateInput() || !getClaudeApiKey()" 
             class="btn-primary text-lg px-8 py-3"
           >
             <span v-if="generating">
@@ -88,11 +184,16 @@ The form should have multiple sections."
               Generating with Claude AI...
             </span>
             <span v-else>
-              🤖 Generate with Claude AI
+              🤖 Generate DocType with Claude AI
             </span>
           </button>
           <div class="text-sm text-gray-500 mt-2 space-y-1">
-            <p>This will send your requirements to Claude AI to generate a complete DocType and HTML mockup</p>
+            <p v-if="activeInputTab === 'requirements'">
+              This will send your business requirements to Claude AI to generate a complete DocType and HTML mockup
+            </p>
+            <p v-else-if="activeInputTab === 'jotform'">
+              This will analyze your JotForm structure and generate an equivalent ERPNext DocType with HTML mockup
+            </p>
             <p class="text-xs">💡 Note: You need Claude AI credits in your Anthropic account to use this service</p>
           </div>
         </div>
@@ -112,7 +213,11 @@ The form should have multiple sections."
         <div class="flex justify-between items-center">
           <div>
             <h3 class="text-sm font-medium text-green-800">✅ DocType Generated Successfully!</h3>
-            <p class="text-sm text-green-700">Your DocType and HTML mockup have been generated by Claude AI</p>
+            <p class="text-sm text-green-700">
+              Your DocType and HTML mockup have been generated by Claude AI
+              <span v-if="activeInputTab === 'jotform'"> from your JotForm structure</span>
+              <span v-else> from your business requirements</span>
+            </p>
           </div>
           <button @click="resetGenerator" class="btn-secondary text-sm">
             Generate Another
@@ -386,10 +491,13 @@ interface Module {
   description?: string;
 }
 
+// Add new reactive variables for tabs and JotForm input
 const generating = ref(false);
 const generatedOutput = ref<GeneratedOutput | null>(null);
 const activeTab = ref('doctype');
+const activeInputTab = ref('requirements'); // New: for input method tabs
 const requirements = ref('');
+const jotformData = ref(''); // New: for JotForm input
 const error = ref('');
 const savingToErp = ref(false);
 const erpSaveSuccess = ref('');
@@ -493,6 +601,451 @@ FEATURES:
   }
 ];
 
+// Add JotForm-specific examples
+const jotformExamples = [
+  {
+    name: 'Real-World Meeting Minutes Form',
+    description: 'Complete JotForm for Management Meeting Minutes with advanced features',
+    text: `JotForm Management Meeting Minutes - Form ID: 250758111292454
+
+FORM HEADER:
+- Title: "Management Meeting Minutes" 
+- Theme: Professional with Inter font
+- Mobile Responsive: Yes
+- Max Width: 752px
+
+BASIC INFORMATION SECTION:
+q3_location: Location (Text Field)
+  - Style: width 500px
+  - Label: "Location"
+  - Type: control_textbox
+
+q4_date: Date (DateTime Field)
+  - Format: DD-MM-YYYY
+  - Validation: limitDate
+  - Current value: "14-07-2025"
+  - Calendar picker enabled
+  - Type: control_datetime
+
+q5_time: Time (Time Field)
+  - Format: HH:MM with AM/PM
+  - Default: "09:07 PM"
+  - Time input with dropdown
+  - Type: control_time
+
+q6_meetingPurpose: Meeting Purpose (Text Area)
+  - Required: Yes (marked with *)
+  - Size: 648px width x 100px height
+  - Validation: required
+  - Type: control_textarea
+
+ATTENDANCE SECTION (Collapsible):
+q9_typeA: Attendees (Multi-Selection Widget)
+  - Widget: Multiple Selection dropdown
+  - Options: 49+ employee names (Adriaan Frederik Lourens, Alexander Salva, Barry Norris, etc.)
+  - Placeholder: "Search and select names"
+  - Height: 45px, Max width: 500px
+  - Type: control_widget
+
+q10_absentees: Absentees (Multi-Selection Widget)
+  - Same configuration as Attendees
+  - Widget: Multiple Selection dropdown
+  - Same employee list
+  - Type: control_widget
+
+AGENDA & TOPICS SECTION (Collapsible):
+q11_agenda: Agenda (Text Field)
+  - Width: 500px
+  - Type: control_textbox
+
+q13_description: Description (Text Area)  
+  - Size: 648px x 163px
+  - Type: control_textarea
+
+DYNAMIC AGENDA ITEMS (With Conditional Logic):
+q14_typeA14: Add Another Checkbox
+  - Triggers display of additional agenda items
+  - Value: "Add another"
+  - Type: control_checkbox
+
+q16_agenda16, q20_agenda20, q24_agenda24, q28_agenda28: Additional Agenda Fields
+  - Hidden by default (display:none)
+  - Shown when "Add another" is checked
+  - Each followed by description textarea
+  - Type: control_textbox
+
+ACTION ITEMS SECTION (Collapsible):
+q33_actionRequired: Action Required (Text Area)
+  - Size: 648px x 163px
+  - Type: control_textarea
+
+q34_assignedTo: Assigned To (Dropdown)
+  - Options: 60+ employees with email calculations
+  - Includes "Other" option
+  - Width: 310px
+  - Calculation field for email addresses
+  - Type: control_dropdown
+
+q62_name: Name (Text Field - Conditional)
+  - Hidden by default
+  - Shows when "Other" is selected in Assigned To
+  - Width: 310px
+  - Type: control_textbox
+
+q37_emailAddress: Email Address (Text Field)
+  - Auto-populated based on Assigned To selection
+  - Width: 310px
+  - Type: control_textbox
+
+q55_status: Status (Dropdown)
+  - Options: New (default), In Progress, Closed
+  - Width: 310px
+  - Type: control_dropdown
+
+q35_dueDate: Due Date (DateTime Field)
+  - Format: DD-MM-YYYY
+  - Calendar picker
+  - Type: control_datetime
+
+FORM CONFIGURATION:
+- Form ID: 250758111292454
+- Submit Action: https://submit.jotform.com/submit/250758111292454
+- Auto-complete: On
+- Character encoding: UTF-8
+
+CONDITIONAL LOGIC RULES:
+1. Show q62_name if q34_assignedTo equals "Other"
+2. Show form fields when URL contains specific patterns
+3. Show q38 if q36_typeOf equals "Management Quarterly"  
+4. Calculate email address based on selected assignee
+5. Progressive agenda item display (q14→q15-17, q18→q19-21, etc.)
+
+ADVANCED FEATURES:
+- JotForm calculations for email assignment
+- Progressive form sections with collapsible design
+- Widget integration for multi-selection
+- URL tracking widget
+- Form event tracking and analytics
+- Professional styling with custom CSS
+- Payment integration ready
+- Multi-language support structure
+
+FORM SECTIONS:
+1. Basic Information (Location, Date, Time, Purpose)
+2. Attendance (Attendees, Absentees with search)
+3. Agenda & Topics (Dynamic expandable agenda items)
+4. Action Items (Tasks, assignments, status tracking)
+5. Hidden utility section (URL tracking, meeting type)
+
+STYLING:
+- Font Family: Inter, sans-serif
+- Background: #FFFFFF
+- Text Color: #2C3345
+- Form width: 752px max-width
+- Responsive design enabled
+- Custom CSS for enhanced appearance`
+  },
+  {
+    name: 'Field Export Structure',
+    description: 'Exported field definitions from JotForm builder',
+    text: `JotForm Field Export - Meeting Minutes Form
+
+FIELD DEFINITIONS:
+1. q1_heading: "Management Meeting Minutes" (Header)
+   - Type: control_head
+   - Position: form-input-wide, hidden by default
+
+2. q3_location: "Location" (Text Input)
+   - Type: control_textbox
+   - Required: No
+   - Width: 500px
+   - Layout: half-width
+
+3. q4_date: "Date" (DateTime)
+   - Type: control_datetime  
+   - Format: DD-MM-YYYY
+   - Validation: limitDate
+   - Layout: form-col-1
+
+4. q5_time: "Time" (Time Input)
+   - Type: control_time
+   - Format: HH:MM AM/PM
+   - Layout: form-col-2
+
+5. q6_meetingPurpose: "Meeting Purpose" (Textarea)
+   - Type: control_textarea
+   - Required: Yes
+   - Size: 648x100px
+   - Validation: required
+
+6. q7_attendance: "Attendance" (Collapsible Section)
+   - Type: control_collapse
+   - Contains: Attendees and Absentees widgets
+
+7. q9_typeA: "Attendees" (Multi-Selection Widget)
+   - Type: control_widget
+   - Widget: Multiple Selection
+   - Data: 49+ employee names
+   - Searchable: Yes
+
+8. q10_absentees: "Absentees" (Multi-Selection Widget)
+   - Type: control_widget
+   - Same configuration as Attendees
+
+9. q11_agenda: "Agenda" (Text Input)
+   - Type: control_textbox
+   - Width: 500px
+
+10. q13_description: "Description" (Textarea)
+    - Type: control_textarea
+    - Size: 648x163px
+
+11. q14_typeA14: Add Another Checkbox
+    - Type: control_checkbox
+    - Value: "Add another"
+    - Triggers: Conditional display
+
+12. q33_actionRequired: "Action Required" (Textarea)
+    - Type: control_textarea
+    - Size: 648x163px
+
+13. q34_assignedTo: "Assigned To" (Dropdown)
+    - Type: control_dropdown
+    - Options: 60+ employees + "Other"
+    - Calculations: Auto email assignment
+
+14. q37_emailAddress: "Email Address" (Text)
+    - Type: control_textbox
+    - Auto-populated via calculations
+
+15. q55_status: "Status" (Dropdown)
+    - Type: control_dropdown
+    - Options: New, In Progress, Closed
+    - Default: New
+
+16. q35_dueDate: "Due Date" (DateTime)
+    - Type: control_datetime
+    - Format: DD-MM-YYYY
+
+WIDGET CONFIGURATIONS:
+- Multiple Selection Widget Settings:
+  * Client ID: 5293157eb5ac485477000004
+  * Height: 45px
+  * Max Width: 500px
+  * Placeholder: "Search and select names"
+  * Data source: Encoded employee list
+
+CONDITIONAL LOGIC:
+- 8 conditional rules defined
+- Field visibility based on selections
+- Progressive form sections
+- Email calculations
+- Dynamic content display
+
+FORM VALIDATION:
+- Required field validation
+- Date format validation
+- Email format checks (implied)
+- Character limits on text areas
+- Dropdown selection validation`
+  },
+  {
+    name: 'Advanced JotForm Features',
+    description: 'Complex JotForm with calculations, widgets, and conditional logic',
+    text: `JotForm Advanced Features Example:
+
+FORM CALCULATIONS:
+- Calculation ID: action_0_1743036575074
+- Field 34 (Assigned To) triggers email calculation
+- Formula: {34} → Auto-populates email address
+- Decimal places: 2
+- Result field: 37 (Email Address)
+- Conditions: Executes when Field 34 is not "Other" and is filled
+
+CONDITIONAL LOGIC SYSTEM:
+Rule 1: Show Custom Name Field
+- Action: Show field q62_name
+- Condition: q34_assignedTo equals "Other"
+- Priority: 0
+
+Rule 2: URL-Based Form Display  
+- Action: Show field q1 (main form)
+- Conditions: q60_typeA60 contains specific URLs
+- Multiple URL patterns supported
+- Priority: 1
+
+Rule 3: Meeting Type Specific Fields
+- Action: Show field q38
+- Condition: q36_typeOf equals "Management Quarterly"  
+- Priority: 2
+
+Rule 4: Progressive Agenda Items
+- Rules 4-7: Sequential agenda item display
+- Each "Add another" checkbox reveals next section
+- Cascading field visibility (q14→q15-17→q18-21→etc.)
+
+WIDGET INTEGRATIONS:
+Multiple Selection Widgets:
+- Widget Name: "Multiple Selection"
+- Client ID: 5293157eb5ac485477000004
+- Frame source: app-widgets.jotform.io/multipleSelection
+- Data encoding: URL-encoded employee lists
+- Features: Search, multi-select, responsive
+
+URL Tracking Widget:
+- Widget: "Get Page URL"  
+- Purpose: Track form referrer
+- Hidden field: q60_typeA60
+- Script: widgets.jotform.io/getParentUrl
+
+FORM JAVASCRIPT FEATURES:
+- Event observer enabled
+- Form tracking and analytics
+- Auto-calendar integration
+- Masked input support (time, phone)
+- Smooth scrolling
+- Error navigation
+- Payment UI support
+- Multiple file upload handling
+
+FORM SECURITY:
+- CSRF protection via simple_spc tokens
+- Form ID validation: 250758111292454
+- Hidden honeypot fields
+- Submission source tracking
+- Event tracking with UUIDs
+
+RESPONSIVE DESIGN:
+- Mobile-optimized layout
+- Flexible form width (max 752px)
+- Column layouts for related fields
+- Collapsible sections for better UX
+- Touch-friendly controls
+
+NOTIFICATION SYSTEM:
+- Form submission tracking
+- Event logging with timestamps
+- User agent detection
+- Referrer tracking
+- Session management
+
+FIELD STYLING:
+- Custom CSS injection
+- Theme: Professional navy (#2C3345)
+- Font: Inter sans-serif
+- Button styling: Navy-700 submit buttons
+- Form validation styling
+- Error message customization
+
+API INTEGRATION READY:
+- Upload server: upload.jotform.com
+- Submit endpoint: submit.jotform.com
+- Widget communication protocols
+- Event tracking APIs
+- Form analytics integration`
+  },
+  {
+    name: 'JotForm Submission Data',
+    description: 'Real submission data structure from Management Meeting Minutes form',
+    text: `JotForm Submission Data - Management Meeting Minutes
+
+FORM SUBMISSION ID: 4567891234567890123
+SUBMITTED: 2025-01-15 14:30:25 UTC
+FORM ID: 250758111292454
+
+SUBMISSION DATA:
+{
+  "q3_location": "Boretech Head Office - Conference Room A",
+  "q4_date": {
+    "day": "15",
+    "month": "01", 
+    "year": "2025"
+  },
+  "q5_time": {
+    "hourSelect": "14",
+    "minuteSelect": "30",
+    "ampm": "PM",
+    "timeInput": "14:30"
+  },
+  "q6_meetingPurpose": "Quarterly management review and strategic planning session for Q1 2025 objectives",
+  "q9_typeA": [
+    "James McKenna",
+    "Stephen Roberts", 
+    "Garry Smith",
+    "Patrick Dunne",
+    "Michael Ferris"
+  ],
+  "q10_absentees": [
+    "Barry Norris",
+    "Lance McDonald"
+  ],
+  "q11_agenda": "Q4 Performance Review",
+  "q13_description": "Review of Q4 2024 performance metrics, financial results, and operational achievements. Discussion of areas for improvement and lessons learned.",
+  "q14_typeA14": ["Add another"],
+  "q16_agenda16": "Q1 2025 Strategic Objectives",
+  "q17_description17": "Setting strategic objectives for Q1 2025 including revenue targets, operational improvements, and new client acquisition goals.",
+  "q18_input18": ["Add another"],
+  "q20_agenda20": "Budget Allocation Review",
+  "q21_description21": "Review and approval of budget allocations for various departments and projects for the upcoming quarter.",
+  "q33_actionRequired": "Prepare detailed Q1 budget breakdown with department-specific allocations and submit for board approval",
+  "q34_assignedTo": "Stephen Roberts",
+  "q37_emailAddress": "stephen@boretechcontracting.com.au",
+  "q55_status": "New",
+  "q35_dueDate": {
+    "day": "31",
+    "month": "01",
+    "year": "2025"
+  },
+  "q36_typeOf": "Management Quarterly",
+  "q60_typeA60": "https://team.boretechcontracting.com.au/form/?id=management-minutes",
+  "formOpenId_V5": "12345678901234567890"
+}
+
+METADATA:
+- Submission Duration: 12 minutes 45 seconds
+- IP Address: 203.123.45.67
+- User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+- Browser: Chrome 120.0.0.0
+- Device Type: Desktop
+- Referrer: https://team.boretechcontracting.com.au/meetings
+- Form Version: 3.3.64022
+
+CALCULATED FIELDS:
+- Email auto-populated based on "Stephen Roberts" selection
+- Meeting type determined: "Management Quarterly"
+- Conditional fields triggered: q38 (quarterly-specific fields)
+- Form tracking ID generated: 12345678901234567890
+
+FIELD VALIDATIONS PASSED:
+✓ Required field q6_meetingPurpose completed
+✓ Date format validation (DD-MM-YYYY)
+✓ Time format validation (HH:MM AM/PM)
+✓ Email calculation successful
+✓ Conditional logic executed correctly
+✓ Widget data properly serialized
+
+FORM SECTIONS COMPLETED:
+✓ Basic Information (Location, Date, Time, Purpose)
+✓ Attendance (5 attendees, 2 absentees selected)
+✓ Agenda & Topics (3 agenda items with descriptions)
+✓ Action Items (1 action assigned to Stephen Roberts)
+✓ Hidden fields (URL tracking, meeting type)
+
+NOTIFICATIONS TRIGGERED:
+- Email sent to: stephen@boretechcontracting.com.au
+- Management team notification sent
+- Form submission confirmation generated
+- Calendar integration triggered (if enabled)
+
+EXPORT FORMATS AVAILABLE:
+- JSON (as shown above)
+- CSV for spreadsheet import
+- PDF formatted report
+- XML for system integration
+- Excel workbook format`
+  }
+];
+
 const generateDocType = async () => {
   generating.value = true;
   error.value = '';
@@ -504,7 +1057,21 @@ const generateDocType = async () => {
     if (!claudeApiKey) {
       throw new Error('Claude API key is not configured in environment variables');
     }
-    const output = await generateDocType(claudeApiKey, requirements.value);
+    
+    // Prepare input based on active tab
+    let inputPrompt = '';
+    if (activeInputTab.value === 'requirements') {
+      inputPrompt = requirements.value;
+    } else if (activeInputTab.value === 'jotform') {
+      // Construct JotForm-based prompt
+      inputPrompt = `Please generate a DocType based on this JotForm data:
+
+${jotformData.value}
+
+Please analyze this JotForm information and create an equivalent ERPNext DocType that captures all the fields and functionality, optimized for ERPNext and mobile use.`;
+    }
+    
+    const output = await generateDocType(claudeApiKey, inputPrompt);
     
     // Handle enhanced response structure
     generatedOutput.value = {
@@ -617,12 +1184,23 @@ const resetGenerator = () => {
   generatedOutput.value = null;
   error.value = '';
   requirements.value = '';
+  jotformData.value = '';
+  activeInputTab.value = 'requirements';
   erpSaveSuccess.value = '';
   erpSaveError.value = '';
   erpSaveWarning.value = '';
   // Keep API key for convenience
 };
 
+// Helper function to validate input based on active tab
+const validateInput = () => {
+  if (activeInputTab.value === 'requirements') {
+    return requirements.value.trim().length > 0;
+  } else if (activeInputTab.value === 'jotform') {
+    return jotformData.value.trim().length > 0;
+  }
+  return false;
+};
 
 
 const formatTimestamp = (timestamp: string) => {
@@ -779,6 +1357,7 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
     module: docType.module || "Custom", // Ensure module is set
     custom: 1, // Ensure it's marked as custom
     istable: docType.istable !== undefined ? docType.istable : 0, // Preserve istable if exists, default to 0
+    is_submittable: 0, // Always 0 - prevents submit/cancel workflow complications
     allow_import: 1 // Enable import functionality
   };
 
@@ -787,9 +1366,20 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
     delete cleanDocType.doctype;
   }
 
-  // Remove the 'naming_rule' attribute if it exists
+  // Remove potentially problematic attributes that may cause validation issues
   if (cleanDocType.naming_rule) {
     delete cleanDocType.naming_rule;
+  }
+  
+  // Remove autoname for custom DocTypes as it can cause validation issues
+  if (cleanDocType.autoname) {
+    console.warn(`Removing autoname "${cleanDocType.autoname}" from custom DocType as it may cause validation issues`);
+    delete cleanDocType.autoname;
+  }
+  
+  // Ensure allow_rename is properly set for custom DocTypes
+  if (cleanDocType.allow_rename === undefined) {
+    cleanDocType.allow_rename = 1; // Allow renaming by default for custom DocTypes
   }
 
   console.log('validateAndFixDocType: Creating clean DocType', {
@@ -878,8 +1468,8 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
           }
       }
 
-      // Enhanced Table field validation for ERPNext v15+
-      if (cleanField.fieldtype === 'Table') {
+      // Enhanced Table and Table MultiSelect field validation for ERPNext v15+
+      if (cleanField.fieldtype === 'Table' || cleanField.fieldtype === 'Table MultiSelect') {
         if (!cleanField.options) {
           console.warn(`Table field "${cleanField.fieldname}" has no child table defined, converting to Section Break`);
           cleanField.fieldtype = 'Section Break';
@@ -898,8 +1488,41 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
                              cleanField.options.length < 2 ||
                              suspiciousPatterns.some(pattern => pattern.test(cleanField.options));
           
+          // Check for ERPNext master DocTypes (not child tables) that can't be used in Table/Table MultiSelect fields
+          const erpNextMasterDocTypes = [
+            'Employee', 'Customer', 'Supplier', 'Item', 'User', 'Company', 'Project', 'Task', 
+            'Lead', 'Opportunity', 'Account', 'Sales Order', 'Purchase Order', 'Quotation', 
+            'Sales Invoice', 'Purchase Invoice', 'Delivery Note', 'Purchase Receipt', 
+            'Journal Entry', 'Payment Entry', 'Stock Entry', 'Material Request', 'BOM', 
+            'Work Order', 'Timesheet', 'Expense Claim', 'Leave Application', 'Salary Slip', 
+            'Attendance', 'Holiday List', 'Department', 'Designation', 'Branch', 'Warehouse', 
+            'UOM', 'Currency', 'Tax Rule', 'Price List', 'Shipping Rule', 'Terms and Conditions', 
+            'Address', 'Contact', 'Communication', 'Event', 'ToDo', 'Note', 'File', 'Email Account',
+            'Print Format', 'Letter Head', 'Web Page', 'Blog Post', 'Website Settings'
+          ];
+          
+          const isMasterDocType = erpNextMasterDocTypes.includes(cleanField.options);
+          
           // Check for non-existent child DocType patterns (common AI-generated names that don't exist)
           const nonExistentChildDocTypePatterns = [
+            /^Form Field$/i, // exactly "Form Field" (very common AI-generated name)
+            /^Field$/i, // exactly "Field" (common AI-generated name)
+            /^Custom Field$/i, // exactly "Custom Field" (common AI-generated name)
+            /^Dynamic Field$/i, // exactly "Dynamic Field" (common AI-generated name)
+            /^Table Field$/i, // exactly "Table Field" (common AI-generated name)
+            /^Form Element$/i, // exactly "Form Element" (common AI-generated name)
+            /^Form Item$/i, // exactly "Form Item" (common AI-generated name)
+            /^Form Component$/i, // exactly "Form Component" (common AI-generated name)
+            /^Meeting Agenda Item$/i, // exactly "Meeting Agenda Item" (common AI-generated name)
+            /^Meeting Action Item$/i, // exactly "Meeting Action Item" (common AI-generated name)
+            /^Meeting Attendee$/i, // exactly "Meeting Attendee" (common AI-generated name)
+            /^Action Item$/i, // exactly "Action Item" (common AI-generated name)
+            /^Agenda Item$/i, // exactly "Agenda Item" (common AI-generated name)
+            /^Attendee$/i, // exactly "Attendee" (common AI-generated name)
+            /^Meeting Item$/i, // exactly "Meeting Item" (common AI-generated name)
+            /^Meeting Entry$/i, // exactly "Meeting Entry" (common AI-generated name)
+            /Field$/i, // ends with "Field" (e.g., "Form Field", "Input Field", "Custom Field")
+            /Fields$/i, // ends with "Fields" (e.g., "Form Fields", "Input Fields")
             /Item$/i, // ends with "Item" (e.g., "Field Type Showcase Item", "Product Item")
             /Items$/i, // ends with "Items" (e.g., "Gallery Items", "Order Items")
             /Detail$/i, // ends with "Detail" (e.g., "Order Detail", "Invoice Detail")
@@ -922,17 +1545,50 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
             /Documents$/i, // ends with "Documents" (e.g., "Support Documents", "Reference Documents")
             /Attachment$/i, // ends with "Attachment" (e.g., "Email Attachment", "File Attachment")
             /Attachments$/i, // ends with "Attachments" (e.g., "Email Attachments", "File Attachments")
+            /Element$/i, // ends with "Element" (e.g., "Form Element", "UI Element")
+            /Elements$/i, // ends with "Elements" (e.g., "Form Elements", "UI Elements")
+            /Component$/i, // ends with "Component" (e.g., "Form Component", "UI Component")
+            /Components$/i, // ends with "Components" (e.g., "Form Components", "UI Components")
             /Gallery/i, // contains "Gallery" (e.g., "Photo Gallery", "Image Gallery")
             /Media/i, // contains "Media" (e.g., "Media Files", "Media Gallery")
             /Upload/i, // contains "Upload" (e.g., "File Upload", "Image Upload")
             /Sub/i, // contains "Sub" (e.g., "Sub Item", "Sub Category")
+            /Meeting/i, // contains "Meeting" (e.g., "Meeting Attendee", "Meeting Item")
+            /Attendee/i, // contains "Attendee" (e.g., "Meeting Attendee", "Event Attendee")
+            /Participant/i, // contains "Participant" (e.g., "Meeting Participant")
+            /Member/i // contains "Member" (e.g., "Team Member", "Group Member")
           ];
           
           const seemsLikeNonExistentChildDocType = nonExistentChildDocTypePatterns.some(pattern => 
             pattern.test(cleanField.options)
           );
           
-          if (isProblematic || seemsLikeNonExistentChildDocType) {
+          if (isMasterDocType) {
+            // Convert Table/Table MultiSelect fields that reference master DocTypes to appropriate field types
+            if (cleanField.fieldtype === 'Table MultiSelect') {
+              // For multi-selection scenarios like attendees/absentees, convert to Text field since ERPNext doesn't support multi-select links directly
+              if (cleanField.fieldname.toLowerCase().includes('attendee') || cleanField.fieldname.toLowerCase().includes('absentee') || cleanField.fieldname.toLowerCase().includes('participant')) {
+                console.warn(`Table MultiSelect field "${cleanField.fieldname}" for multiple employee selection. Converting to Text field for manual entry.`);
+                cleanField.fieldtype = 'Text';
+                cleanField.options = '';
+                if (!cleanField.description) {
+                  cleanField.description = `Enter ${cleanField.label || cleanField.fieldname} names (converted from Table MultiSelect - use comma-separated names)`;
+                }
+              } else {
+                console.warn(`Table MultiSelect field "${cleanField.fieldname}" references master DocType "${cleanField.options}". Converting to Link field for single selection.`);
+                cleanField.fieldtype = 'Link';
+                if (!cleanField.description) {
+                  cleanField.description = `Select ${cleanField.label || cleanField.fieldname} (converted from Table MultiSelect for ERPNext compatibility)`;
+                }
+              }
+            } else if (cleanField.fieldtype === 'Table') {
+              console.warn(`Table field "${cleanField.fieldname}" references master DocType "${cleanField.options}". Converting to Link field.`);
+              cleanField.fieldtype = 'Link';
+              if (!cleanField.description) {
+                cleanField.description = `Select ${cleanField.label || cleanField.fieldname} (converted from Table field for ERPNext compatibility)`;
+              }
+            }
+          } else if (isProblematic || seemsLikeNonExistentChildDocType) {
             if (seemsLikeNonExistentChildDocType) {
               console.warn(`Table field "${cleanField.fieldname}" references likely non-existent child DocType "${cleanField.options}". Converting to Text field for data entry.`);
               cleanField.fieldtype = 'Text';
@@ -967,6 +1623,47 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
             }
             
             console.log(`Table field "${cleanField.fieldname}" with child DocType "${cleanField.options}" - validated for ERPNext v15+`);
+          }
+        }
+      }
+
+      // Additional safety net: Convert any remaining Table/Table MultiSelect fields that might cause validation issues
+      if ((cleanField.fieldtype === 'Table' || cleanField.fieldtype === 'Table MultiSelect') && cleanField.options) {
+        // Check if the options might cause validation issues (catch anything we might have missed)
+        const potentiallyProblematicOptions = [
+          'Meeting Attendee', 'Meeting Action Item', 'Meeting Agenda Item', 'Action Item', 'Agenda Item',
+          'Form Field', 'Custom Field', 'Dynamic Field', 'Table Field', 'Form Element', 'Form Item',
+          'Attendee', 'Participant', 'Member'
+        ];
+        
+        if (potentiallyProblematicOptions.includes(cleanField.options) || 
+            cleanField.options.includes('Meeting') || 
+            cleanField.options.includes('Attendee') ||
+            cleanField.options.includes('Action') ||
+            cleanField.options.includes('Agenda')) {
+          
+          console.warn(`Safety net: Converting Table field "${cleanField.fieldname}" with potentially problematic options "${cleanField.options}"`);
+          
+          // Special handling for attendee/participant-related fields
+          if (cleanField.fieldname.toLowerCase().includes('attendee') || 
+              cleanField.fieldname.toLowerCase().includes('absentee') || 
+              cleanField.fieldname.toLowerCase().includes('participant') ||
+              cleanField.options.toLowerCase().includes('attendee') ||
+              cleanField.options.toLowerCase().includes('participant')) {
+            cleanField.fieldtype = 'Text';
+            cleanField.options = '';
+            if (!cleanField.description) {
+              cleanField.description = `Enter ${cleanField.label || cleanField.fieldname} names (converted from Table field - use comma-separated names)`;
+            }
+            console.log(`Safety net: Converted attendee-related Table field "${cleanField.fieldname}" to Text field`);
+          } else {
+            // For other Table fields, convert to Text for data entry
+            cleanField.fieldtype = 'Text';
+            cleanField.options = '';
+            if (!cleanField.description) {
+              cleanField.description = `Enter ${cleanField.label || cleanField.fieldname} details (converted from Table field)`;
+            }
+            console.log(`Safety net: Converted Table field "${cleanField.fieldname}" to Text field`);
           }
         }
       }
@@ -1014,9 +1711,9 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
         write: perm.write === true ? 1 : (perm.write === false ? 0 : (perm.write || 0)),
         create: perm.create === true ? 1 : (perm.create === false ? 0 : (perm.create || 0)),
         delete: perm.delete === true ? 1 : (perm.delete === false ? 0 : (perm.delete || 0)),
-        submit: perm.submit === true ? 1 : (perm.submit === false ? 0 : (perm.submit || 0)),
-        cancel: perm.cancel === true ? 1 : (perm.cancel === false ? 0 : (perm.cancel || 0)),
-        amend: perm.amend === true ? 1 : (perm.amend === false ? 0 : (perm.amend || 0)),
+        submit: 0, // Always 0 - submittable DocTypes need special configuration
+        cancel: 0, // Always 0 - submittable DocTypes need special configuration
+        amend: 0, // Always 0 - submittable DocTypes need special configuration
         report: perm.report === true ? 1 : (perm.report === false ? 0 : (perm.report || 0)),
         export: perm.export === true ? 1 : (perm.export === false ? 0 : (perm.export || 0)),
         import: perm.import === true ? 1 : (perm.import === false ? 0 : (perm.import || 0)),
@@ -1043,9 +1740,9 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
           write: Math.max(existingPerm.write, perm.write),
           create: Math.max(existingPerm.create, perm.create),
           delete: Math.max(existingPerm.delete, perm.delete),
-          submit: Math.max(existingPerm.submit, perm.submit),
-          cancel: Math.max(existingPerm.cancel, perm.cancel),
-          amend: Math.max(existingPerm.amend, perm.amend),
+          submit: 0, // Always 0 - submittable DocTypes need special configuration
+          cancel: 0, // Always 0 - submittable DocTypes need special configuration
+          amend: 0, // Always 0 - submittable DocTypes need special configuration
           report: Math.max(existingPerm.report, perm.report),
           export: Math.max(existingPerm.export, perm.export),
           import: Math.max(existingPerm.import, perm.import),
@@ -1072,9 +1769,9 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
         write: 1,
         create: 1,
         delete: 1,
-        submit: 0,
-        cancel: 0,
-        amend: 0,
+        submit: 0, // Always 0 - submittable DocTypes need special configuration
+        cancel: 0, // Always 0 - submittable DocTypes need special configuration
+        amend: 0, // Always 0 - submittable DocTypes need special configuration
         report: 1,
         export: 1,
         import: 1,
@@ -1093,9 +1790,9 @@ const validateAndFixDocType = (docType: any, skipAutoRename = false) => {
       write: 1,
       create: 1,
       delete: 1,
-      submit: 0,
-      cancel: 0,
-      amend: 0,
+      submit: 0, // Always 0 - submittable DocTypes need special configuration
+      cancel: 0, // Always 0 - submittable DocTypes need special configuration
+      amend: 0, // Always 0 - submittable DocTypes need special configuration
       report: 1,
       export: 1,
       import: 1,
@@ -1273,8 +1970,17 @@ const actualSaveToErp = async () => {
       erpSaveError.value = 'Duplicate permission rules detected. The DocType has been automatically fixed to remove duplicates and merge conflicting permissions. Please try saving again.';
     } else if (error_message.includes('Dynamic Link') || error_message.includes('must point to another Link Field')) {
       erpSaveError.value = 'Dynamic Link field configuration issue detected. The DocType has been automatically fixed with proper ERPNext v15+ Dynamic Link configuration including required DocType reference fields. Please try saving again.';
-    } else if (error_message.includes('WrongOptionsDoctypeLinkError') || error_message.includes('Options must be a valid DocType')) {
-      erpSaveError.value = 'Invalid DocType reference detected in Link or Table field options. The DocType has been automatically fixed to use valid DocType references or convert problematic fields to safer alternatives. Please try saving again.';
+    } else if (error_message.includes('WrongOptionsDoctypeLinkError') || error_message.includes('Options must be a valid DocType') || error_message.includes('Form Field') || error_message.includes('field') && error_message.includes('row')) {
+      erpSaveError.value = `❌ <strong>Table Field Issue Detected:</strong> The AI generated a Table field that references a child DocType (like "Form Field") that doesn't exist in your ERPNext system.<br><br>
+      🔧 <strong>Automatic Fix Applied:</strong> The system has been enhanced to automatically detect and convert such Table fields to Text fields for data entry.<br><br>
+      🔄 <strong>Next Steps:</strong> Please try saving again. If you continue to get this error, try generating a new DocType - it will be automatically fixed with proper field types.`;
+    } else if (error_message.includes('is not a child table') || error_message.includes('Table MultiSelect') || error_message.includes('Employee') && (error_message.includes('attendees') || error_message.includes('absentees'))) {
+      erpSaveError.value = `❌ <strong>Master DocType in Table Field:</strong> The AI generated Table or Table MultiSelect fields that reference master DocTypes (like "Employee") which cannot be used as child tables.<br><br>
+      🔧 <strong>Automatic Fix Applied:</strong> The system now automatically converts:<br>
+      • Table MultiSelect → Link fields (for single selection)<br>
+      • Table fields with master DocTypes → Link fields<br>
+      • Invalid child DocTypes → Text fields<br><br>
+      🔄 <strong>Next Steps:</strong> Please try saving again. The DocType will be automatically fixed with proper field types that work with ERPNext validation.`;
     } else if (error_message.includes('ValidationError')) {
       erpSaveError.value = `Validation Error: ${error_message}. The DocType has been automatically optimized for ERPNext v15+ compatibility. Please try saving again.`;
     } else if (error_message.includes('TypeError') || error_message.includes('NoneType')) {
