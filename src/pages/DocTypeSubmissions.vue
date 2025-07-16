@@ -259,7 +259,7 @@
                     @mouseleave="hoveredPdfIcon = null"
                   >
                     <component 
-                      :is="(field.label && field.label.toLowerCase().includes('sign on')) ? FileCheck2 :
+                      :is="(field.label && (field.label.toLowerCase().includes('sign on') || field.label.toLowerCase().includes('sign-off')) ) ? FileCheck2 :
                            (field.label && field.label.toLowerCase().includes('pdf')) ? 
                            (hoveredPdfIcon === (doc.name + field.fieldname) ? PdfIconBlack : PdfIcon) : 
                            (field.label && field.label.toLowerCase().includes('folder')) ? FolderIcon : 
@@ -422,7 +422,7 @@
                             @mouseleave="hoveredPdfIcon = null"
                           >
                             <component 
-                              :is="(field.label && field.label.toLowerCase().includes('sign on')) ? FileCheck2 :
+                              :is="(field.label && (field.label.toLowerCase().includes('sign on') || field.label.toLowerCase().includes('sign-off')) ) ? FileCheck2 :
                                    (field.label && field.label.toLowerCase().includes('pdf')) ? 
                                    (hoveredPdfIcon === (doc.name + field.fieldname) ? PdfIconBlack : PdfIcon) : 
                                    (field.label && field.label.toLowerCase().includes('folder')) ? FolderIcon : 
