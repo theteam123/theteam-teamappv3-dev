@@ -324,6 +324,17 @@ const handleSubmit = async () => {
       }
     }
 
+    // Append logs to JSON fields with [logs] in label before submission
+    const logsFields = form.value?.fields.filter(field => 
+      field.fieldtype === 'JSON' && field.label?.includes('[logs]')
+    ) || [];
+    for (const field of logsFields) {
+      const fieldRef = formFieldRefs.value[field.fieldname];
+      if (fieldRef && typeof fieldRef.appendLogsToJson === 'function') {
+        fieldRef.appendLogsToJson(form.value?.fields);
+      }
+    }
+
     await createForm(route.params.id as string, formData.value);
     showSubmittedModal.value = true;
     // router.push(`/forms/${route.params.id}/submissions`); // We'll navigate from the modal

@@ -875,6 +875,17 @@ const handleSupportSubmit = async () => {
       }
     }
 
+    // Append logs to JSON fields with [logs] in label before submission
+    const logsFields = supportForm.value?.fields.filter(field => 
+      field.fieldtype === 'JSON' && field.label?.includes('[logs]')
+    ) || [];
+    for (const field of logsFields) {
+      const fieldRef = supportFormFieldRefs.value[field.fieldname];
+      if (fieldRef && typeof fieldRef.appendLogsToJson === 'function') {
+        fieldRef.appendLogsToJson(supportForm.value?.fields);
+      }
+    }
+
     // Validate form data before submission
     const formDataToSubmit = { ...supportFormData.value };
     

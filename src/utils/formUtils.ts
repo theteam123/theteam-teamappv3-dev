@@ -29,6 +29,17 @@ export interface WatermarkConfig {
   fields: WatermarkField[];
 }
 
+export interface LogsField {
+  fieldname: string;
+  label: string;
+  value: string;
+}
+
+export interface LogsData {
+  fieldName: string;
+  fields: LogsField[];
+}
+
 export const initializeWatermarkFields = (fields: DocTypeField[], formData: Record<string, any> = {}): WatermarkConfig[] => {
   const watermarkConfigs: WatermarkConfig[] = [];
 
@@ -76,6 +87,71 @@ export const initializeWatermarkFields = (fields: DocTypeField[], formData: Reco
   });
 
   return watermarkConfigs;
+};
+
+export const initializeLogsFields = (fields: DocTypeField[], formData: Record<string, any> = {}): LogsData | null => {
+  // Find the single field with [logs] tag
+  const logsField = fields.find(field => 
+    field.label?.includes('[logs]') &&
+    field.description?.includes('log-fields:')
+  );
+
+  if (!logsField) return null;
+
+  // Extract field names from description
+  const match = logsField.description?.match(/log-fields:([\w\s,]+)/);
+  if (!match) return null;
+
+  // Get the comma-separated field names and trim each one
+  const fieldNames = match[1].split(',').map(name => name.trim());
+
+  // Find the corresponding fields and their values
+  const logFields = fieldNames.map(fieldName => {
+    // Find field by checking if its fieldname matches
+    const field = fields.find(f => f.fieldname === fieldName);
+
+    if (!field) {
+      return null;
+    }
+
+    // Get the current value from formData
+    const currentValue = formData[field.fieldname];
+
+    return {
+      fieldname: field.fieldname,
+      label: field.label.replace(/\[.*?\]/g, '').trim(), // Clean label for display
+      value: currentValue?.toString() || ''
+    };
+  })
+  .filter((field): field is LogsField => field !== null); // Remove any fields that weren't found
+
+  if (logFields.length === 0) return null;
+
+  return {
+    fieldName: logsField.fieldname,
+    fields: logFields
+  };
+};
+
+export const formatLogsToJson = (logsData: LogsData | null, userName?: string): Record<string, string> => {
+  const result: Record<string, string> = {};
+  
+  if (logsData) {
+    logsData.fields.forEach(field => {
+      result[field.label] = field.value;
+    });
+  }
+  
+  // Append logged in user, date and time
+  if (userName) {
+    result['Updated By'] = userName;
+  }
+  
+  const now = new Date();
+  result['Date'] = now.toLocaleDateString();
+  result['Time'] = now.toLocaleTimeString();
+  
+  return result;
 };
 
 export const initializeGeolocationFields = (fields: DocTypeField[], formData: Record<string, any> = {}): GeolocationData[] => {

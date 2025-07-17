@@ -569,38 +569,138 @@
 
     <!-- JSON Input -->
     <template v-else-if="field.fieldtype === 'JSON'">
-      <label :for="field.fieldname" class="block text-sm font-medium text-gray-700">
+      <label v-if="!isLogsField" :for="field.fieldname" class="block text-sm font-medium text-gray-700">
         {{ formattedLabel }}
         <span v-if="isFieldRequired" class="text-red-500">*</span>
       </label>
       <div class="mt-1">
-        <textarea
-          :id="field.fieldname"
-          :value="formattedJsonValue"
-          @input="handleJsonInput"
-          rows="8"
-          :required="isFieldRequired"
-          :disabled="isFieldReadOnly"
-          :readonly="isFieldReadOnly"
-          class="mt-1 block w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-          :class="{
-            'bg-gray-50': isFieldReadOnly,
-            'cursor-not-allowed': isFieldReadOnly,
-            'border-red-500': jsonError
-          }"
-        ></textarea>
-        <p v-if="jsonError" class="mt-1 text-sm text-red-600">{{ jsonError }}</p>
-        <div class="mt-2 flex justify-end space-x-2">
-          <button
-            v-if="!isFieldReadOnly"
-            type="button"
-            @click="formatJson"
-            class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        <!-- Hide JSON input for logs fields -->
+        <template v-if="!isLogsField">
+          <textarea
+            :id="field.fieldname"
+            :value="formattedJsonValue"
+            @input="handleJsonInput"
+            rows="8"
+            :required="isFieldRequired"
+            :disabled="isFieldReadOnly"
+            :readonly="isFieldReadOnly"
+            class="mt-1 block w-full font-mono text-sm rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+            :class="{
+              'bg-gray-50': isFieldReadOnly,
+              'cursor-not-allowed': isFieldReadOnly,
+              'border-red-500': jsonError
+            }"
+          ></textarea>
+          <p v-if="jsonError" class="mt-1 text-sm text-red-600">{{ jsonError }}</p>
+          <div class="mt-2 flex justify-end space-x-2">
+            <button
+              v-if="!isFieldReadOnly"
+              type="button"
+              @click="formatJson"
+              class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              Format JSON
+            </button>
+          </div>
+        </template>
+        
+        <!-- Logs Table Display for [logs] fields -->
+        <div v-if="isLogsField && parsedLogsData && parsedLogsData.logs && parsedLogsData.logs.length > 0" class="mt-4">
+          <!-- Collapsible Header -->
+          <div class="flex items-center justify-between mb-3">
+            
+            <button
+              type="button"
+              @click="toggleLogsCollapse"
+              class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <h4 class="text-sm font-medium text-gray-900">Activity Logs</h4>
+              <ChevronDownIcon v-if="isLogsCollapsed" class="h-4 w-4" />
+              <ChevronUpIcon v-else class="h-4 w-4" />
+            </button>
+          </div>
+          
+          <!-- Collapsible Table -->
+          <Transition 
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 max-h-0"
+            enter-to-class="opacity-100 max-h-[1000px]"
+            leave-active-class="transition-all duration-300 ease-in"
+            leave-from-class="opacity-100 max-h-[1000px]"
+            leave-to-class="opacity-0 max-h-0"
           >
-            Format JSON
-          </button>
+            <div v-if="!isLogsCollapsed" class="overflow-hidden">
+              <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Timestamp
+                      </th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Changes
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <tr v-for="(log, index) in parsedLogsData.logs" :key="index" class="hover:bg-gray-50">
+                      <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">
+                          {{ formatLogTimestamp(log.timestamp) }}
+                        </div>
+                        <div v-if="log.data['Updated By']" class="text-sm text-gray-500">
+                          by {{ log.data['Updated By'] }}
+                        </div>
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="space-y-1">
+                          <div v-for="(value, key) in getLogDataWithoutMeta(log.data)" :key="key" class="text-sm">
+                            <span class="font-medium text-gray-700">{{ key }}:</span>
+                            <span class="text-gray-900 ml-1 font-bold">{{ value }}</span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </Transition>
         </div>
-        <p v-if="field.description" class="mt-1 text-xs text-gray-500">
+        
+        <!-- Empty state for logs -->
+        <div v-else-if="isLogsField" class="mt-4">
+          <!-- Collapsible Header for Empty State -->
+          <div class="flex items-center justify-between mb-3">
+            <button
+              type="button"
+              @click="toggleLogsCollapse"
+              class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <h4 class="text-sm font-medium text-gray-900">Activity Logs</h4>
+              <ChevronDownIcon v-if="isLogsCollapsed" class="h-4 w-4" />
+              <ChevronUpIcon v-else class="h-4 w-4" />
+            </button>
+          </div>
+          
+          <!-- Collapsible Empty State -->
+          <Transition 
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 max-h-0"
+            enter-to-class="opacity-100 max-h-[200px]"
+            leave-active-class="transition-all duration-300 ease-in"
+            leave-from-class="opacity-100 max-h-[200px]"
+            leave-to-class="opacity-0 max-h-0"
+          >
+            <div v-if="!isLogsCollapsed" class="overflow-hidden">
+              <div class="border border-gray-200 rounded-lg p-4 text-center text-gray-500 text-sm">
+                No activity logs yet. Logs will appear here after form submissions.
+              </div>
+            </div>
+          </Transition>
+        </div>
+        
+        <p v-if="field.description && !isLogsField" class="mt-1 text-xs text-gray-500">
           {{ field.description }}
         </p>
       </div>
@@ -1491,7 +1591,7 @@ import { getFormList, uploadFile } from '../services/erpnext';
 import { searchLink } from '../services/deskApi';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 import { useErrorStore } from '../stores/error';
-import { MapPinIcon, LoaderIcon } from 'lucide-vue-next';
+import { MapPinIcon, LoaderIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-vue-next';
 import { getErpNextApiUrl } from '../utils/api';
 import { optimizeImage } from '../utils/imageUtils';
 import SignaturePad from 'signature_pad';
@@ -1510,6 +1610,7 @@ import 'ace-builds/src-noconflict/mode-python';
 import 'ace-builds/src-noconflict/mode-html';
 import 'ace-builds/src-noconflict/mode-css';
 import 'ace-builds/src-noconflict/mode-markdown';
+import { initializeLogsFields, formatLogsToJson, type LogsData } from '../utils/formUtils';
 
 interface TableField {
   fieldname: string;
@@ -1606,6 +1707,30 @@ const errorStore = useErrorStore();
 const authStore = useAuthStore();
 
 const mediaQueryMatches = ref(false);
+
+// Add logs field detection
+const isLogsField = computed(() => {
+  return props.field.fieldtype === 'JSON' && props.field.label?.includes('[logs]');
+});
+
+// Parse logs data from JSON value
+const parsedLogsData = computed(() => {
+  if (!isLogsField.value || !props.modelValue) return null;
+  
+  try {
+    const value = typeof props.modelValue === 'string' 
+      ? JSON.parse(props.modelValue)
+      : props.modelValue;
+    
+    if (value && value.logs && Array.isArray(value.logs)) {
+      return value;
+    }
+  } catch (e) {
+    console.warn('Failed to parse logs JSON:', e);
+  }
+  
+  return null;
+});
 
 // Initialize uploadedFiles with existing data for multiple upload tables
 const initializeExistingFiles = () => {
@@ -2323,11 +2448,7 @@ const saveCurrentSignature = () => {
   return null;
 };
 
-// Expose the save method so parent components can call it
-defineExpose({ 
-  VueTelInput,
-  saveCurrentSignature 
-});
+// Note: defineExpose is called later after all functions are declared
 
 // watch(() => props.modelValue, (newValue) => {
 //   if (!newValue && signaturePad.value && !signaturePad.value.isEmpty()) {
@@ -2576,6 +2697,149 @@ const formatJson = () => {
     jsonError.value = 'Invalid JSON format';
   }
 };
+
+// Method to append logs data to JSON field
+const appendLogsToJson = (formFields?: any[]) => {
+  try {
+    // Get all fields from formData to pass to initializeLogsFields
+    if (!props.formData) {
+      jsonError.value = 'Form data not available for logs';
+      return;
+    }
+
+    let logsData: LogsData | null = null;
+    
+    // If formFields are provided, use them directly
+    if (formFields) {
+      logsData = initializeLogsFields(formFields, props.formData);
+    } 
+    // If this current field is the logs field, use its description directly
+    else if (isLogsField.value && props.field.description?.includes('log-fields:')) {
+      console.log('Using current field as logs field:', props.field);
+      
+      // Extract field names from description
+      const match = props.field.description.match(/log-fields:([\w\s,]+)/);
+      if (match) {
+        const fieldNames = match[1].split(',').map(name => name.trim());
+        console.log('Field names to log:', fieldNames);
+        
+        // Create log fields data directly without needing full field definitions
+        const logFields = fieldNames.map(fieldName => {
+          const currentValue = props.formData![fieldName];
+          
+          return {
+            fieldname: fieldName,
+            label: fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), // Convert field name to readable label
+            value: currentValue?.toString() || ''
+          };
+        }).filter(field => field.value !== ''); // Only include fields that have values
+
+        if (logFields.length > 0) {
+          logsData = {
+            fieldName: props.field.fieldname,
+            fields: logFields
+          };
+        }
+      }
+    }
+    // Fallback: look for any field with logs configuration in form data
+    else {
+      console.log('Looking for logs field in form data...');
+      
+      // Look for a field that might contain log-fields configuration
+      const formDataKeys = Object.keys(props.formData);
+      let logsFieldDescription = '';
+      
+      // Check if any field value contains log-fields: pattern
+      for (const key of formDataKeys) {
+        if (props.formData[key] && typeof props.formData[key] === 'string') {
+          const value = props.formData[key];
+          if (value.includes('log-fields:')) {
+            logsFieldDescription = value;
+            break;
+          }
+        }
+      }
+      
+      // If found, parse it directly
+      if (logsFieldDescription) {
+        const match = logsFieldDescription.match(/log-fields:([\w\s,]+)/);
+        if (match) {
+          const fieldNames = match[1].split(',').map(name => name.trim());
+          console.log('Found logs configuration, field names to log:', fieldNames);
+          
+          const logFields = fieldNames.map(fieldName => {
+            const currentValue = props.formData![fieldName];
+            
+            return {
+              fieldname: fieldName,
+              label: fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+              value: currentValue?.toString() || ''
+            };
+          }).filter(field => field.value !== '');
+
+          if (logFields.length > 0) {
+            logsData = {
+              fieldName: 'logs',
+              fields: logFields
+            };
+          }
+        }
+      }
+    }
+    
+    console.log('Final logs data:', logsData);
+    
+    if (!logsData || !logsData.fields || logsData.fields.length === 0) {
+      jsonError.value = 'No logs data found. Make sure you have fields with values specified in log-fields: configuration.';
+      return;
+    }
+
+    // Get current JSON value
+    let currentValue: any = {};
+    if (props.modelValue) {
+      try {
+        currentValue = typeof props.modelValue === 'string' 
+          ? JSON.parse(props.modelValue)
+          : props.modelValue;
+      } catch (e) {
+        currentValue = {};
+      }
+    }
+
+    // Get user name from auth store
+    const userName = authStore.user?.profile?.full_name || authStore.user?.email || 'Unknown User';
+
+    // Format logs data and append to current JSON
+    const logsJson = formatLogsToJson(logsData, userName);
+    
+    // Append logs as a new entry with timestamp
+    const timestamp = new Date().toISOString();
+    if (!currentValue.logs) {
+      currentValue.logs = [];
+    }
+    
+    currentValue.logs.push({
+      timestamp,
+      data: logsJson
+    });
+
+    // Update the field value
+    emit('update:modelValue', JSON.stringify(currentValue, null, 2));
+    jsonError.value = null;
+
+  } catch (error) {
+    console.error('Error appending logs to JSON:', error);
+    jsonError.value = 'Failed to append logs data';
+  }
+};
+
+// Expose methods for external access
+defineExpose({ 
+  VueTelInput,
+  saveCurrentSignature,
+  appendLogsToJson
+});
 
 // Add function to validate JSON before submission
 const validateJsonField = () => {
@@ -3743,6 +4007,45 @@ const {
   setupMentionListeners,
   cleanupMentionListeners
 } = useMentions(handleValueUpdate, () => isFieldReadOnly.value);
+
+// Helper function to format log timestamps
+const formatLogTimestamp = (timestamp: string) => {
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-AU', {
+      timeZone: 'Australia/Sydney',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (e) {
+    return timestamp;
+  }
+};
+
+// Helper function to get log data without meta fields
+const getLogDataWithoutMeta = (logData: Record<string, any>) => {
+  const metaFields = ['Updated By', 'Date', 'Time'];
+  const filteredData: Record<string, any> = {};
+  
+  Object.keys(logData).forEach(key => {
+    if (!metaFields.includes(key)) {
+      filteredData[key] = logData[key];
+    }
+  });
+  
+  return filteredData;
+};
+
+// Collapsible state for logs table (expanded by default)
+const isLogsCollapsed = ref(true);
+
+const toggleLogsCollapse = () => {
+  isLogsCollapsed.value = !isLogsCollapsed.value;
+};
 
 
 </script>

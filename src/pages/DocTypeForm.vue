@@ -464,6 +464,17 @@ const handleSubmit = async () => {
       }
     }
 
+    // Append logs to JSON fields with [logs] in label before submission
+    const logsFields = docType.value?.fields.filter(field => 
+      field.fieldtype === 'JSON' && field.label?.includes('[logs]')
+    ) || [];
+    for (const field of logsFields) {
+      const fieldRef = formFieldRefs.value[field.fieldname];
+      if (fieldRef && typeof fieldRef.appendLogsToJson === 'function') {
+        fieldRef.appendLogsToJson(docType.value?.fields);
+      }
+    }
+
     const formDataToSubmit = { ...formData.value };
 
     // Fix: Clean up phone fields and duration fields before submission

@@ -191,6 +191,17 @@ const saveEdit = async () => {
       }
     }
 
+    // Append logs to JSON fields with [logs] in label before submission
+    const logsFields = form.value?.fields.filter(field => 
+      field.fieldtype === 'JSON' && field.label?.includes('[logs]')
+    ) || [];
+    for (const field of logsFields) {
+      const fieldRef = formFieldRefs.value[field.fieldname];
+      if (fieldRef && typeof fieldRef.appendLogsToJson === 'function') {
+        fieldRef.appendLogsToJson(form.value?.fields);
+      }
+    }
+
     await updateFormSubmission(
       route.params.formId as string,
       route.params.submissionId as string,

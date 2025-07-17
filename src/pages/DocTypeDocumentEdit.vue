@@ -448,6 +448,17 @@ const handleSubmit = async () => {
   // Save all signature fields before checking for changes
   saveAllSignatures();
   
+  // Append logs to JSON fields with [logs] in label before submission
+  const logsFields = docType.value?.fields.filter(field => 
+    field.fieldtype === 'JSON' && field.label?.includes('[logs]')
+  ) || [];
+  for (const field of logsFields) {
+    const fieldRef = formFieldRefs.value[field.fieldname];
+    if (fieldRef && typeof fieldRef.appendLogsToJson === 'function') {
+      fieldRef.appendLogsToJson(docType.value?.fields);
+    }
+  }
+  
   // Check if there are any changes
   console.log('formData.value', formData.value);
   console.log('originalFormData.value', originalFormData.value);
