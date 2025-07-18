@@ -1,0 +1,29 @@
+# Ensure shell scripts are executable on Unix-like systems
+*.sh text eol=lf
+setup-production.sh text eol=lf
+deploy-update.sh text eol=lf
+deploy-api-only.sh text eol=lf
+fix-git-conflicts.sh text eol=lf
+build-troubleshoot.sh text eol=lf
+server-build.sh text eol=lf
+
+# Ensure line endings are correct for different file types
+*.js text eol=lf
+*.ts text eol=lf
+*.vue text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary 

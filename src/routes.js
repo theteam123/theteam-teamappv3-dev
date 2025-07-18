@@ -1,25 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from './pages/Home.vue'
 import Auth from './pages/Auth.vue'
-import Users from './pages/Users.vue'
-import Companies from './pages/Companies.vue'
-import Roles from './pages/Roles.vue'
+import App from './pages/App.vue'
 import Forms from './pages/Forms.vue'
-import FormSubmissions from './pages/FormSubmissions.vue'
-import FormSubmit from './pages/FormSubmit.vue'
 import PublicFormSubmit from './pages/PublicFormSubmit.vue'
-import FormAnalytics from './pages/FormAnalytics.vue'
-import Tags from './pages/Tags.vue'
-import Categories from './pages/Categories.vue'
-import Content from './pages/Content.vue'
 import Documents from './pages/Documents.vue'
-import EmployeeFeedbackRecords from './pages/EmployeeFeedbackRecords.vue'
-import Policies from './pages/Policies.vue'
-import Records from './pages/Records.vue'
-import Templates from './pages/Templates.vue'
-import Videos from './pages/Videos.vue'
 import DocType from './pages/DocType.vue'
+import DocTypeSubmissions from './pages/DocTypeSubmissions.vue'
+import DocTypeForm from './pages/DocTypeForm.vue'
+import DocTypeDocumentEdit from './pages/DocTypeDocumentEdit.vue'
+import DocTypeImages from './pages/DocTypeImages.vue'
+import DocTypeGenerator from './pages/DocTypeGenerator.vue'
+import VoiceAssistant from './views/VoiceAssistant.vue'
+import ApiTester from './pages/ApiTester.vue'
 import { useAuthStore } from './stores/auth'
+import { useErrorStore } from './stores/error'
 
 const routes = [
   {
@@ -35,22 +30,19 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/users',
-    name: 'users',
-    component: Users,
+    path: '/app',
+    name: 'app',
+    component: App,
     meta: { requiresAuth: true }
   },
   {
-    path: '/companies',
-    name: 'companies',
-    component: Companies,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/roles',
-    name: 'roles',
-    component: Roles,
-    meta: { requiresAuth: true }
+    path: '/oauth-callback',
+    name: 'oauth-callback',
+    component: () => import('./pages/OAuthCallback.vue'),
+    meta: { 
+      requiresAuth: false,
+      isOAuthCallback: true
+    }
   },
   {
     path: '/documents',
@@ -65,51 +57,100 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/policies',
-    name: 'policies',
-    component: Policies,
-    meta: { requiresAuth: true }
+    path: '/voice-assistant',
+    name: 'voice-assistant',
+    component: VoiceAssistant,
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Dizza', 'Admin', 'Manager']
+    }
   },
   {
-    path: '/records',
-    name: 'records',
-    component: Records,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/templates',
-    name: 'templates',
-    component: Templates,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/videos',
-    name: 'videos',
-    component: Videos,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/doctypes',
-    name: 'doctypes',
+    path: '/documents',
+    name: 'documents',
     component: DocType,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+    }
+  },
+  {
+    path: '/documents/taktec-portal',
+    name: 'taktec-documents',
+    component: DocType,
+    meta: { 
+      requiresAuth: true,
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician'],
+      portal: 'taktec'
+    }
+  },
+  {
+    path: '/documents/:id',
+    name: 'document-submissions',
+    component: DocTypeSubmissions,
+    meta: { 
+      requiresAuth: true,
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+    }
+  },
+  {
+    path: '/documents/:id/new',
+    name: 'document-form',
+    component: DocTypeForm,
+    meta: { 
+      requiresAuth: true,
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+    }
+  },
+  {
+    path: '/documents/:id/:documentId/edit',
+    name: 'document-document-edit',
+    component: DocTypeDocumentEdit,
+    meta: { 
+      requiresAuth: true,
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+    }
+  },
+  {
+    path: '/documents/:id/:documentId/images',
+    name: 'document-images',
+    component: DocTypeImages,
+    meta: { 
+      requiresAuth: true,
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician']
+    }
+  },
+  {
+    path: '/documents/:id/:documentId/image/:fieldname',
+    name: 'document-single-image',
+    component: () => import('./pages/DocTypeSingleImage.vue'),
+    meta: { 
+      requiresAuth: true,
+      // requiredRoles: ['Taktec User', 'Taktec Admin', 'System Manager', 'Technician' ]
+    }
   },
   {
     path: '/forms/:id/submissions',
     name: 'form-submissions',
-    component: FormSubmissions,
+    component: () => import('./pages/FormSubmissions.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/forms/:formId/submissions/:submissionId/edit',
+    name: 'form-submission-edit',
+    component: () => import('./pages/FormSubmissionEdit.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/forms/:id/submit',
     name: 'form-submit',
-    component: FormSubmit,
+    component: () => import('./pages/FormSubmit.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/forms/:id/analytics',
-    name: 'form-analytics',
-    component: FormAnalytics,
+    path: '/forms/:id/new',
+    name: 'form-new',
+    component: () => import('./pages/FormNew.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -119,28 +160,28 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/tags',
-    name: 'tags',
-    component: Tags,
-    meta: { requiresAuth: true }
+    path: '/form/:id',
+    name: 'public-doctype-form',
+    component: () => import('./pages/PublicDocTypeForm.vue'),
+    meta: { requiresAuth: false }
   },
   {
-    path: '/categories',
-    name: 'categories',
-    component: Categories,
-    meta: { requiresAuth: true }
+    path: '/test-api',
+    name: 'test-api',
+    component: ApiTester,
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['Admin', 'Developer','System Manager', 'Taktec User', 'Taktec Admin']
+    }
   },
   {
-    path: '/content',
-    name: 'content',
-    component: Content,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/feedback-records',
-    name: 'feedback-records',
-    component: EmployeeFeedbackRecords,
-    meta: { requiresAuth: true }
+    path: '/doctype-generator',
+    name: 'doctype-generator',
+    component: DocTypeGenerator,
+    meta: { 
+      requiresAuth: true,
+      requiredRoles: ['System Manager', 'Admin', 'Developer']
+    }
   },
   {
     path: '/:pathMatch(.*)*',
@@ -162,29 +203,44 @@ const router = createRouter({
 })
 
 // Add debug logging
-router.beforeEach((to, from, next) => {
-  console.log('Route navigation:', {
-    to: to.fullPath,
-    from: from.fullPath,
-    toName: to.name,
-    fromName: from.name,
-    availableRoutes: router.getRoutes().map(r => ({
-      path: r.path,
-      name: r.name
-    }))
-  })
-
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  const errorStore = useErrorStore()
+
+  // Always allow OAuth callback
+  if (to.path === '/oauth-callback') {
+    next();
+    return;
+  }
+
+  // Initialize auth state if not already initialized
+  if (!authStore.isInitialized) {
+    await authStore.initialize();
+  }
 
   // Check if the route requires authentication
   if (to.meta.requiresAuth) {
     // Check if user is authenticated
     if (!authStore.isAuthenticated) {
-      // Redirect to auth page if not authenticated
-      next({ name: 'auth' })
-      return
+      const message = 'Please log in to access this page';
+      errorStore.$patch({ message, type: 'error' });
+      next({ name: 'auth' });
+      return;
     }
 
+    // Check for required roles
+    if (to.meta.requiredRoles) {
+      const hasRequiredRole = to.meta.requiredRoles.some(role => 
+        authStore.user?.roles?.includes(role)
+      );
+      
+      if (!hasRequiredRole) {
+        const message = 'Access denied: You do not have the required permissions to view this page';
+        errorStore.$patch({ message, type: 'error' });
+        next({ name: 'home' });
+        return;
+      }
+    }
   }
 
   next()

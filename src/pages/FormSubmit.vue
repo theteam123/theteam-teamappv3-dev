@@ -21,7 +21,7 @@
         <div class="mt-6">
           <button
             @click="submitted = false"
-            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
           >
             Submit Another Response
           </button>
@@ -106,7 +106,7 @@
             <button
               type="submit"
               :disabled="submitting"
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LoaderIcon v-if="submitting" class="w-4 h-4 mr-2 animate-spin" />
               {{ submitting ? 'Submitting...' : 'Submit' }}
@@ -140,20 +140,8 @@ const formData = ref({});
 const fetchForm = async () => {
   loading.value = true;
   try {
-    const { data, error: fetchError } = await supabase
-      .from('forms')
-      .select('*')
-      .eq('id', route.params.id)
-      .single();
-
-    if (fetchError) throw fetchError;
-    form.value = data;
-
-    // Initialize form data with empty values
-    formData.value = form.value.fields.reduce((acc, field) => {
-      acc[field.label] = '';
-      return acc;
-    }, {});
+    // TODO: Implement your form fetching logic here
+    form.value = null;
   } catch (err) {
     error.value = err.message;
   } finally {
@@ -164,16 +152,7 @@ const fetchForm = async () => {
 const handleSubmit = async () => {
   submitting.value = true;
   try {
-    const { error: submitError } = await supabase
-      .from('form_submissions')
-      .insert({
-        form_id: route.params.id,
-        submitted_by: authStore.user?.id,
-        data: formData.value
-      });
-
-    if (submitError) throw submitError;
-
+    // TODO: Implement your form submission logic here
     submitted.value = true;
     formData.value = form.value.fields.reduce((acc, field) => {
       acc[field.label] = '';
