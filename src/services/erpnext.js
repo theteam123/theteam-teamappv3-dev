@@ -1113,3 +1113,33 @@ export const addComment = async (commentData) => {
     throw new Error(errorMessage);
   }
 };
+
+/**
+ * Validate a link field in a document
+ * @param {string} doctype - The DocType of the document
+ * @param {string} docname - The name of the document
+ * @param {Array<string>} fields - Array of field names to validate
+ * @returns {Promise<Object>} Response from the validate link API
+ */
+export const validateLink = async (doctype, docname, fields) => {
+  try {
+    // Prepare form data
+    const formData = new URLSearchParams();
+    formData.append('doctype', doctype);
+    formData.append('docname', docname);
+    formData.append('fields', JSON.stringify(fields));
+
+    const response = await erp.post('/api/method/frappe.client.validate_link', formData, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    const errorMessage = handleServerError(error, 'validateLink', 'Failed to validate link');
+    throw new Error(errorMessage);
+  }
+};
+

@@ -1587,7 +1587,7 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 // Explicitly import Draw control
 import 'leaflet-draw/dist/leaflet.draw.js';
 
-import { getFormList, uploadFile } from '../services/erpnext';
+import { getFormList, uploadFile, validateLink } from '../services/erpnext';
 import { searchLink } from '../services/deskApi';
 import { evaluateFieldDependency } from '../utils/fieldDependency';
 import { useErrorStore } from '../stores/error';
@@ -1646,6 +1646,7 @@ interface FormField {
   read_only_depends_on?: string;
   description?: string;
   default?: string;
+  fetch_from?: string;
   tableFields?: TableField[];
 }
 
@@ -1680,6 +1681,7 @@ const props = defineProps<{
   modelValue: any;
   formData?: Record<string, any>;
   parentDocName?: string;
+  allFields?: FormField[];
 }>();
 
 const emit = defineEmits<{
@@ -2654,6 +2656,80 @@ const handleValueUpdate = (value: any) => {
     evaluateFieldDependency(props.field, props.formData);
   }
 };
+
+// Handle fetch_from functionality for Data fields
+const handleFetchFrom = async () => {
+  if (props.field.fieldtype === 'Data' && props.field.fetch_from && props.formData && props.allFields) {
+    const fetchFromParts = props.field.fetch_from.split('.');
+    
+    if (fetchFromParts.length !== 2) {
+      console.error('Invalid fetch_from format. Use "source_field.target_field"');
+      return;
+    }
+    
+    const [sourceFieldName, targetFieldName] = fetchFromParts;
+    
+    // Find the source field in allFields to get its options (DocType)
+    const sourceField = props.allFields.find(field => field.fieldname === sourceFieldName);
+    
+    if (!sourceField) {
+      console.error(`Source field "${sourceFieldName}" not found in form fields`);
+      return;
+    }
+    
+    if (!sourceField.options) {
+      console.error(`Source field "${sourceFieldName}" has no options (DocType) defined`);
+      return;
+    }
+    
+    const sourceDocType = sourceField.options;
+    const sourceValue = props.formData[sourceFieldName];
+    
+    if (sourceValue) {
+      try {
+        // Use validateLink to fetch the document data
+        const response = await validateLink(
+          sourceDocType,
+          sourceValue,
+          [targetFieldName]
+        );
+        
+        if (response && response.message && response.message[targetFieldName]) {
+          const fetchedValue = response.message[targetFieldName];
+          
+          // Auto-populate the current field with the fetched value
+          emit('update:modelValue', fetchedValue);
+          if (props.formData) {
+            props.formData[props.field.fieldname] = fetchedValue;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data for fetch_from:', error);
+      }
+    }
+  }
+};
+
+// Watch for changes in the source field referenced by fetch_from
+watch(
+  () => {
+    if (props.field.fetch_from && props.formData) {
+      const fetchFromParts = props.field.fetch_from.split('.');
+      if (fetchFromParts.length === 2) {
+        const [sourceFieldName] = fetchFromParts;
+        return props.formData[sourceFieldName];
+      }
+    }
+    return null;
+  },
+  (newValue, oldValue) => {
+    // Only trigger if there's a new value and it's different from the old value
+    if (newValue && newValue !== oldValue && props.allFields) {
+      handleFetchFrom();
+    }
+  },
+  { immediate: true }
+);
 
 // JSON field handling
 const jsonError = ref<string | null>(null);

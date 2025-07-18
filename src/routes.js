@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from './pages/Home.vue'
 import Auth from './pages/Auth.vue'
+import App from './pages/App.vue'
 import Forms from './pages/Forms.vue'
 import PublicFormSubmit from './pages/PublicFormSubmit.vue'
 import Documents from './pages/Documents.vue'
@@ -27,6 +28,12 @@ const routes = [
     name: 'auth',
     component: Auth,
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/app',
+    name: 'app',
+    component: App,
+    meta: { requiresAuth: true }
   },
   {
     path: '/oauth-callback',

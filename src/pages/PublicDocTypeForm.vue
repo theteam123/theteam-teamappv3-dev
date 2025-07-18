@@ -153,6 +153,7 @@
                         v-model="formData[field.fieldname]"
                         :formData="formData"
                         :parentDocName="route.params.id as string"
+                        :allFields="docType?.fields || []"
                       />
                     </div>
                   </div>
@@ -202,6 +203,7 @@
                       v-model="formData[field.fieldname]"
                       :formData="formData"
                       :parentDocName="route.params.id as string"
+                      :allFields="docType?.fields || []"
                     />
                   </div>
                 </div>

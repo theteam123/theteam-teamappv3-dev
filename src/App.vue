@@ -53,7 +53,7 @@
             <!-- Document Management Section -->
             <div class="pt-4">
               <!-- System Modules -->
-              <div v-if="modules.length > 0" class="space-y-1 max-h-[calc(100vh-24rem)] overflow-y-auto">
+              <div v-if="modules.length > 0 && $route.path !== '/app'" class="space-y-1 max-h-[calc(100vh-24rem)] overflow-y-auto">
                 
                 <router-link 
                   v-for="module in modules" 
