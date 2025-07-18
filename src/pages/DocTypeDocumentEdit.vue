@@ -135,6 +135,7 @@
                       :formData="formData"
                       :parentDocName="route.params.id as string"
                       :disabled="!canEditDocument"
+                      :allFields="docType?.fields || []"
                     />
                   </div>
                 </div>
@@ -206,6 +207,7 @@
                     :formData="formData"
                     :parentDocName="route.params.id as string"
                     :disabled="!canEditDocument"
+                    :allFields="docType?.fields || []"
                   />
                 </div>
               </div>
